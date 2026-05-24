@@ -1,0 +1,26 @@
+# Per-machine cache + symlinks (fetched at SessionStart, never committed)
+.claude/.cache/
+.claude/skills/
+.claude/commands/
+.claude/kickoff
+.claude/close-ok-*
+
+# OpenSCAD build artifacts
+*.csg
+*.echo
+
+# Generated outputs (commit only via explicit release process)
+build/
+out/
+preview/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor noise
+*.swp
+*.bak
+*~
+.vscode/
+.idea/
