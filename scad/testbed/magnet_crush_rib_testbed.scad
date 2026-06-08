@@ -1,12 +1,12 @@
 // magnet_crush_rib_testbed.scad
-// version: 1.3.0
+// version: 1.4.0
 //
 // Flat plate with a 6×2 grid of crush-rib wells — one row per magnet size,
 // one column per rib-protrusion level. Print in PETG, press-fit each magnet
 // by hand, note which protrusion holds without cracking the well.
 //
-// Row 0 (front): 5×1 mm magnets   (well-Ø = MAGNETS[0][0]+2×WELL_R_ADD, well-depth = MAGNETS[0][1]+WELL_D_ADD)
-// Row 1 (back):  6×1.5 mm magnets (well-Ø = MAGNETS[1][0]+2×WELL_R_ADD, well-depth = MAGNETS[1][1]+WELL_D_ADD)
+// Row 0 (front): 5×1 mm magnets   (well-Ø = MAGNETS[0][0]+2×WELL_R_ADD[0], well-depth = MAGNETS[0][1]+WELL_D_ADD)
+// Row 1 (back):  6×1.5 mm magnets (well-Ø = MAGNETS[1][0]+2×WELL_R_ADD[1], well-depth = MAGNETS[1][1]+WELL_D_ADD)
 // Columns 0–5:   rib protrusion ∈ {0.05, 0.10, 0.15, 0.20, 0.25, 0.30} mm
 //
 // Crush-rib geometry: 8 axial ribs at 45° spacing, parallel to build-Z.
@@ -23,11 +23,11 @@
 // ── Parameters ───────────────────────────────────────────────────────────────
 
 PROTRUSIONS  = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30]; // rib radial protrusion, mm
-// NOTE: col 0 protrusion (0.05) == WELL_R_ADD (0.05) → zero net engagement; it's a baseline, not a low-friction test.
+// NOTE: col 0 protrusion (0.05) < WELL_R_ADD[0] (0.20) → ribs don't reach the magnet in row 0; true baseline.
 MAGNETS      = [[5.0, 1.0], [6.0, 1.5]];             // [OD mm, H mm] per row
 
-WELL_R_ADD   = 0.05;  // added per side to magnet OD → well nominal radius = OD/2 + 0.05
-WELL_D_ADD   = 0.10;  // added to magnet H → well depth
+WELL_R_ADD   = [0.20, 0.05]; // added per side to magnet OD, per row: [5×1mm, 6×1.5mm]
+WELL_D_ADD   = 0.50;  // added to magnet H → well depth
 RIB_WIDTH    = 0.8;   // rib base chord width at bore wall (fixed for all protrusions)
 RIB_COUNT    = 8;     // 8 = FDM-validated for disc magnets; ≤5 → polygon bore, 30 → unprintable at 0.4mm
 CHAMFER_R    = 0.3;   // lead-in chamfer radius at well opening; small — don't eat rib engagement depth
@@ -50,7 +50,7 @@ ROWS   = len(MAGNETS);
 PLATE_X = 2*MARGIN_X + (COLS-1)*WELL_SPACING;
 PLATE_Y = 2*MARGIN_Y + (ROWS-1)*WELL_SPACING;
 
-function well_r(row) = MAGNETS[row][0]/2 + WELL_R_ADD;
+function well_r(row) = MAGNETS[row][0]/2 + WELL_R_ADD[row];
 function well_d(row) = MAGNETS[row][1]   + WELL_D_ADD;
 function cx(col)     = MARGIN_X + col*WELL_SPACING;
 function cy(row)     = MARGIN_Y + row*WELL_SPACING;
