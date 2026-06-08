@@ -1,5 +1,5 @@
 // magnet_crush_rib_testbed.scad
-// version: 1.1.0
+// version: 1.2.0
 //
 // Flat plate with a 6×2 grid of crush-rib wells — one row per magnet size,
 // one column per rib-protrusion level. Print in PETG, press-fit each magnet
@@ -29,7 +29,7 @@ WELL_R_ADD   = 0.05;  // added per side to magnet OD → well nominal radius = O
 WELL_D_ADD   = 0.10;  // added to magnet H → well depth
 RIB_WIDTH    = 0.8;   // rib base chord width at bore wall (fixed for all protrusions)
 RIB_COUNT    = 8;     // 8 = FDM-validated for disc magnets; ≤5 → polygon bore, 30 → unprintable at 0.4mm
-CHAMFER_R    = 0.6;   // lead-in chamfer radius at well opening (magnet self-centering)
+CHAMFER_R    = 0.3;   // lead-in chamfer radius at well opening; small — don't eat rib engagement depth
 
 PLATE_H      = 5.0;   // plate thickness
 WELL_SPACING = 14.0;  // well centre-to-centre (X and Y)
@@ -71,9 +71,8 @@ module bore_with_ribs(row, protrusion) {
             cylinder(r=r, h=d+0.01);
             for (i=[0:RIB_COUNT-1]) {
                 rotate([0,0, i*(360/RIB_COUNT)])
-                // Rib notch: wedge with apex pointing inward from bore wall.
-                // Triangle vertices (XY): two points at bore wall, one apex inward.
-                linear_extrude(height=d+0.02)
+                // Rib notch capped at d - CHAMFER_R so ribs don't enter the chamfer zone.
+                linear_extrude(height=d - CHAMFER_R + 0.01)
                 polygon([
                     [ r - protrusion, 0          ],  // apex (inward)
                     [ r,             -RIB_WIDTH/2 ], // wall left
