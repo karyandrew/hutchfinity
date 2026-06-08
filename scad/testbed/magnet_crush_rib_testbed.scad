@@ -1,5 +1,5 @@
 // magnet_crush_rib_testbed.scad
-// version: 1.0.0
+// version: 1.1.0
 //
 // Flat plate with a 6×2 grid of crush-rib wells — one row per magnet size,
 // one column per rib-protrusion level. Print in PETG, press-fit each magnet
@@ -9,10 +9,13 @@
 // Row 1 (back):  6×1.5 mm magnets well-Ø = 6.1 mm, well-depth = 1.6 mm
 // Columns 0–5:   rib protrusion ∈ {0.05, 0.10, 0.15, 0.20, 0.25, 0.30} mm
 //
-// Crush-rib geometry: 3 axial ribs at 120° spacing, parallel to build-Z.
+// Crush-rib geometry: 8 axial ribs at 45° spacing, parallel to build-Z.
+// 8 ribs is the experimentally validated count for FDM disc-magnet wells:
+// ≤5 produces a polygon bore, 30 won't print at 0.4mm nozzle (gridfinity-rebuilt-openscad).
 // Each rib is a wedge of plate material retained inside the bore — the bore
 // subtraction has rib-shaped notches, so PETG material protrudes inward.
 // Rib base width (at bore wall): RIB_WIDTH. Apex depth into bore: protrusion.
+// Lead-in chamfer on well opening aids magnet centering before interference.
 //
 // Labels on top face show protrusion × 100 as integer (e.g. "10" = 0.10 mm).
 // Row labels show magnet spec ("5x1", "6x1.5").
@@ -25,7 +28,8 @@ MAGNETS      = [[5.0, 1.0], [6.0, 1.5]];             // [OD mm, H mm] per row
 WELL_R_ADD   = 0.05;  // added per side to magnet OD → well nominal radius = OD/2 + 0.05
 WELL_D_ADD   = 0.10;  // added to magnet H → well depth
 RIB_WIDTH    = 0.8;   // rib base chord width at bore wall (fixed for all protrusions)
-RIB_COUNT    = 3;
+RIB_COUNT    = 8;     // 8 = FDM-validated for disc magnets; ≤5 → polygon bore, 30 → unprintable at 0.4mm
+CHAMFER_R    = 0.6;   // lead-in chamfer radius at well opening (magnet self-centering)
 
 PLATE_H      = 5.0;   // plate thickness
 WELL_SPACING = 14.0;  // well centre-to-centre (X and Y)
@@ -53,22 +57,29 @@ function cy(row)     = MARGIN_Y + row*WELL_SPACING;
 // ── Modules ───────────────────────────────────────────────────────────────────
 
 // Bore shape to subtract from the plate for one well.
-// = cylinder with 3 rib-shaped notches removed → rib material stays in plate.
+// = cylinder (+ chamfer cone) with 8 rib-shaped notches removed → rib material stays in plate.
 module bore_with_ribs(row, protrusion) {
     r = well_r(row);
     d = well_d(row);
-    difference() {
-        cylinder(r=r, h=d+0.01);
-        for (i=[0:RIB_COUNT-1]) {
-            rotate([0,0, i*(360/RIB_COUNT)])
-            // Rib notch: wedge with apex pointing inward from bore wall.
-            // Triangle vertices (XY): two points at bore wall, one apex inward.
-            linear_extrude(height=d+0.02)
-            polygon([
-                [ r - protrusion, 0         ],   // apex (inward)
-                [ r,             -RIB_WIDTH/2 ], // wall left
-                [ r,              RIB_WIDTH/2 ], // wall right
-            ]);
+    union() {
+        // Lead-in chamfer: 45° cone at the opening, removes a ring of material
+        // so the magnet self-centers before hitting the ribs.
+        translate([0, 0, d - CHAMFER_R])
+            cylinder(r1=r, r2=r + CHAMFER_R, h=CHAMFER_R + 0.01);
+
+        difference() {
+            cylinder(r=r, h=d+0.01);
+            for (i=[0:RIB_COUNT-1]) {
+                rotate([0,0, i*(360/RIB_COUNT)])
+                // Rib notch: wedge with apex pointing inward from bore wall.
+                // Triangle vertices (XY): two points at bore wall, one apex inward.
+                linear_extrude(height=d+0.02)
+                polygon([
+                    [ r - protrusion, 0          ],  // apex (inward)
+                    [ r,             -RIB_WIDTH/2 ], // wall left
+                    [ r,              RIB_WIDTH/2 ], // wall right
+                ]);
+            }
         }
     }
 }
