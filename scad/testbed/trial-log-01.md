@@ -11,33 +11,114 @@ testbed: magnet_crush_rib_testbed v1.2.0
 
 | | |
 |---|---|
-| Printer | Sovol SV08 |
-| Profile | PHATTY (0.6mm nozzle / 0.3mm layer height) |
-| Filament | Sunlu Clear PETG |
+| Printer | Sovol SV08 MAX |
+| Process profile | PHATTY MAX 0.6 nozzle - 0.5.0 (see below) |
+| Filament profile | Sunlu PETG PHAT MAX - .6 1.1.1 (see below) |
 | Testbed | `magnet_crush_rib_testbed.scad` v1.2.0 |
 | Rib count | 8 @ 45° spacing |
 | Chamfer | 0.3mm lead-in |
 
-**Note:** PHATTY settings are marginal for these features. At 0.3mm layer height the 5×1mm well (1.1mm deep) is ~3 layers; the 0.8mm rib engagement zone is ~2 layers. Coarse geometry on small holes.
+### Process profile — PHATTY MAX 0.6 nozzle - 0.5.0
 
-OrcaSlicer profile for this print: **not yet captured** — to be added from local session.
+```json
+{
+    "bottom_shell_layers": "2",
+    "bottom_surface_pattern": "monotonic",
+    "brim_type": "no_brim",
+    "detect_thin_wall": "1",
+    "elefant_foot_compensation": "1",
+    "first_layer_flow_ratio": "1.3",
+    "from": "User",
+    "infill_direction": "90",
+    "infill_wall_overlap": "35%",
+    "inherits": "0.30mm Standard @Sovol SV08 MAX 0.6 nozzle",
+    "initial_layer_infill_speed": "140",
+    "initial_layer_line_width": "1.4",
+    "initial_layer_print_height": "0.6",
+    "initial_layer_speed": "120",
+    "inner_wall_acceleration": "2500",
+    "inner_wall_line_width": "1.4",
+    "inner_wall_speed": "140",
+    "internal_solid_infill_line_width": "1.4",
+    "internal_solid_infill_speed": "180",
+    "layer_height": "0.59",
+    "line_width": "1.2",
+    "name": "PHATTY MAX 0.6 nozzle - 0.5.0",
+    "outer_wall_acceleration": "1000",
+    "outer_wall_line_width": "1.4",
+    "print_extruder_id": ["1"],
+    "print_extruder_variant": ["Direct Drive Standard"],
+    "reduce_crossing_wall": "1",
+    "seam_gap": "-0.01",
+    "seam_position": "nearest",
+    "set_other_flow_ratios": "1",
+    "skirt_loops": "0",
+    "sparse_infill_density": "28%",
+    "sparse_infill_line_width": "0.8",
+    "sparse_infill_pattern": "tpmsd",
+    "sparse_infill_speed": "220",
+    "staggered_inner_seams": "1",
+    "top_shell_layers": "2",
+    "top_shell_thickness": "0",
+    "top_surface_line_width": "1.4",
+    "top_surface_speed": "120",
+    "version": "2.3.2.60",
+    "wall_direction": "cw",
+    "wall_loops": "1"
+}
+```
+
+### Filament profile — Sunlu PETG PHAT MAX - .6 1.1.1
+
+```json
+{
+    "chamber_temperature": ["40"],
+    "fan_cooling_layer_time": ["0"],
+    "fan_max_speed": ["100"],
+    "fan_min_speed": ["25"],
+    "filament_extruder_variant": ["Direct Drive Standard"],
+    "filament_flow_ratio": ["1.13"],
+    "filament_max_volumetric_speed": ["50"],
+    "filament_settings_id": ["Sunlu PETG PHAT MAX - .6 1.1.1"],
+    "filament_vendor": ["Sunlu"],
+    "from": "User",
+    "full_fan_speed_layer": ["5"],
+    "hot_plate_temp": ["85"],
+    "inherits": "Generic PETG @Sovol SV08 MAX",
+    "name": "Sunlu PETG PHAT MAX - .6 1.1.1",
+    "nozzle_temperature": ["260"],
+    "slow_down_layer_time": ["0"],
+    "version": "2.3.2.60"
+}
+```
+
+## Why PHATTY is marginal for this feature
+
+| Setting | Value | Effect on wells |
+|---|---|---|
+| `layer_height` | 0.59mm | 1.1mm well = ~2 layers total; bore barely resolves |
+| `outer_wall_line_width` | 1.4mm | Fat single wall; bore narrower than nominal |
+| `wall_loops` | 1 | One perimeter — no redundancy, bore geometry is coarse |
+| `filament_flow_ratio` | 1.13 | 13% over-extrusion narrows bore further |
+| `first_layer_flow_ratio` | 1.3 | 130% first-layer flow raises well floor, reduces effective depth |
+| `slow_down_layer_time` | 0 | No cooling on small features; top layers may fuse |
 
 ## Results
 
-### Row A — 5×1mm magnets (well-Ø 5.1mm, well-depth 1.1mm)
+### Row A — 5×1mm magnets (nominal well-Ø 5.1mm, well-depth 1.1mm)
 
 | Col | Protrusion | Result |
 |---|---|---|
-| 0 | 0.05mm | Inserted — only one that went in |
+| 0 | 0.05mm | Inserted (only one that went in) |
 | 1 | 0.10mm | Would not insert |
 | 2 | 0.15mm | Would not insert |
 | 3 | 0.20mm | Would not insert |
 | 4 | 0.25mm | Would not insert |
 | 5 | 0.30mm | Would not insert |
 
-5×1mm bore is too tight overall at current nominal Ø (OD + 0.1mm) with PHATTY extrusion. Only 0.05mm protrusion was insertable. Retention result at 0.05mm not recorded (insertion alone was the finding).
+Over-extrusion + coarse layer geometry effectively closed the bore. The nominal 0.1mm bore clearance is insufficient at PHATTY settings — the bore is already undersize before ribs are considered.
 
-### Row B — 6×1.5mm magnets (well-Ø 6.1mm, well-depth 1.6mm)
+### Row B — 6×1.5mm magnets (nominal well-Ø 6.1mm, well-depth 1.6mm)
 
 | Col | Protrusion | Result |
 |---|---|---|
@@ -45,17 +126,19 @@ OrcaSlicer profile for this print: **not yet captured** — to be added from loc
 | 1 | 0.10mm | Inserted, pulls right back out |
 | 2 | 0.15mm | Inserted, pulls right back out |
 | 3 | 0.20mm | Inserted, pulls right back out |
-| 4 | 0.25mm | ✅ Holds — does not pull out |
-| 5 | 0.30mm | ✅ Holds — does not pull out |
+| 4 | 0.25mm | ✅ Holds |
+| 5 | 0.30mm | ✅ Holds |
 
-**All 6×1.5mm magnets sit proud of the plate surface.** Well depth (1.6mm = magnet H + 0.10mm) is insufficient to seat flush.
+**All 6×1.5mm magnets sit proud of the plate surface.** Effective well depth less than nominal 1.6mm due to first-layer over-extrusion raising the floor.
+
+**Preference: shy is better than proud** for this use case — magnets in tub foot wells and casing arrays must not protrude above their surface or they interfere with mating geometry.
 
 ## Design implications for next iteration
 
-1. **Well depth**: increase extra depth from +0.10mm to at least +0.5mm. Magnets must seat shy (preferred) not proud. Proud magnets will interfere with mating casing surface.
+1. **Well depth**: increase extra depth from +0.10mm to +0.5mm minimum. Needs physical validation at target print settings.
 
-2. **5×1mm bore**: nominal Ø + 0.1mm is already too tight at PHATTY settings. Next testbed should widen bore clearance or test at standard (0.4mm / 0.2mm) settings to separate rib geometry from extrusion-width overextrusion artifact.
+2. **5×1mm bore**: nominal Ø + 0.1mm is insufficient at PHATTY settings. Either: (a) increase bore clearance to +0.3–0.4mm for PHATTY, or (b) reprint at standard settings (0.4mm nozzle / 0.2mm layer) to characterize rib geometry cleanly before adding extrusion-width compensation.
 
-3. **6×1.5mm recipe**: protrusion 0.25–0.30mm holds. With correct well depth (flush/shy), target 0.25mm as the conservative starting point for casing.scad.
+3. **6×1.5mm recipe (tentative)**: 0.25mm protrusion holds at PHATTY. Pending flush/shy well depth confirmation and validation at standard settings before locking for casing.scad.
 
-4. **Print settings**: PHATTY at 0.3mm layer height is too coarse for 1–2mm deep features. Next testbed print at standard settings (0.4mm nozzle / 0.2mm layer) to get clean rib geometry before locking recipe.
+4. **Print settings for next testbed**: standard (0.4mm nozzle / 0.2mm layer height) — PHATTY is too coarse for features this small.
