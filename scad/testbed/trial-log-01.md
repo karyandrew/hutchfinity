@@ -14,7 +14,7 @@ testbed: magnet_crush_rib_testbed v1.2.0
 | Printer | Sovol SV08 MAX |
 | Process profile | PHATTY MAX 0.6 nozzle - 0.5.0 (see below) |
 | Filament profile | Sunlu PETG PHAT MAX - .6 1.1.1 (see below) |
-| Testbed | `magnet_crush_rib_testbed.scad` v1.2.0 |
+| Testbed | `magnet_crush_rib_testbed.scad` v1.2.0 (v1.3.0 in this PR corrects label positioning, reduces $fn, and adds an assert guard — no well or rib geometry changes; trial data is valid for both) |
 | Rib count | 8 @ 45° spacing |
 | Chamfer | 0.3mm lead-in |
 
