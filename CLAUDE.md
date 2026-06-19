@@ -1,45 +1,41 @@
 ---
-version: 1.0.0
+version: 1.1.0
 ---
 
-# Hutchfinity — repo-specific instructions
+# Hutchfinity - Claude Instructions
 
 ## Project
 
-`karyandrew/hutchfinity` is a parametric, modular drawer chest system built around gridfinity-extended tubs at **half-pitch** (21mm XY / 3.5mm Z). General-purpose organizer; not bound to any single application domain. OpenSCAD source; targets FDM printers with ≥256mm² build envelope (A1-tier and up).
+This repository is a parametric, modular drawer chest system built around Gridfinity Extended at half pitch: 21mm XY and 3.5mm Z. It is a general-purpose organizer project, not a domain-specific deployment.
 
-System parts: tub (drawer), casing (enclosure), handle (glue-on), peg (inter-casing stack link). Casings stack vertically into chests; tubs slide drawer-style; magnets provide tactile detent. All XY dimensions are derived parametrically from tub cell count + pitch.
+The authored system parts are:
 
-## Pre-flight: read at session start
+- `tub.scad` - drawer pan
+- `casing.scad` - one-slot enclosure
+- `handle.scad` - optional glue-on pull
+- `peg.scad` - inter-casing stack link
 
-Before acting on any task, load these files in full:
+Casings stack vertically into chests. Tubs slide drawer-style. Optional magnets provide closed retention and an extended-warning detent. All XY dimensions derive parametrically from tub cell count and pitch.
 
-- [`.claude/.cache/second-brain/.claude/rules/shared-rules.md`](.claude/.cache/second-brain/.claude/rules/shared-rules.md) — cross-repo behavioral rules (canonical, fetched at SessionStart)
-- [`.claude/.cache/second-brain/.claude/rules/sensitivity.md`](.claude/.cache/second-brain/.claude/rules/sensitivity.md) — sensitivity frontmatter policy
+## Public Repository Hygiene
 
-If the cache is missing, the launch wasn't `claude-sb` — pause and surface this before substantive work.
+This repository is public. Compose every committed change for public exposure.
 
-## Dependencies
+Do not add:
 
-`karyandrew/second-brain` — canonical cross-repo rules, sensitivity policy, skills, slash commands. Inherited via the `claude-sb` launch wrapper (`CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD=1` + `--add-dir ~/second-brain`). User-level symlink (`~/.claude/commands` → `~/second-brain/.claude/commands`) delivers slash commands. PreToolUse hook `.claude/hooks/guard-second-brain-present.sh` warns if inheritance isn't detected.
+- Private-repo references or private workflow dependencies
+- Domain-specific deployment context that narrows the project away from a general organizer
+- Personal names, contact details, local paths, machine names, or runtime details
+- License selections, inferred license policy, or contribution promises that depend on an unresolved license decision
 
-## Session Pre-Flight
+If a useful instruction contains sensitive or private context, rewrite it in public-safe terms instead of preserving the sensitive wording.
 
-Open GitHub issues are the sole work-tracking surface (no `TODO.md`). Per second-brain `wiki/pm-via-issue-deps.md`, pick work from the ready set: open issues whose `blockedBy` is empty and which don't carry the `claude-in-progress` label. Use `gh issue list --state open --repo karyandrew/hutchfinity` for titles; read bodies on demand.
+## Workflow
 
-## Public Repo
+Open GitHub issues may be used for work tracking, but do not pick up, sign, label, close, or otherwise mutate issues unless the user explicitly asks for that action.
 
-This repo is public from initial commit per [`second-brain/adr/0011-hutchfinity-public-repo.md`](https://github.com/karyandrew/second-brain/blob/main/adr/0011-hutchfinity-public-repo.md). Every commit is composed assuming public exposure. Hygiene baseline:
-
-- No references to private `karyandrew/*` repos
-- No domain-specific application context that doxxes the operator
-- No addresses, phones, alt-emails
-- License: see `LICENSE` (or hutchfinity#1 if not yet picked)
-
-## Git Workflow
-
-Solo dev. Work on a `claude/*` branch, open a PR, merge it with a merge commit (not squash, not rebase), and delete the branch if auto-delete didn't. Canonical rule lives in second-brain `rules/shared-rules.md` → Git Workflow.
+Use a non-main branch for file changes. Do not commit, push, open a PR, or merge without explicit authorization. Before any commit or PR text, review the diff and public surfaces for local paths, personal details, private references, and domain-specific context.
 
 ## Versioning
 
-Parametric SCAD modules carry semver in their headers. PRDs and reference docs carry frontmatter `version:`. Canonical rule: [second-brain/.claude/rules/versioning.md](https://github.com/karyandrew/second-brain/blob/main/.claude/rules/versioning.md).
+Parametric SCAD modules carry semver in their headers. PRDs and reference docs carry frontmatter `version:` when they are maintained as versioned artifacts.
