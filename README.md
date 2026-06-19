@@ -30,3 +30,8 @@ Gridfinity was created by **Zack Freedman** ([Hack Smith Industries](https://hac
 ## Contributing
 
 Issues welcome. PRs welcome once LICENSE lands.
+
+## Repository map
+
+- `wiki/` - evergreen implementation notes and validated recipes.
+- `adr/` - architecture decision records.
