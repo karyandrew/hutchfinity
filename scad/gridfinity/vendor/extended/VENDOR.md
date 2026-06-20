@@ -6,11 +6,11 @@ sensitivity: public
 
 - **Upstream:** https://github.com/ostat/gridfinity_extended_openscad
 - **Pinned SHA:** `8b3a6c570c40ec1501ed61bc958835c06ffb7b8c` (2026-02-27)
-- **License:** GPL-3.0 (see `LICENSE`)
+- **License:** GNU GPL v3.0 (see `LICENSE`)
 
 Files retained: `combined/gridfinity_basic_cup.scad`, `combined/gridfinity_baseplate.scad`. The `combined/` variants are auto-generated single-file builds — self-contained, no module path setup required.
 
-GPL-3.0 is copyleft. The 3d-printing repo is private; no constraint while internal. Any derivative SCAD config we publish externally inherits GPL-3.0.
+GPL-3.0 is copyleft. Published derivative SCAD configs that include or build on these vendored files need to preserve the upstream license terms and notices.
 
 ## Toolchain
 
