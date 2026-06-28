@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Hutchfinity Chest PRD
@@ -33,7 +33,7 @@ A single drawer slot is one tub plus one casing, with an optional handle. Chests
 | HR-2 | **Multiplicity comes from stacking, not a drawer-count parameter.** | A single parametric casing stays simple; tall chests are assemblies, not special-case models. |
 | HR-3 | **Casing has back, sides, and top only.** No bottom, no front. | No front means there is an opening for the drawer. No bottom keeps the model simpler to print and lets each drawer ride on the top of the casing below, footer, or tabletop. |
 | HR-4 | **Casing prints inverted with the top on the bed.** | Sides and back rise as vertical perimeters; the model should avoid bridges and manual supports. |
-| HR-5 | **The bottom-most drawer can ride on a footer or tabletop.** A footer is a zero-height or short-height empty casing generated from the same casing module. | Avoids a separate base system while preserving the same stack interface; taller footers exist specifically to clear robot vacuums when the chest footprint warrants floor clearance. |
+| HR-5 | **The bottom-most drawer can ride on a footer or tabletop.** Footer/base behavior is outside `casing.scad`. | Keeps the casing module a single supportless shell while leaving bottom support and robot-vacuum clearance to assembly-level design. |
 | HR-6 | **Tub geometry remains compatible with the existing tub catalog.** The lip stays; optional magnet wells and glue-on handle pads must not break stacking or basic tub use. | Hutchfinity should extend tubs into drawers without making every tub a one-off chest-only part. |
 | HR-7 | **Sliding interface is tub-on-casing-top.** Each tub rides on the top of the casing below; the bottom tub rides on the footer top or tabletop. | No rails, tracks, or drawer hardware in v1. |
 | HR-8 | **Drawers are fully removable.** No pull-out stop in v1. | Clean removal is simpler, easier to print, and easier to inspect. |
@@ -69,26 +69,16 @@ The casing is a single-piece inverted print:
 - Back and side walls print as vertical perimeters.
 - No bottom face.
 - No front face.
-- Peg sockets exist on both top and bottom interfaces.
+- Peg interface reference points are reserved for vertical stacking; final socket geometry remains testbed-gated.
 - Magnet wells for the tub above are reserved, but their casing-side orientation is an implementation risk: blind wells opening on the final top surface may conflict with top-on-bed printing. Validate whether they print cleanly as bed-side features, move the wells to an insert/post-process operation, or revise the casing orientation before locking `casing.scad`.
 
 The inverted orientation is part of the product contract. If an implementation requires support material or bridges for the casing shell, it is violating the v1 intent.
 
 ### Footer
 
-The footer is not a fifth authored part. It is a casing configuration. Its tall-riser role is specifically robot-vacuum clearance: if a chest is large enough to become a floor obstacle, the footer should lift the bottom drawer high enough that common robot vacuums can pass under instead of pushing, wedging, or trapping themselves.
+Footer/base behavior is outside `casing.scad`. The bottom drawer can ride on a tabletop, a future footer, or a future base/riser, but the casing module does not expose footer mode, footer threshold, or robot-vacuum policy parameters.
 
-- `cells_z = 0` for a zero-height footer when no floor clearance is needed.
-- Short or tall positive `cells_z` values for a riser when the chest footprint needs floor-obstacle clearance.
-
-Default robot-vacuum clearance heuristic:
-
-| Condition | Footer default |
-|---|---|
-| Chest XY envelope below configured robot-vacuum threshold | `0u` footer or tabletop |
-| Chest XY envelope at or above configured robot-vacuum threshold | Tall footer, default target `34u` |
-
-The threshold should be configurable. The current design assumption is a robot-vacuum navigation envelope around 450mm: roughly a 350mm round vacuum plus about 50mm of side clearance. Treat that as a heuristic comment in code, not a fixed standard.
+Default robot-vacuum clearance remains an assembly-level heuristic, not a casing rule. The current design assumption is a robot-vacuum navigation envelope around 450mm: roughly a 350mm round vacuum plus about 50mm of side clearance. Treat that as a heuristic comment in assembly/base design, not a fixed casing standard.
 
 ### Tub
 
@@ -156,17 +146,15 @@ Dimensional recipe authority lives in `wiki/magnet-press-fit.md` and the active 
 
 | Parameter | Meaning | v1 guidance |
 |---|---|---|
-| `pitch_xy` | Grid pitch in X/Y | Default 21mm; derived dimensions should respect user-chosen pitch. |
-| `pitch_z` | Grid pitch in Z | Default 3.5mm. |
-| `cells_x`, `cells_y` | Tub and casing footprint | Drives tub, casing, magnet-array, and peg-socket placement. |
-| `cells_z` | Casing height | Positive for drawer slots; `0` or short positive values for footer. |
-| `wall_thickness` | Casing wall thickness | Implementation value TBD; must print cleanly and resist normal drawer use. |
-| `clearance_slide` | Tub-to-casing sliding clearance | TBD by prototype. Must support smooth drawer motion without obvious rattle. |
+| `slot_width`, `slot_depth`, `slot_height` | Casing enclosed slot size | Direct casing inputs. Assembly may derive them from a tub, but `casing.scad` stays tub-agnostic. |
+| `side_thickness`, `back_thickness`, `top_thickness` | Casing shell thicknesses | Implementation values TBD; must print cleanly and resist normal drawer use. There is no bottom thickness. |
+| `peg_spacing` | Vertical stack reference spacing | Single casing input; peg count is derived by indexing corners and evenly dividing each side. |
+| `pitch_xy`, `pitch_z`, `cells_x`, `cells_y`, `cells_z` | Tub/assembly grid sizing | Default 21mm XY and 3.5mm Z remain system conventions, but they are not casing-module arguments. |
+| Tub-to-slot clearance | Assembly clearance from tub exterior to casing slot | Assembly/tub-fit concern, not a casing-module argument. |
 | `peg_profile`, `peg_diameter`, `peg_clearance` | Peg press-fit recipe | TBD by testbed/prototype; include compliant male profiles, not just solid cylinders. |
 | `magnet_small`, `magnet_standard` | Disc magnet sizes | 5x1mm and 6x1.5mm currently available. |
 | `magnet_recipe` | Bore, depth, and rib geometry | Provisional until trial-02 standard-settings validation. |
-| `detent_position` | Extended-warning magnet position | Default around 75% extension; tune by prototype. |
-| `footer_threshold_xy` | Floor-clearance threshold | Configurable; current heuristic around 450mm envelope. |
+| `detent_position` | Extended-warning magnet position | Assembly/interface value; tune by prototype. |
 
 ## Out of scope for v1
 
@@ -207,9 +195,9 @@ System works when all hold:
 ## Implementation guidance
 
 - Keep authored modules to `tub.scad`, `casing.scad`, `handle.scad`, and `peg.scad`.
-- Do not add a fifth authored `footer.scad`; use casing parameters.
 - Do not add `drawer_count` to `casing.scad`.
 - Keep magnet and peg recipes named and centralized so testbed results can update them without hunting through geometry.
+- Keep `casing.scad` tub-agnostic; use `hutchfinity-assembly.scad` for fit previews that place casing beside tubs, handles, pegs, or future footer/base geometry.
 - Put hardcoded heuristic values behind named parameters and comments.
 - Render and inspect single-slot prototypes before generating tall assemblies.
 - Validate one casing/tub/peg/magnet combination before scaling to multiple heights or footprints.

@@ -1,5 +1,5 @@
 ---
-version: 0.2.4
+version: 0.3.0
 sensitivity: public
 ---
 
@@ -11,7 +11,18 @@ This technical spec translates `docs/chest-prd.md` into module contracts for the
 
 `scad/casing.scad` emits one drawer-slot casing in print orientation: the casing top is on the build plate and the side/back walls rise upward. The physical part has a top, left side, right side, and back; it has no front and no bottom.
 
-A casing is parameterized from the matching tub cell count and pitch. The target enclosed/grid footprint range is 200-450mm wide, 200-450mm deep, and 25-450mm tall, corresponding roughly to 10-21 cells in X/Y and 8-128 cells in Z at the default half-pitch. The tub slides through the open front and rides on the top surface of the casing below, a footer, or a tabletop. Stacked casings use the same XY footprint and later receive peg/socket geometry once the press-fit recipe is validated.
+The casing module is tub-agnostic. It accepts direct slot dimensions rather than importing `tub.scad` or deriving from tub cell count, pitch, or wall thickness. Assembly-level files such as `scad/hutchfinity-assembly.scad` choose casing slot dimensions that match a tub or preview target.
+
+The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm tall. Stacked casings use the same outer XY footprint and later receive peg/socket geometry once the press-fit recipe is validated.
+
+## Files
+
+| File | Role |
+|---|---|
+| `scad/casing.scad` | Standalone casing shell. No tub import, no footer mode. |
+| `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, handle, and pegs together. |
+
+No shared `hutchfinity-dimensions.scad` file is part of this pass.
 
 ## Coordinate convention
 
@@ -27,48 +38,43 @@ This convention keeps the STL in the intended no-support print orientation. In i
 
 Default values are intentionally conservative first-pass numbers, not final ergonomic values.
 
-Thickness requirements are also not finalized here. The printed part will not behave like a solid-wall analytical beam: slicer wall loops, sparse infill density/pattern, material, nozzle, and layer height all matter. This spec therefore keeps thicknesses as named prototype parameters rather than deriving them from a structural formula.
+Thickness requirements are not finalized here. The printed part will not behave like a solid-wall analytical beam: slicer wall loops, sparse infill density/pattern, material, nozzle, and layer height all matter. This spec therefore keeps thicknesses as named prototype parameters rather than deriving them from a structural formula.
 
 | Term | Formula / default | Notes |
 |---|---|---|
-| `pitch_xy` | 21mm | Half-pitch Gridfinity default. |
-| `pitch_z` | 3.5mm | Half-pitch Z unit. |
-| `tub_outer_x` | `cells_x * pitch_xy + 2 * tub_wall_thickness` | Matches current tub architecture where walls live outside the cell grid. |
-| `tub_outer_y` | `cells_y * pitch_xy + 2 * tub_wall_thickness` | Same as X. |
-| `inner_x` | `tub_outer_x + 2 * clearance_slide` | Sliding clearance on both side walls. |
-| `inner_y` | `tub_outer_y + clearance_slide` | Rear clearance only; the front is open. |
-| `outer_x` | `inner_x + 2 * side_wall_thickness` | Includes left and right walls. |
-| `outer_y` | `inner_y + back_wall_thickness` | Includes back wall; no front wall. |
-| `slot_height` | `cells_z * pitch_z` | Positive for drawer slots; `0` for a flat footer/tabletop riding plate. |
-| `print_z` | `top_thickness + max(slot_height, 0)` | Top slab plus wall height in print orientation. |
-| `bottom_thickness` | `0` | The casing has no floor/bottom plate. |
+| `slot_width` | `210mm` | Direct enclosed slot width; assembly may derive it from a tub, but casing does not. |
+| `slot_depth` | `210mm` | Direct enclosed slot depth. |
+| `slot_height` | `84mm` | Direct enclosed slot height. |
+| `outer_x` | `slot_width + 2 * side_thickness` | Includes left and right walls. |
+| `outer_y` | `slot_depth + back_thickness` | Includes back wall; no front wall. |
+| `print_z` | `top_thickness + slot_height` | Top slab plus wall height in print orientation. |
+| `peg_axis_intervals` | `max(1, ceil(span / peg_spacing))` | Derived; not an argument. |
+| `peg_count` | length of perimeter reference positions | Derived from one `peg_spacing`; not an argument. |
+
+There is no `bottom_thickness` term. The casing has no floor/bottom plate.
 
 ## Parameters
 
 | Parameter | Default | Status |
 |---|---:|---|
-| `cells_x`, `cells_y`, `cells_z` | `10, 10, 24` | First-pass representative casing inside the target footprint range. |
-| `pitch_xy`, `pitch_z` | `21, 3.5` | Stable defaults, user-overridable. |
-| `tub_wall_thickness` | `1.6` | Current tub architecture value. |
-| `clearance_slide` | `0.6` | Prototype value; tune after drawer-fit print. |
-| `side_wall_thickness` | `2.4` | Prototype side wall value, not a final scale formula. |
-| `back_wall_thickness` | `2.4` | Prototype back wall value, not a final scale formula. |
+| `slot_width`, `slot_depth`, `slot_height` | `210, 210, 84` | First-pass representative enclosed slot dimensions. |
+| `side_thickness` | `2.4` | Prototype side wall value, not a final scale formula. |
+| `back_thickness` | `2.4` | Prototype back wall value, not a final scale formula. |
 | `top_thickness` | `2.4` | Prototype riding surface; bed-facing in print orientation. |
-| `bottom_thickness` | `0` | Intentional: no floor/bottom plate. |
-| `footer_threshold_xy` | `450` | Heuristic only; no automatic footer selection yet. |
-| `detent_position` | `0.75` | Reserved for extended-warning magnet placement. |
-| `peg_socket_d`, `peg_socket_depth` | `6.0, 1.2` | Disabled provisional top-slab socket dimensions; placeholder only. |
-| `peg_preview_count_x`, `peg_preview_count_y` | `2, 2` | Preview-only count knobs for optional top-slab markers/cuts; not a final interface rule. |
-| `peg_preview_spacing_x`, `peg_preview_spacing_y` | `190, 190` | Preview-only center-to-center spacing knobs for the representative casing. |
-| `peg_preview_edge_margin` | `10` | Minimum edge margin assert for optional preview markers/cuts. |
+| `peg_spacing` | `190` | Single target spacing. Count is derived per side and positions divide evenly between corners. |
+| `show_debug_markers` | `false` | Optional reference-point markers only; not socket geometry. |
+
+Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-slot clearance, bottom thickness, footer/base controls, `peg_count`, `peg_edge_margin`, and magnet placement parameters. Those belong to tub generation, assembly mapping, a future footer/base design, or a future validated interface.
 
 ## Provisional interfaces
 
-Magnet and peg dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for press-fit validation. The casing module may expose named positions and disabled top-slab placeholders, but it must not lock final magnet bore, rib protrusion, socket diameter, peg profile, or bottom-interface peg bosses until the physical tests land. Bottom-interface peg sockets are deferred because the casing has no bottom plate; rendering them at interior XY positions would put them in air. Peg count and spacing are first-pass parameters, not design rules: `peg_preview_count_x/y` and `peg_preview_spacing_x/y` define optional centered top-slab preview markers/cuts with an edge-margin assert, but they do not derive from footprint, load, or stack height. If physical testing later supports a rule, the rule can be added as a derivation layer above these parameters. Optional top-slab preview positions are only markers for later interface work, not an acceptance criterion.
+Magnet and peg dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for press-fit validation.
 
-## Footer behavior
+The casing module currently exposes only peg reference positions derived from `peg_spacing`; it does not cut peg sockets. The reference pattern indexes the perimeter corners, derives interval counts from the single spacing value, and divides each side evenly. This avoids separate X/Y peg-count knobs and avoids a free-floating edge-margin parameter.
 
-A footer is a casing configuration, not a fifth authored part. `cells_z = 0` emits the top/riding slab footprint without drawer-slot wall height. Positive `cells_z` values are risers; robot-vacuum clearance remains a named heuristic, not a fixed standard.
+Magnet wells are also deferred from `casing.scad` until the casing-side printability and press-fit recipe are validated. When added, chamfer can stay fixed inside the recipe rather than becoming a public casing argument.
+
+Footer behavior is outside `casing.scad`. A footer, tabletop, or future base/riser belongs in assembly-level design, not in the casing module argument surface.
 
 ## Render checks
 
@@ -78,11 +84,17 @@ Minimum first-pass check:
 openscad -o preview/casing-representative.stl scad/casing.scad
 ```
 
+Assembly caller check:
+
+```bash
+openscad -o /tmp/hutchfinity-assembly-check.stl scad/hutchfinity-assembly.scad
+```
+
 For visual review, render a PNG from the same file when OpenSCAD is available. If OpenSCAD is unavailable, static syntax and parameter review are still required, and the missing renderer is reported in the PR.
 
 ## Acceptance criteria
 
-- Casing dimensions derive from tub cell count and pitch.
+- Casing dimensions are direct slot parameters, not coupled to tub internals.
 - The casing has no front and no bottom.
 - Same XY footprint casings are vertically stackable by reserved peg interfaces.
 - Tub body geometry is not rewritten to create the slide path.
