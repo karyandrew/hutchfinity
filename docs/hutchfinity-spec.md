@@ -1,5 +1,5 @@
 ---
-version: 0.3.0
+version: 0.3.1
 sensitivity: public
 ---
 
@@ -36,15 +36,15 @@ This convention keeps the STL in the intended no-support print orientation. In i
 
 ## Dimensional formulas
 
-Default values are intentionally conservative first-pass numbers, not final ergonomic values.
+Default values are intentionally conservative first-pass numbers, not final ergonomic values. The current representative target is a regular 12 x 16 tub at 20u body height: `255.2 x 339.2mm` exterior XY from `docs/gridfinity-system-prd.md`, and `20 * 3.5 + 3.74 = 73.74mm` estimated total Z including the minimum lip.
 
 Thickness requirements are not finalized here. The printed part will not behave like a solid-wall analytical beam: slicer wall loops, sparse infill density/pattern, material, nozzle, and layer height all matter. This spec therefore keeps thicknesses as named prototype parameters rather than deriving them from a structural formula.
 
 | Term | Formula / default | Notes |
 |---|---|---|
-| `slot_width` | `210mm` | Direct enclosed slot width; assembly may derive it from a tub, but casing does not. |
-| `slot_depth` | `210mm` | Direct enclosed slot depth. |
-| `slot_height` | `84mm` | Direct enclosed slot height. |
+| `slot_width` | `255.2mm` | Direct enclosed slot width; assembly may derive it from a tub, but casing does not. |
+| `slot_depth` | `339.2mm` | Direct enclosed slot depth. |
+| `slot_height` | `73.74mm` | Direct enclosed slot height for a 20u body plus minimum lip estimate. |
 | `outer_x` | `slot_width + 2 * side_thickness` | Includes left and right walls. |
 | `outer_y` | `slot_depth + back_thickness` | Includes back wall; no front wall. |
 | `print_z` | `top_thickness + slot_height` | Top slab plus wall height in print orientation. |
@@ -57,10 +57,10 @@ There is no `bottom_thickness` term. The casing has no floor/bottom plate.
 
 | Parameter | Default | Status |
 |---|---:|---|
-| `slot_width`, `slot_depth`, `slot_height` | `210, 210, 84` | First-pass representative enclosed slot dimensions. |
-| `side_thickness` | `2.4` | Prototype side wall value, not a final scale formula. |
-| `back_thickness` | `2.4` | Prototype back wall value, not a final scale formula. |
-| `top_thickness` | `2.4` | Prototype riding surface; bed-facing in print orientation. |
+| `slot_width`, `slot_depth`, `slot_height` | `255.2, 339.2, 73.74` | Representative regular-tub, 20u enclosed slot dimensions. |
+| `side_thickness` | `25` | Prototype side wall value, not a final scale formula. |
+| `back_thickness` | `25` | Prototype back wall value, not a final scale formula. |
+| `top_thickness` | `10` | Prototype ceiling/riding surface; bed-facing in print orientation. |
 | `peg_spacing` | `190` | Single target spacing. Count is derived per side and positions divide evenly between corners. |
 | `show_debug_markers` | `false` | Optional reference-point markers only; not socket geometry. |
 

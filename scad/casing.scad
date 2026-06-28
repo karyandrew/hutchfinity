@@ -1,5 +1,5 @@
 // casing.scad
-// version: 0.2.0
+// version: 0.2.1
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
 // no front, no bottom. Peg and magnet recipes remain provisional.
 
@@ -7,12 +7,12 @@ $fn = 48;
 
 // Representative first-pass parameters. These describe the casing slot directly;
 // hutchfinity-assembly.scad is responsible for choosing values that match a tub.
-SLOT_WIDTH = 210;
-SLOT_DEPTH = 210;
-SLOT_HEIGHT = 84;
-SIDE_THICKNESS = 2.4;
-BACK_THICKNESS = 2.4;
-TOP_THICKNESS = 2.4;
+SLOT_WIDTH = 255.2;
+SLOT_DEPTH = 339.2;
+SLOT_HEIGHT = 73.74;
+SIDE_THICKNESS = 25;
+BACK_THICKNESS = 25;
+TOP_THICKNESS = 10;
 PEG_SPACING = 190.0;
 SHOW_DEBUG_MARKERS = false;
 
