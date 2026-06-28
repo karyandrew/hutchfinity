@@ -1,11 +1,11 @@
 ---
 sensitivity: public
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Hutchfinity Chest PRD
 
-**Audience:** agents and contributors drafting the Hutchfinity chest SCAD modules. Read this before designing or modifying `tub.scad`, `casing.scad`, `handle.scad`, or `peg.scad`.
+**Audience:** agents and contributors drafting the Hutchfinity chest SCAD modules. Read this before designing or modifying `tub.scad`, `casing.scad`, `knob.scad`, or `peg.scad`.
 
 This is a PRD, not a build guide. It captures the product contract for the modular drawer chest architecture. Implementation details that are still under physical validation are called out as open dependencies, not silently decided here.
 
@@ -19,22 +19,22 @@ The system has four authored SCAD parts plus the underlying grid library:
 |---|---|
 | `tub.scad` | Drawer pan. Parametric on grid cell count and pitch. Slides in and out of a casing. |
 | `casing.scad` | One-slot enclosure: back, sides, and top only. No bottom and no front. Stacks vertically. |
-| `handle.scad` | Optional glue-on pull pad for the tub front. Kept separate so tubs remain backward-compatible. |
+| `knob.scad` | Optional glue-on pull for the tub front. Kept separate so tubs remain backward-compatible. |
 | `peg.scad` | Press-fit dowel that registers and retains vertically stacked casings. |
 | Gridfinity Extended | Source geometry for half-pitch grid conventions and tub/bin compatibility. |
 
-A single drawer slot is one tub plus one casing, with an optional handle. Chests gain height by stacking casing modules vertically, not by adding a `drawer_count` parameter to one monolithic model.
+A single drawer slot is one tub plus one casing, with an optional knob. Chests gain height by stacking casing modules vertically, not by adding a `drawer_count` parameter to one monolithic model.
 
 ## Hard requirements
 
 | # | Requirement | Rationale |
 |---|---|---|
-| HR-1 | **One drawer slot is one module.** The module consists of one tub plus one casing; handle is optional. | Keeps the system composable. Users can print, replace, and rearrange one slot at a time. |
+| HR-1 | **One drawer slot is one module.** The module consists of one tub plus one casing; knob is optional. | Keeps the system composable. Users can print, replace, and rearrange one slot at a time. |
 | HR-2 | **Multiplicity comes from stacking, not a drawer-count parameter.** | A single parametric casing stays simple; tall chests are assemblies, not special-case models. |
 | HR-3 | **Casing has back, sides, and top only.** No bottom, no front. | No front means there is an opening for the drawer. No bottom keeps the model simpler to print and lets each drawer ride on the top of the casing below, footer, or tabletop. |
 | HR-4 | **Casing prints inverted with the top on the bed.** | Sides and back rise as vertical perimeters; the model should avoid bridges and manual supports. |
 | HR-5 | **The bottom-most drawer can ride on a footer or tabletop.** Footer/base behavior is outside `casing.scad`. | Keeps the casing module a single supportless shell while leaving bottom support and robot-vacuum clearance to assembly-level design. |
-| HR-6 | **Tub geometry remains compatible with the existing tub catalog.** The lip stays; optional magnet wells and glue-on handle pads must not break stacking or basic tub use. | Hutchfinity should extend tubs into drawers without making every tub a one-off chest-only part. |
+| HR-6 | **Tub geometry remains compatible with the existing tub catalog.** The lip stays; optional magnet wells and glue-on knob bases must not break stacking or basic tub use. | Hutchfinity should extend tubs into drawers without making every tub a one-off chest-only part. |
 | HR-7 | **Sliding interface is tub-on-casing-top.** Each tub rides on the top of the casing below; the bottom tub rides on the footer top or tabletop. | No rails, tracks, or drawer hardware in v1. |
 | HR-8 | **Drawers are fully removable.** No pull-out stop in v1. | Clean removal is simpler, easier to print, and easier to inspect. |
 | HR-9 | **Pegs register and retain vertical casing stacks.** Side-by-side and multi-column linking are v2. | v1 solves vertical chest assembly first. Lateral assemblies add another fit problem and should not block the single-column chest. |
@@ -47,7 +47,7 @@ A single drawer slot is one tub plus one casing, with an optional handle. Chests
 
 ### Module stack
 
-Each drawer slot is a casing with a matching tub and optional handle:
+Each drawer slot is a casing with a matching tub and optional knob:
 
 ```
 top casing
@@ -87,17 +87,17 @@ The tub is the drawer pan. v1 tub requirements:
 - Parametric on grid cell count and pitch.
 - Retains the existing lip.
 - Can receive optional magnet wells inside the existing foot envelope.
-- Can receive an optional glue-on handle pad.
+- Can receive an optional glue-on knob base.
 - Does not require rails, rollers, or extra slide hardware.
 - Remains useful as a tub outside the chest.
 
 The available foot-envelope budget for tub magnets is about 4.75mm Z. The magnet design must not touch the 1.2mm floor above that envelope.
 
-### Handle
+### Knob
 
-The handle is a separate glue-on pad. It is separate because tub geometry should stay reusable without forcing every drawer to carry a specialized front.
+The knob is a separate glue-on pull. It uses a broad, thin, flared base so it can be glued to the tub front without making the tub geometry chest-only.
 
-v1 does not require snap-on or fastened handles. Those can be future variants if glue-on handles fail in use.
+v1 does not require snap-on or fastened knobs. Those can be future variants if glue-on knobs fail in use.
 
 ### Pegs
 
@@ -194,10 +194,10 @@ System works when all hold:
 
 ## Implementation guidance
 
-- Keep authored modules to `tub.scad`, `casing.scad`, `handle.scad`, and `peg.scad`.
+- Keep authored modules to `tub.scad`, `casing.scad`, `knob.scad`, and `peg.scad`.
 - Do not add `drawer_count` to `casing.scad`.
 - Keep magnet and peg recipes named and centralized so testbed results can update them without hunting through geometry.
-- Keep `casing.scad` tub-agnostic; use `hutchfinity-assembly.scad` for fit previews that place casing beside tubs, handles, pegs, or future footer/base geometry.
+- Keep `casing.scad` tub-agnostic; use `hutchfinity-assembly.scad` for fit previews that place casing beside tubs, knobs, pegs, or future footer/base geometry.
 - Put hardcoded heuristic values behind named parameters and comments.
 - Render and inspect single-slot prototypes before generating tall assemblies.
 - Validate one casing/tub/peg/magnet combination before scaling to multiple heights or footprints.

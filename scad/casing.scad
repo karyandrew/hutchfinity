@@ -1,19 +1,27 @@
 // casing.scad
-// version: 0.2.1
+// version: 0.3.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
-// no front, no bottom. Peg and magnet recipes remain provisional.
+// no front, no bottom. Peg sockets are prototype geometry; magnet wells remain deferred.
 
-$fn = 48;
+$fn = 64;
+EPS = 0.01;
 
 // Representative first-pass parameters. These describe the casing slot directly;
 // hutchfinity-assembly.scad is responsible for choosing values that match a tub.
-SLOT_WIDTH = 255.2;
-SLOT_DEPTH = 339.2;
+// Current default is a regular tub oriented width-wise: the drawer opens along
+// the tub's short axis, so the casing opening spans the tub's long dimension.
+SLOT_WIDTH = 339.2;
+SLOT_DEPTH = 255.2;
 SLOT_HEIGHT = 73.74;
 SIDE_THICKNESS = 25;
 BACK_THICKNESS = 25;
 TOP_THICKNESS = 10;
 PEG_SPACING = 190.0;
+PEG_DIAMETER = 8.0;
+PEG_CLEARANCE = 0.45;
+PEG_SOCKET_DEPTH = TOP_THICKNESS;
+PEG_CHAMFER = 2.5;
+ENABLE_PEG_HOLES = true;
 SHOW_DEBUG_MARKERS = false;
 
 DEBUG_MARKER_D = 3.0;
@@ -21,23 +29,28 @@ DEBUG_MARKER_D = 3.0;
 function casing_outer_x(slot_width, side_thickness) = slot_width + 2 * side_thickness;
 function casing_outer_y(slot_depth, back_thickness) = slot_depth + back_thickness;
 function casing_print_z(slot_height, top_thickness) = top_thickness + slot_height;
+function peg_socket_diameter(peg_diameter, peg_clearance) = peg_diameter + peg_clearance;
+function peg_socket_inset(peg_diameter, peg_clearance, peg_chamfer) =
+    peg_socket_diameter(peg_diameter, peg_clearance) / 2 + peg_chamfer;
 
 // Peg reference points are derived from one spacing target. Corners are always
 // indexed; extra points divide the side evenly when the span exceeds spacing.
-function peg_axis_intervals(span, peg_spacing) = max(1, ceil(span / peg_spacing));
-function peg_axis_positions(span, peg_spacing) =
-    let(intervals = peg_axis_intervals(span, peg_spacing))
-    [for (i = [0 : intervals]) i * span / intervals];
-function peg_axis_middle_positions(span, peg_spacing) =
-    let(intervals = peg_axis_intervals(span, peg_spacing))
-    intervals <= 1 ? [] : [for (i = [1 : intervals - 1]) i * span / intervals];
-function peg_reference_positions(width, depth, peg_spacing) = concat(
-    [for (x = peg_axis_positions(width, peg_spacing)) [x, 0]],
-    [for (y = peg_axis_middle_positions(depth, peg_spacing)) [width, y]],
-    [for (x = peg_axis_positions(width, peg_spacing)) [x, depth]],
-    [for (y = peg_axis_middle_positions(depth, peg_spacing)) [0, y]]
+function peg_axis_intervals(span, peg_spacing, inset) =
+    max(1, ceil((span - 2 * inset) / peg_spacing));
+function peg_axis_positions(span, peg_spacing, inset) =
+    let(intervals = peg_axis_intervals(span, peg_spacing, inset), usable = span - 2 * inset)
+    [for (i = [0 : intervals]) inset + i * usable / intervals];
+function peg_axis_middle_positions(span, peg_spacing, inset) =
+    let(intervals = peg_axis_intervals(span, peg_spacing, inset), usable = span - 2 * inset)
+    intervals <= 1 ? [] : [for (i = [1 : intervals - 1]) inset + i * usable / intervals];
+function peg_reference_positions(width, depth, peg_spacing, inset) = concat(
+    [for (x = peg_axis_positions(width, peg_spacing, inset)) [x, inset]],
+    [for (y = peg_axis_middle_positions(depth, peg_spacing, inset)) [width - inset, y]],
+    [for (x = peg_axis_positions(width, peg_spacing, inset)) [x, depth - inset]],
+    [for (y = peg_axis_middle_positions(depth, peg_spacing, inset)) [inset, y]]
 );
-function peg_count(width, depth, peg_spacing) = len(peg_reference_positions(width, depth, peg_spacing));
+function peg_count(width, depth, peg_spacing, inset) =
+    len(peg_reference_positions(width, depth, peg_spacing, inset));
 
 module casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness) {
     union() {
@@ -49,6 +62,22 @@ module casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, t
         translate([outer_x - side_thickness, 0, 0]) cube([side_thickness, outer_y, print_z]);
         translate([0, outer_y - back_thickness, 0]) cube([outer_x, back_thickness, print_z]);
     }
+}
+
+module chamfered_peg_socket_cut(position, socket_diameter, socket_depth, socket_chamfer) {
+    chamfer = min(socket_chamfer, socket_depth / 2);
+    translate([position[0], position[1], -EPS])
+    union() {
+        cylinder(d=socket_diameter, h=socket_depth + 2 * EPS);
+        cylinder(d1=socket_diameter + 2 * chamfer, d2=socket_diameter, h=chamfer + EPS);
+        translate([0, 0, socket_depth - chamfer])
+            cylinder(d1=socket_diameter, d2=socket_diameter + 2 * chamfer, h=chamfer + 2 * EPS);
+    }
+}
+
+module chamfered_peg_socket_cuts(positions, socket_diameter, socket_depth, socket_chamfer) {
+    for (p = positions)
+        chamfered_peg_socket_cut(p, socket_diameter, socket_depth, socket_chamfer);
 }
 
 module peg_debug_markers(positions) {
@@ -65,22 +94,40 @@ module hutchfinity_casing(
     back_thickness=BACK_THICKNESS,
     top_thickness=TOP_THICKNESS,
     peg_spacing=PEG_SPACING,
+    peg_diameter=PEG_DIAMETER,
+    peg_clearance=PEG_CLEARANCE,
+    peg_socket_depth=PEG_SOCKET_DEPTH,
+    peg_chamfer=PEG_CHAMFER,
+    enable_peg_holes=ENABLE_PEG_HOLES,
     show_debug_markers=SHOW_DEBUG_MARKERS
 ) {
     outer_x = casing_outer_x(slot_width, side_thickness);
     outer_y = casing_outer_y(slot_depth, back_thickness);
     print_z = casing_print_z(slot_height, top_thickness);
-    peg_positions = peg_reference_positions(outer_x, outer_y, peg_spacing);
+    socket_diameter = peg_socket_diameter(peg_diameter, peg_clearance);
+    socket_depth = min(peg_socket_depth, top_thickness);
+    socket_inset = peg_socket_inset(peg_diameter, peg_clearance, peg_chamfer);
+    peg_positions = peg_reference_positions(outer_x, outer_y, peg_spacing, socket_inset);
 
     assert(slot_width > 0 && slot_depth > 0 && slot_height > 0,
         "slot dimensions must be positive");
     assert(side_thickness > 0 && back_thickness > 0 && top_thickness > 0,
         "side, back, and top thicknesses must be positive");
     assert(peg_spacing > 0, "peg_spacing must be positive");
+    assert(peg_diameter > 0 && peg_clearance >= 0,
+        "peg diameter must be positive and peg clearance must be non-negative");
+    assert(peg_socket_depth > 0 && peg_chamfer >= 0,
+        "peg socket depth must be positive and peg chamfer must be non-negative");
+    assert(outer_x > 2 * socket_inset && outer_y > 2 * socket_inset,
+        "peg sockets must fit inside the casing footprint");
 
-    casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness);
+    difference() {
+        casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness);
+        if (enable_peg_holes)
+            chamfered_peg_socket_cuts(peg_positions, socket_diameter, socket_depth, peg_chamfer);
+    }
 
-    if (show_debug_markers)
+    if (show_debug_markers && !enable_peg_holes)
         %peg_debug_markers(peg_positions);
 }
 
