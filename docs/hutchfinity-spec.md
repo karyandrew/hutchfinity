@@ -1,5 +1,5 @@
 ---
-version: 0.2.3
+version: 0.2.4
 sensitivity: public
 ---
 
@@ -57,11 +57,14 @@ Thickness requirements are also not finalized here. The printed part will not be
 | `bottom_thickness` | `0` | Intentional: no floor/bottom plate. |
 | `footer_threshold_xy` | `450` | Heuristic only; no automatic footer selection yet. |
 | `detent_position` | `0.75` | Reserved for extended-warning magnet placement. |
-| `peg_preview_inset` | `10` | Preview-only center offset for optional top-slab markers/cuts; not a placement contract. |
+| `peg_socket_d`, `peg_socket_depth` | `6.0, 1.2` | Disabled provisional top-slab socket dimensions; placeholder only. |
+| `peg_preview_count_x`, `peg_preview_count_y` | `2, 2` | Preview-only count knobs for optional top-slab markers/cuts; not a final interface rule. |
+| `peg_preview_spacing_x`, `peg_preview_spacing_y` | `190, 190` | Preview-only center-to-center spacing knobs for the representative casing. |
+| `peg_preview_edge_margin` | `10` | Minimum edge margin assert for optional preview markers/cuts. |
 
 ## Provisional interfaces
 
-Magnet and peg dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for press-fit validation. The casing module may expose named positions and disabled top-slab placeholders, but it must not lock final magnet bore, rib protrusion, socket diameter, peg profile, or bottom-interface peg bosses until the physical tests land. Bottom-interface peg sockets are deferred because the casing has no bottom plate; rendering them at interior XY positions would put them in air. Peg count and spacing are deliberately unresolved in this version: they may vary with footprint, load, stack height, and the selected peg interface, but this PR does not choose that rule. Optional top-slab preview positions are only markers for later interface work, not an acceptance criterion.
+Magnet and peg dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for press-fit validation. The casing module may expose named positions and disabled top-slab placeholders, but it must not lock final magnet bore, rib protrusion, socket diameter, peg profile, or bottom-interface peg bosses until the physical tests land. Bottom-interface peg sockets are deferred because the casing has no bottom plate; rendering them at interior XY positions would put them in air. Peg count and spacing are first-pass parameters, not design rules: `peg_preview_count_x/y` and `peg_preview_spacing_x/y` define optional centered top-slab preview markers/cuts with an edge-margin assert, but they do not derive from footprint, load, or stack height. If physical testing later supports a rule, the rule can be added as a derivation layer above these parameters. Optional top-slab preview positions are only markers for later interface work, not an acceptance criterion.
 
 ## Footer behavior
 
