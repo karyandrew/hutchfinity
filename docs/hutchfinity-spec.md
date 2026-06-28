@@ -1,5 +1,5 @@
 ---
-version: 0.2.1
+version: 0.2.2
 sensitivity: public
 ---
 
@@ -40,6 +40,8 @@ Default values are intentionally conservative first-pass numbers, not final ergo
 | `slot_height` | `cells_z * pitch_z` | Positive for drawer slots; `0` for a flat footer/tabletop riding plate. |
 | `print_z` | `top_thickness + max(slot_height, 0)` | Top slab plus wall height in print orientation. |
 | `bottom_thickness` | `0` | The casing has no floor/bottom plate. |
+| `peg_count_y` | `max(2, ceil((outer_y - 2 * peg_inset) / peg_max_spacing) + 1)` | Number of reserved peg positions on each side interface. |
+| `peg_count_x` | `max(2, ceil((outer_x - 2 * peg_inset) / peg_max_spacing) + 1)` | Number of positions on the back interface before duplicate side endpoints are removed. |
 
 ## Parameters
 
@@ -55,10 +57,12 @@ Default values are intentionally conservative first-pass numbers, not final ergo
 | `bottom_thickness` | `0` | Intentional: no floor/bottom plate. |
 | `footer_threshold_xy` | `450` | Heuristic only; no automatic footer selection yet. |
 | `detent_position` | `0.75` | Reserved for extended-warning magnet placement. |
+| `peg_inset` | `10` | Provisional center offset from casing perimeter for reserved peg positions. |
+| `peg_max_spacing` | `180` | Provisional maximum center-to-center spacing before another reserved peg position is added. |
 
 ## Provisional interfaces
 
-Magnet and peg dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for press-fit validation. The casing module may expose named positions and disabled top-slab placeholders, but it must not lock final magnet bore, rib protrusion, socket diameter, peg profile, or bottom-interface peg bosses until the physical tests land. Bottom-interface peg sockets are deferred because the casing has no bottom plate; rendering them at interior XY positions would put them in air.
+Magnet and peg dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for press-fit validation. The casing module may expose named positions and disabled top-slab placeholders, but it must not lock final magnet bore, rib protrusion, socket diameter, peg profile, or bottom-interface peg bosses until the physical tests land. Bottom-interface peg sockets are deferred because the casing has no bottom plate; rendering them at interior XY positions would put them in air. Peg count and spacing are footprint-derived, not fixed: reserved positions run along the two side interfaces and the back interface, omit the open-front edge, and add intermediate positions when the span exceeds `peg_max_spacing`.
 
 ## Footer behavior
 
