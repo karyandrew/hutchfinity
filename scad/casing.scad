@@ -1,5 +1,5 @@
 // casing.scad
-// version: 0.1.2
+// version: 0.1.3
 // First-pass Hutchfinity casing shell. Emits print orientation: top on bed,
 // no front, no bottom. Magnet and peg recipes are reserved but provisional.
 
@@ -7,8 +7,8 @@ $fn = 48;
 EPS = 0.01;
 
 // Representative first-pass parameters.
-CELLS_X = 6;
-CELLS_Y = 8;
+CELLS_X = 10;
+CELLS_Y = 10;
 CELLS_Z = 24;
 PITCH_XY = 21;
 PITCH_Z = 3.5;
@@ -22,12 +22,11 @@ FOOTER_THRESHOLD_XY = 450;
 DETENT_POSITION = 0.75;
 
 // Provisional interface toggles stay false until physical recipes land.
-SHOW_INTERFACE_MARKERS = true;
+SHOW_INTERFACE_MARKERS = false;
 ENABLE_PROVISIONAL_TOP_PEG_SOCKETS = false;
 PEG_SOCKET_D = 6.0;
 PEG_SOCKET_DEPTH = 1.2;
-PEG_INSET = 10.0;
-PEG_MAX_SPACING = 180.0;
+PEG_PREVIEW_INSET = 10.0;
 
 function tub_outer(cells, pitch_xy, tub_wall) = cells * pitch_xy + 2 * tub_wall;
 function slot_height(cells_z, pitch_z) = max(cells_z * pitch_z, 0);
@@ -39,27 +38,14 @@ function casing_outer_x(cells_x, pitch_xy, tub_wall, clearance, side_wall) =
     casing_inner_x(cells_x, pitch_xy, tub_wall, clearance) + 2 * side_wall;
 function casing_outer_y(cells_y, pitch_xy, tub_wall, clearance, back_wall) =
     casing_inner_y(cells_y, pitch_xy, tub_wall, clearance) + back_wall;
-function span_count(span, max_spacing) = max(2, ceil(span / max_spacing) + 1);
-function interpolate(a, b, i, count) = count <= 1 ? a : a + (b - a) * i / (count - 1);
-function edge_points_y(x, y0, y1, max_spacing) =
-    let(count = span_count(abs(y1 - y0), max_spacing))
-    [for (i = [0:count - 1]) [x, interpolate(y0, y1, i, count)]];
-function interior_edge_points_x(y, x0, x1, max_spacing) =
-    let(count = span_count(abs(x1 - x0), max_spacing))
-    [for (i = [0:count - 1])
-        if (i > 0 && i < count - 1) [interpolate(x0, x1, i, count), y]];
-function peg_positions(outer_x, outer_y, inset, max_spacing) =
-    let(
-        left_x = inset,
-        right_x = outer_x - inset,
-        front_y = inset,
-        back_y = outer_y - inset
-    )
-    concat(
-        edge_points_y(left_x, front_y, back_y, max_spacing),
-        edge_points_y(right_x, front_y, back_y, max_spacing),
-        interior_edge_points_x(back_y, left_x, right_x, max_spacing)
-    );
+// Preview-only positions for optional top-slab markers/cuts. This is not a
+// placement contract; final peg count and spacing remain a physical-interface decision.
+function preview_peg_positions(outer_x, outer_y, inset) = [
+    [inset, inset],
+    [outer_x - inset, inset],
+    [inset, outer_y - inset],
+    [outer_x - inset, outer_y - inset]
+];
 
 module casing_shell(outer_x, outer_y, print_z, side_wall, back_wall, top_thickness) {
     union() {
@@ -102,7 +88,7 @@ module hutchfinity_casing(
     outer_x = inner_x + 2 * side_wall_thickness;
     outer_y = inner_y + back_wall_thickness;
     print_z = top_thickness + slot_height(cells_z, pitch_z);
-    positions = peg_positions(outer_x, outer_y, PEG_INSET, PEG_MAX_SPACING);
+    positions = preview_peg_positions(outer_x, outer_y, PEG_PREVIEW_INSET);
 
     assert(cells_x > 0 && cells_y > 0, "cells_x and cells_y must be positive");
     assert(cells_z >= 0, "cells_z must be >= 0; use 0 for a flat footer");
@@ -111,10 +97,8 @@ module hutchfinity_casing(
         "side wall, back wall, and top thicknesses must be positive");
     assert(bottom_thickness == 0,
         "bottom_thickness must stay 0; the casing intentionally has no floor/bottom");
-    assert(PEG_MAX_SPACING > PEG_SOCKET_D,
-        "peg max spacing must be larger than the peg/socket diameter");
-    assert(outer_x > 2 * PEG_INSET && outer_y > 2 * PEG_INSET,
-        "peg inset must fit inside the casing footprint");
+    assert(outer_x > 2 * PEG_PREVIEW_INSET && outer_y > 2 * PEG_PREVIEW_INSET,
+        "peg preview inset must fit inside the casing footprint");
 
     difference() {
         casing_shell(outer_x, outer_y, print_z, side_wall_thickness, back_wall_thickness, top_thickness);
