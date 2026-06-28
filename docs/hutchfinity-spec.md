@@ -1,5 +1,5 @@
 ---
-version: 0.2.0
+version: 0.2.1
 sensitivity: public
 ---
 
@@ -35,10 +35,11 @@ Default values are intentionally conservative first-pass numbers, not final ergo
 | `tub_outer_y` | `cells_y * pitch_xy + 2 * tub_wall_thickness` | Same as X. |
 | `inner_x` | `tub_outer_x + 2 * clearance_slide` | Sliding clearance on both side walls. |
 | `inner_y` | `tub_outer_y + clearance_slide` | Rear clearance only; the front is open. |
-| `outer_x` | `inner_x + 2 * casing_wall_thickness` | Includes left and right walls. |
-| `outer_y` | `inner_y + casing_wall_thickness` | Includes back wall; no front wall. |
+| `outer_x` | `inner_x + 2 * side_wall_thickness` | Includes left and right walls. |
+| `outer_y` | `inner_y + back_wall_thickness` | Includes back wall; no front wall. |
 | `slot_height` | `cells_z * pitch_z` | Positive for drawer slots; `0` for a flat footer/tabletop riding plate. |
 | `print_z` | `top_thickness + max(slot_height, 0)` | Top slab plus wall height in print orientation. |
+| `bottom_thickness` | `0` | The casing has no floor/bottom plate. |
 
 ## Parameters
 
@@ -48,14 +49,16 @@ Default values are intentionally conservative first-pass numbers, not final ergo
 | `pitch_xy`, `pitch_z` | `21, 3.5` | Stable defaults, user-overridable. |
 | `tub_wall_thickness` | `1.6` | Current tub architecture value. |
 | `clearance_slide` | `0.6` | Prototype value; tune after drawer-fit print. |
-| `casing_wall_thickness` | `2.4` | Prototype value; should print as clean PETG perimeters. |
-| `top_thickness` | `2.4` | Prototype riding surface. |
+| `side_wall_thickness` | `2.4` | Prototype side wall value; should print as clean PETG perimeters. |
+| `back_wall_thickness` | `2.4` | Prototype back wall value; matched to side walls for v0.1. |
+| `top_thickness` | `2.4` | Prototype riding surface; bed-facing in print orientation. |
+| `bottom_thickness` | `0` | Intentional: no floor/bottom plate. |
 | `footer_threshold_xy` | `450` | Heuristic only; no automatic footer selection yet. |
 | `detent_position` | `0.75` | Reserved for extended-warning magnet placement. |
 
 ## Provisional interfaces
 
-Magnet and peg dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for press-fit validation. The casing module may expose named positions and disabled placeholders, but it must not lock final magnet bore, rib protrusion, socket diameter, or peg profile until the physical tests land.
+Magnet and peg dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for press-fit validation. The casing module may expose named positions and disabled top-slab placeholders, but it must not lock final magnet bore, rib protrusion, socket diameter, peg profile, or bottom-interface peg bosses until the physical tests land. Bottom-interface peg sockets are deferred because the casing has no bottom plate; rendering them at interior XY positions would put them in air.
 
 ## Footer behavior
 
