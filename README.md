@@ -7,7 +7,7 @@ A parametric, modular drawer chest system built around gridfinity-extended tubs 
 - **Tubs** = drawer pans, sized in cells (X × Y × Z) at user-chosen pitch
 - **Casings** = single-piece enclosures that house one tub each; back + sides + top, no bottom, no front
 - **Pegs** = press-fit dowels that link stacked casings vertically
-- **Handles** = optional glue-on pulls
+- **Knobs** = optional glue-on pulls with broad, thin glue bases
 - **Magnets** = optional press-fit retention + extended-warning detent
 
 Tubs slide drawer-style on the top of the casing below (or on a footer / tabletop for the bottom-most). Casings stack into chests of arbitrary height. Same XY footprint = stackable; varying heights are fine. Multi-column chest assembly is a v2 goal.
