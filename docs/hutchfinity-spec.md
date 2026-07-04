@@ -1,5 +1,5 @@
 ---
-version: 0.4.0
+version: 0.5.0
 sensitivity: public
 ---
 
@@ -23,6 +23,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | `scad/peg.scad` | Prototype chamfered press-fit peg. |
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
+| `scad/casing-fit-test.scad` | Fit-test caller that maps current tub-source dimensions and named clearance candidates to a casing slot. |
 
 No shared `hutchfinity-dimensions.scad` file is part of this pass.
 
@@ -38,15 +39,24 @@ This convention keeps the STL in the intended no-support print orientation. In i
 
 ## Dimensional formulas
 
-Default values are intentionally conservative first-pass numbers, not final ergonomic values. The current representative target is a regular 12 x 16 tub at 20u body height, oriented width-wise: `255.2 x 339.2mm` exterior XY from `docs/gridfinity-system-prd.md`, with casing `slot_width=339.2mm` and `slot_depth=255.2mm`. The slot height is `20 * 3.5 + 3.74 = 73.74mm`, estimated total Z including the minimum lip.
+Default values are intentionally conservative fit-test numbers, not final ergonomic values. The current representative XY target is a regular 12 x 16 tub oriented width-wise: `255.2 x 339.2mm` exterior XY from `docs/gridfinity-system-prd.md`, with casing `slot_width=339.2mm` and `slot_depth=255.2mm` before any explicit casing clearance. The current source tub height is 23u body height, so the default casing slot height is `23 * 3.5 + 3.74 = 84.24mm`, matching the rounded `84.2mm` total Z listed in `docs/gridfinity-system-prd.md`. The earlier PR #19 `73.74mm` value was a 20u representative casing target, not the current regular tub source height.
 
 Thickness requirements are not finalized here. The printed part will not behave like a solid-wall analytical beam: slicer wall loops, sparse infill density/pattern, material, nozzle, and layer height all matter. This spec therefore keeps thicknesses as named prototype parameters rather than deriving them from a structural formula.
+
+`scad/casing-fit-test.scad` is the physical-fit caller for issue #20. It separates three concepts that should not be conflated:
+
+| Concept | Where it belongs | Notes |
+|---|---|---|
+| Tub source dimensions | `docs/gridfinity-system-prd.md` and tub build scripts | Current regular tub source is 23u total height, not the PR #19 20u casing target. |
+| Casing slot clearance | `scad/casing-fit-test.scad` / assembly mapping | Geometry clearance around the printed tub; side, back, and top clearances are named separately. |
+| Slicer contour compensation | Slicer/process profile and trial notes | Andrew's `0.6` contour-compensation observation is process evidence, not a SCAD dimension by itself. |
+
 
 | Term | Formula / default | Notes |
 |---|---|---|
 | `slot_width` | `339.2mm` | Direct enclosed slot width; width-wise regular tub orientation uses the tub long axis across the opening. |
 | `slot_depth` | `255.2mm` | Direct enclosed slot depth; width-wise regular tub orientation uses the tub short axis for drawer travel. |
-| `slot_height` | `73.74mm` | Direct enclosed slot height for a 20u body plus minimum lip estimate. |
+| `slot_height` | `84.24mm` | Direct enclosed slot height for the current 23u source tub plus minimum lip estimate. |
 | `outer_x` | `slot_width + 2 * side_thickness` | Includes left and right walls. |
 | `outer_y` | `slot_depth + back_thickness` | Includes back wall; no front wall. |
 | `print_z` | `top_thickness + slot_height` | Top slab plus wall height in print orientation. |
@@ -59,7 +69,7 @@ There is no `bottom_thickness` term. The casing has no floor/bottom plate.
 
 | Parameter | Default | Status |
 |---|---:|---|
-| `slot_width`, `slot_depth`, `slot_height` | `339.2, 255.2, 73.74` | Representative width-wise regular-tub, 20u enclosed slot dimensions. |
+| `slot_width`, `slot_depth`, `slot_height` | `339.2, 255.2, 84.24` | Representative width-wise regular-tub source dimensions before explicit fit clearance. |
 | `side_thickness` | `25` | Prototype side wall value, not a final scale formula. |
 | `back_thickness` | `25` | Prototype back wall value, not a final scale formula. |
 | `top_thickness` | `10` | Prototype ceiling/riding surface; bed-facing in print orientation. |
@@ -89,6 +99,13 @@ Minimum first-pass check:
 
 ```bash
 openscad -o preview/casing-representative.stl scad/casing.scad
+```
+
+Fit-test caller check:
+
+```bash
+openscad -o preview/casing-fit-regular-23u.stl scad/casing-fit-test.scad
+openscad -o /tmp/hutchfinity-fit-pr19-20u-check.stl -D FIT_TUB_HEIGHT_U=20 scad/casing-fit-test.scad
 ```
 
 Assembly caller check:

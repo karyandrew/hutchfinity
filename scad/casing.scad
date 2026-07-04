@@ -1,5 +1,5 @@
 // casing.scad
-// version: 0.3.0
+// version: 0.4.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
 // no front, no bottom. Peg sockets are prototype geometry; magnet wells remain deferred.
 
@@ -8,11 +8,12 @@ EPS = 0.01;
 
 // Representative first-pass parameters. These describe the casing slot directly;
 // hutchfinity-assembly.scad is responsible for choosing values that match a tub.
-// Current default is a regular tub oriented width-wise: the drawer opens along
+// Current default is a regular source tub oriented width-wise: the drawer opens along
 // the tub's short axis, so the casing opening spans the tub's long dimension.
+// The default height tracks the current 23h tub source total: 23 * 3.5 + 3.74.
 SLOT_WIDTH = 339.2;
 SLOT_DEPTH = 255.2;
-SLOT_HEIGHT = 73.74;
+SLOT_HEIGHT = 84.24;
 SIDE_THICKNESS = 25;
 BACK_THICKNESS = 25;
 TOP_THICKNESS = 10;
