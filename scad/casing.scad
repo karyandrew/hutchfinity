@@ -1,5 +1,5 @@
 // casing.scad
-// version: 0.5.2
+// version: 0.6.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
 // no front, no bottom. Installed-top and installed-bottom peg sockets are
 // prototype geometry; magnet wells remain deferred.
@@ -37,26 +37,32 @@ function peg_socket_opening_radius(peg_diameter, peg_clearance, peg_chamfer) =
     peg_socket_diameter(peg_diameter, peg_clearance) / 2 + peg_chamfer;
 function peg_socket_inset(peg_diameter, peg_clearance, peg_chamfer, edge_land=PEG_SOCKET_EDGE_LAND) =
     peg_socket_opening_radius(peg_diameter, peg_clearance, peg_chamfer) + edge_land;
+function peg_socket_end_inset(side_thickness, back_thickness, peg_diameter, peg_clearance, peg_chamfer, edge_land) =
+    max(
+        max(side_thickness, back_thickness),
+        peg_socket_inset(peg_diameter, peg_clearance, peg_chamfer, edge_land)
+    );
 
-// Peg reference points are derived from one spacing target. Only side and back
-// wall footprints get sockets; the open front span has no wall-foot receiver.
-// Corners are indexed through the side-wall rows, while the back row adds only
-// middle positions to avoid duplicates.
-function peg_axis_intervals(span, peg_spacing, inset) =
-    max(1, ceil((span - 2 * inset) / peg_spacing));
-function peg_axis_positions(span, peg_spacing, inset) =
-    let(intervals = peg_axis_intervals(span, peg_spacing, inset), usable = span - 2 * inset)
-    [for (i = [0 : intervals]) inset + i * usable / intervals];
-function peg_axis_middle_positions(span, peg_spacing, inset) =
-    let(intervals = peg_axis_intervals(span, peg_spacing, inset), usable = span - 2 * inset)
-    intervals <= 1 ? [] : [for (i = [1 : intervals - 1]) inset + i * usable / intervals];
-function peg_reference_positions(width, depth, peg_spacing, inset) = concat(
-    [for (y = peg_axis_positions(depth, peg_spacing, inset)) [inset, y]],
-    [for (y = peg_axis_positions(depth, peg_spacing, inset)) [width - inset, y]],
-    [for (x = peg_axis_middle_positions(width, peg_spacing, inset)) [x, depth - inset]]
+// Peg reference points are derived from one spacing target. Centers sit on the
+// side/back wall centerlines and stay away from open-front/back/side corners.
+function peg_axis_intervals_between(start, end, peg_spacing) =
+    max(1, ceil((end - start) / peg_spacing));
+function peg_axis_positions_between(start, end, peg_spacing) =
+    let(intervals = peg_axis_intervals_between(start, end, peg_spacing), usable = end - start)
+    [for (i = [0 : intervals]) start + i * usable / intervals];
+function peg_axis_middle_positions_between(start, end, peg_spacing) =
+    let(intervals = peg_axis_intervals_between(start, end, peg_spacing), usable = end - start)
+    intervals <= 1 ? [] : [for (i = [1 : intervals - 1]) start + i * usable / intervals];
+function peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing, end_inset) = concat(
+    [for (y = peg_axis_positions_between(end_inset, depth - end_inset, peg_spacing))
+        [side_thickness / 2, y]],
+    [for (y = peg_axis_positions_between(end_inset, depth - end_inset, peg_spacing))
+        [width - side_thickness / 2, y]],
+    [for (x = peg_axis_middle_positions_between(end_inset, width - end_inset, peg_spacing))
+        [x, depth - back_thickness / 2]]
 );
-function peg_count(width, depth, peg_spacing, inset) =
-    len(peg_reference_positions(width, depth, peg_spacing, inset));
+function peg_count(width, depth, side_thickness, back_thickness, peg_spacing, end_inset) =
+    len(peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing, end_inset));
 
 module casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness) {
     union() {
@@ -125,13 +131,22 @@ module hutchfinity_casing(
     socket_diameter = peg_socket_diameter(peg_diameter, peg_clearance);
     socket_depth = min(peg_socket_depth, top_thickness);
     socket_opening_radius = peg_socket_opening_radius(peg_diameter, peg_clearance, peg_chamfer);
-    socket_inset = peg_socket_inset(
+    socket_end_inset = peg_socket_end_inset(
+        side_thickness,
+        back_thickness,
         peg_diameter,
         peg_clearance,
         peg_chamfer,
         peg_socket_edge_land
     );
-    peg_positions = peg_reference_positions(outer_x, outer_y, peg_spacing, socket_inset);
+    peg_positions = peg_reference_positions(
+        outer_x,
+        outer_y,
+        side_thickness,
+        back_thickness,
+        peg_spacing,
+        socket_end_inset
+    );
 
     assert(slot_width > 0 && slot_depth > 0 && slot_height > 0,
         "slot dimensions must be positive");
@@ -144,11 +159,12 @@ module hutchfinity_casing(
         "peg socket depth must be positive and peg chamfer must be non-negative");
     assert(peg_socket_edge_land > 0,
         "peg socket edge land must leave material beyond the chamfer opening");
-    assert(outer_x > 2 * socket_inset && outer_y > 2 * socket_inset,
+    assert(!enable_peg_holes ||
+           (outer_x > 2 * socket_end_inset && outer_y > 2 * socket_end_inset),
         "peg sockets must fit inside the casing footprint");
     assert(!enable_peg_holes ||
-           (side_thickness > socket_inset + socket_opening_radius &&
-            back_thickness > socket_inset + socket_opening_radius),
+           (side_thickness / 2 > socket_opening_radius &&
+            back_thickness / 2 > socket_opening_radius),
         "peg socket chamfer must fit inside the side/back wall thickness");
 
     difference() {

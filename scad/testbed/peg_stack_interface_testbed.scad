@@ -1,8 +1,7 @@
 // peg_stack_interface_testbed.scad
-// version: 0.3.1
+// version: 0.4.0
 // Coupon for the two-ended Hutchfinity vertical stack ribbed-peg interface.
-// This tests the side-wall edge condition from casing.scad: socket chamfers
-// keep the same edge land instead of being tangent to the outside edge.
+// This tests the side-wall centerline condition from casing.scad.
 
 use <../casing.scad>;
 use <../peg.scad>;
@@ -24,7 +23,7 @@ COUPON_GAP = 10.0;
 PEG_GAP_Y = 18.0;
 function foot_origin_x() = COUPON_X + COUPON_GAP;
 function socket_diameter() = peg_socket_diameter(PEG_DIAMETER, PEG_CLEARANCE);
-function socket_x() = peg_socket_inset(PEG_DIAMETER, PEG_CLEARANCE, PEG_CHAMFER);
+function socket_x() = SIDE_THICKNESS / 2;
 function socket_center() = [socket_x(), COUPON_Y / 2];
 
 module top_slab_socket_coupon() {
@@ -58,8 +57,8 @@ module wall_foot_receiver_coupon() {
 }
 
 module loose_peg() {
-    translate([COUPON_X / 2, -PEG_GAP_Y, 0])
-    hutchfinity_peg(
+    translate([COUPON_X / 2 - PEG_LENGTH / 2, -PEG_GAP_Y, 0])
+    hutchfinity_peg_print_layout(
         diameter=PEG_DIAMETER,
         length=PEG_LENGTH,
         end_chamfer=PEG_CHAMFER

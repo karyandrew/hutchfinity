@@ -1,6 +1,6 @@
 // peg_socket_fit_testbed.scad
-// version: 0.2.0
-// Cheap physical coupon for provisional Hutchfinity ribbed-peg/socket fit.
+// version: 0.3.0
+// Cheap physical coupon for provisional Hutchfinity laid-down ribbed-peg/socket fit.
 
 use <../casing.scad>;
 use <../peg.scad>;
@@ -53,11 +53,11 @@ module socket_coupon(clearance, index) {
 
 module test_peg(index) {
     translate([
-        coupon_origin_x(index) + COUPON_X / 2,
+        coupon_origin_x(index) + COUPON_X / 2 - PEG_LENGTH / 2,
         -PEG_GAP_Y,
         0
     ])
-    hutchfinity_peg(
+    hutchfinity_peg_print_layout(
         diameter=PEG_DIAMETER,
         length=PEG_LENGTH,
         end_chamfer=PEG_CHAMFER

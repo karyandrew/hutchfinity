@@ -1,5 +1,5 @@
 ---
-version: 0.10.3
+version: 0.11.0
 sensitivity: public
 ---
 
@@ -20,12 +20,12 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | File | Role |
 |---|---|
 | `scad/casing.scad` | Standalone casing shell. No tub import, no footer mode. |
-| `scad/peg.scad` | Prototype ribbed/star crush-fit peg. |
+| `scad/peg.scad` | Prototype laid-down hex-core crush-rib peg. |
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
 | `scad/casing-fit-test.scad` | Fit-test caller that maps current tub-source dimensions and named clearance candidates to a casing slot. |
 | `scad/testbed/peg_socket_fit_testbed.scad` | Cheap coupon for provisional peg/socket clearance and chamfer checks. |
-| `scad/testbed/peg_stack_interface_testbed.scad` | Cheap side-wall edge-condition coupon for the two-ended top-slab socket to wall-foot receiver stack interface. |
+| `scad/testbed/peg_stack_interface_testbed.scad` | Cheap side-wall centerline coupon for the two-ended top-slab socket to wall-foot receiver stack interface. |
 | `scad/testbed/casing_mouth_fit_gauge.scad` | Shallow front-mouth gauge for checking tub entry and top clearance before printing a full casing. |
 | `scad/testbed/casing-fit-trial-01.md` | Planned physical validation log for the #20 casing fit and peg/socket coupon print. |
 
@@ -66,7 +66,7 @@ Thickness requirements are not finalized here. The printed part will not behave 
 | `outer_x` | `slot_width + 2 * side_thickness` | Includes left and right walls. |
 | `outer_y` | `slot_depth + back_thickness` | Includes back wall; no front wall. |
 | `print_z` | `top_thickness + slot_height` | Top slab plus wall height in print orientation. |
-| `peg_axis_intervals` | `max(1, ceil((span - 2 * socket_inset) / peg_spacing))` | Derived; not an argument. |
+| `peg_axis_intervals_between` | `max(1, ceil((end - start) / peg_spacing))` | Derived; not an argument. |
 | `peg_count` | length of perimeter socket positions | Derived from one `peg_spacing`; not an argument. |
 
 There is no `bottom_thickness` term. The casing has no floor/bottom plate.
@@ -79,10 +79,10 @@ There is no `bottom_thickness` term. The casing has no floor/bottom plate.
 | `side_thickness` | `25` | Prototype side wall value, not a final scale formula. |
 | `back_thickness` | `25` | Prototype back wall value, not a final scale formula. |
 | `top_thickness` | `10` | Prototype ceiling/riding surface; bed-facing in print orientation. |
-| `peg_spacing` | `190` | Single target spacing. Count is derived per side and positions divide evenly between corners. |
+| `peg_spacing` | `190` | Single target spacing. Count is derived per side and positions divide evenly between derived end insets. |
 | `peg_diameter`, `peg_clearance` | `8, 0.45` | Prototype peg/socket fit values. |
 | `peg_socket_depth`, `peg_chamfer` | `10, 2.5` | Prototype top-slab through-sockets and wall-foot sockets with generous chamfers at both ends. |
-| `peg_socket_edge_land` | `4.0` | Minimum material left between the socket chamfer opening and the outside side/back wall edge. |
+| `peg_socket_edge_land` | `4.0` | Minimum material land used when checking socket chamfer clearance. |
 | `enable_peg_holes` | `true` | Cuts prototype top-slab sockets and matching wall-foot sockets by default. |
 | `show_debug_markers` | `false` | Optional reference-point markers only when peg holes are disabled. |
 
@@ -92,11 +92,11 @@ Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-
 
 Magnet dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for magnet press-fit validation.
 
-The casing module cuts prototype peg sockets derived from `peg_spacing`. Socket centers are restricted to side-wall and back-wall footprints; the open front span has no sockets because there is no front wall to receive a peg from the casing above. Each casing has top-slab sockets for the casing above and matching wall-foot sockets for the casing below. Socket centers are inset by the full chamfer opening radius plus `peg_socket_edge_land`; with the current 8.0mm peg, 0.45mm clearance, 2.5mm chamfer, and 4.0mm land, the first socket center sits `10.725mm` from the outside edge, leaving `4.0mm` of material beyond the chamfer. This avoids separate X/Y peg-count knobs, avoids a public edge-margin parameter, and keeps peg locations tied to actual mating material.
+The casing module cuts prototype peg sockets derived from `peg_spacing`. Socket centers are restricted to side-wall and back-wall footprints; the open front span has no sockets because there is no front wall to receive a peg from the casing above. Each casing has top-slab sockets for the casing above and matching wall-foot sockets for the casing below. Socket centers sit on wall centerlines: `side_thickness / 2` for side-wall rows and `outer_y - back_thickness / 2` for the back-wall row. Side rows also stay away from the open-front and back corners using a derived end inset: `max(side_thickness, back_thickness, socket opening radius + peg_socket_edge_land)`. With the current 25mm side/back walls, 8.0mm peg, 0.45mm clearance, 2.5mm chamfer, and 4.0mm edge-land check, side-row centers are `12.5mm` from the outside side edge and at least `25mm` from the front/back end edges. This avoids separate X/Y peg-count knobs, avoids a public edge-margin parameter, and keeps peg locations tied to actual mating material without putting holes at corners.
 
-Peg sockets use generous 2.5mm chamfers at their openings and deepest ends. `scad/peg.scad` is no longer a plain cylinder: the default peg is a six-rib star/crush profile with an 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. The stack interface remains prototype geometry until the coupon and an actual casing pair are physically tested.
+Peg sockets use generous 2.5mm chamfers at their openings and deepest ends. `scad/peg.scad` is no longer a plain cylinder: the default printable artifact is a laid-down six-sided core with six crush ribs, 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. The module `hutchfinity_peg()` still models the installed vertical peg for assembly use; `hutchfinity_peg_print_layout()` rotates it onto a flat-friendly face for standalone/testbed printing. The stack interface remains prototype geometry until the coupon and an actual casing pair are physically tested.
 
-`scad/testbed/peg_socket_fit_testbed.scad` renders a small clearance sweep using the same socket cutter and ribbed peg module: `0.30`, `0.45`, and `0.60mm` socket clearance around the 8mm nominal prototype peg. The raised index marks count from left to right. This coupon is a physical validation aid, not a locked press-fit recipe.
+`scad/testbed/peg_socket_fit_testbed.scad` renders a small clearance sweep using the same socket cutter and laid-down ribbed peg print module: `0.30`, `0.45`, and `0.60mm` socket clearance around the 8mm nominal prototype peg. The raised index marks count from left to right. This coupon is a physical validation aid, not a locked press-fit recipe.
 
 Magnet wells are deferred from `casing.scad` until the casing-side printability and press-fit recipe are validated. When added, chamfer can stay fixed inside the recipe rather than becoming a public casing argument.
 

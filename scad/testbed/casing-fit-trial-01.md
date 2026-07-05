@@ -32,14 +32,16 @@ Print the casing and mouth-gauge artifacts in their OpenSCAD orientation: the to
 |---|---|---|---:|
 | Mouth fit gauge | Tub can enter the representative width and immediate ceiling height without forced spreading or top rub. | Full-depth sliding friction, back clearance, long-wall bow, stack behavior, or peg behavior. | `617.6cm^3` |
 | Regular 23u casing fit target | Full-depth slot behavior for the current representative casing. | Final clearance recipe unless tested against a real printed tub and recorded. | `2974.7cm^3` |
-| Peg/socket clearance coupon | First-pass insertion/retention feel across three socket clearances. | Actual casing pair behavior: top-slab socket plus wall-foot receiver, full slab stiffness, slicer infill, and stack loading. | `26.9cm^3` |
-| Peg stack interface coupon | Whether a 20mm peg can mate a lower top-slab through-socket to an upper wall-foot blind receiver at the side-wall edge condition without face interference. | Full casing stack squareness, long-wall tolerance, or retention under load. | `24.9cm^3` |
+| Peg/socket clearance coupon | First-pass insertion/retention feel across three socket clearances. | Actual casing pair behavior: top-slab socket plus wall-foot receiver, full slab stiffness, slicer infill, and stack loading. | `26.3cm^3` |
+| Peg stack interface coupon | Whether a 20mm peg can mate a lower top-slab through-socket to an upper wall-foot blind receiver at the side-wall condition without face interference. | Full casing stack squareness, long-wall tolerance, or retention under load. | `24.6cm^3` |
 
 The mouth gauge keeps full slot width and height because those are the dimensions being tested; it only reduces drawer-travel depth. Its CAD solid volume is about 21% of the full casing target before slicer infill. If it fails, change `SIDE_CLEARANCE` or `TOP_CLEARANCE` before spending plastic on the full casing.
 
-2026-07-05 critique update: the original peg was only a chamfered cylinder. `scad/peg.scad` now defaults to a six-rib star/crush profile: 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. Regenerate the peg/socket and stack-interface coupons before physical testing.
+2026-07-05 critique update: the original peg was only a chamfered cylinder. `scad/peg.scad` now uses a six-sided crush-rib profile: 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. Regenerate the peg/socket and stack-interface coupons before physical testing.
 
-2026-07-05 edge-land update: the first ribbed-peg socket inset left the socket chamfer tangent to the outside casing edge. `scad/casing.scad` now adds `4.0mm` of edge land beyond the chamfer opening, moving the current socket center from `6.725mm` to `10.725mm` from the outside side/back edge.
+2026-07-05 edge-land update: the first ribbed-peg socket inset left the socket chamfer tangent to the outside casing edge. A follow-up moved sockets onto side/back wall centerlines and added a derived end inset so side-row sockets are no longer corner-adjacent. With the current 25mm walls, side-row centers are `12.5mm` from the outside side edge and at least `25mm` from the front/back end edges.
+
+2026-07-05 peg-print update: the printable peg artifact now lays the peg on its side with a six-sided core plus crush ribs. Assembly/test-fit semantics still use the peg as a vertical stack connector after printing.
 
 ## Pre-print render checks
 
@@ -47,12 +49,12 @@ The mouth gauge keeps full slot width and height because those are the dimension
 |---|---|---:|---:|---|
 | Mouth fit gauge | Manifold | `389.2 x 48.0 x 94.24mm` | `389.2 x 48.0 x 94.24mm` | Match |
 | Regular 23u casing fit target | Manifold | `389.2 x 280.2 x 94.24mm` | `389.2 x 280.2 x 94.24mm` | Match |
-| Peg/socket clearance coupon | Manifold | `122.0 x 46.0 x 20.0mm` | `122.0 x 46.0 x 20.0mm` | Match |
-| Peg stack interface coupon | Manifold | `60.0 x 56.0 x 20.0mm` | `60.0 x 56.0 x 20.0mm` | Match |
+| Peg/socket clearance coupon | Manifold | `122.0 x 46.3 x 10.6mm` | `122.0 x 46.3 x 10.6mm` | Match |
+| Peg stack interface coupon | Manifold | `60.0 x 56.3 x 20.0mm` | `60.0 x 56.3 x 20.0mm` | Match |
 
-The peg/socket coupon Y envelope includes loose pegs placed in front of the coupon blocks. Coupon blocks occupy `Y=0..26mm`; peg centers are at `Y=-16mm`, so the full exported Y envelope is `-20..26mm`.
+The peg/socket coupon Y envelope includes loose pegs placed in front of the coupon blocks. Coupon blocks occupy `Y=0..26mm`; laid-down peg centers are at `Y=-16mm`, so the full exported Y envelope is about `-20.3..26mm`. The laid-down pegs reduce the coupon's exported Z envelope from the old upright-peg `20mm` to `10.6mm`.
 
-The peg stack interface coupon deliberately uses the casing side-wall edge condition rather than a centered socket in a block. The first draft used centered sockets and would have overestimated surrounding material; the committed coupon uses `SIDE_THICKNESS = 25mm` and `peg_socket_inset(...)` from `casing.scad`.
+The peg stack interface coupon deliberately uses the casing side-wall condition rather than a centered socket in an oversized block. The first draft used centered sockets in 34mm blocks and would have overestimated surrounding material; the current coupon uses `SIDE_THICKNESS = 25mm` and places the socket on the same wall centerline as `casing.scad`.
 
 ## Geometry under test
 
@@ -66,10 +68,10 @@ The peg stack interface coupon deliberately uses the casing side-wall edge condi
 | Peg diameter | `8.0mm` |
 | Peg socket clearances | `0.30`, `0.45`, `0.60mm` |
 | Peg/socket chamfer | `2.5mm` |
-| Peg socket edge land | `4.0mm` beyond the socket chamfer opening |
-| Peg profile | Six-rib star/crush peg; `7.4mm` core and `8.6mm` rib peaks by default |
+| Peg socket placement | Side/back wall centerlines; side-row end inset `25mm` with current walls |
+| Peg profile | Laid-down six-sided core with six crush ribs; `7.4mm` core and `8.6mm` rib peaks by default |
 | Casing socket faces | Installed top opens on print `Z=0`; installed bottom/wall-foot sockets open on print `Z=print_z` |
-| Peg stack interface coupon | `25mm` side-wall strip, socket center at casing socket inset, `10mm` lower through-socket + `10mm` upper blind receiver + `20mm` peg |
+| Peg stack interface coupon | `25mm` side-wall strip, socket center on wall centerline, `10mm` lower through-socket + `10mm` upper blind receiver + `20mm` peg |
 
 ## Setup to record
 
