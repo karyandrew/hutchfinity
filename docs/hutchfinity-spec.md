@@ -1,5 +1,5 @@
 ---
-version: 0.9.0
+version: 0.10.0
 sensitivity: public
 ---
 
@@ -25,6 +25,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
 | `scad/casing-fit-test.scad` | Fit-test caller that maps current tub-source dimensions and named clearance candidates to a casing slot. |
 | `scad/testbed/peg_socket_fit_testbed.scad` | Cheap coupon for provisional peg/socket clearance and chamfer checks. |
+| `scad/testbed/peg_stack_interface_testbed.scad` | Cheap coupon for the two-ended top-slab socket to wall-foot receiver stack interface. |
 | `scad/testbed/casing_mouth_fit_gauge.scad` | Shallow front-mouth gauge for checking tub entry and top clearance before printing a full casing. |
 | `scad/testbed/casing-fit-trial-01.md` | Planned physical validation log for the #20 casing fit and peg/socket coupon print. |
 
@@ -117,6 +118,7 @@ Peg/socket coupon check:
 
 ```bash
 openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
+openscad -o /tmp/hutchfinity-peg-stack-interface-testbed.stl scad/testbed/peg_stack_interface_testbed.scad
 ```
 
 Assembly caller check:
@@ -133,6 +135,7 @@ Physical validation packet:
 openscad -o /tmp/hutchfinity-casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad
 openscad -o /tmp/hutchfinity-casing-fit-regular-23u.stl scad/casing-fit-test.scad
 openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
+openscad -o /tmp/hutchfinity-peg-stack-interface-testbed.stl scad/testbed/peg_stack_interface_testbed.scad
 ```
 
 Record the physical result in `scad/testbed/casing-fit-trial-01.md`. Casing and mouth-gauge artifacts print inverted; flip them into installed orientation for fit testing, with the slab above the tub and the walls down. The mouth gauge is a cheaper entry/ceiling check only; it does not replace full-depth casing slide validation. Keep the default trial at zero explicit casing clearance first; if it binds, adjust the named side/back/top clearances in the fit-test caller rather than changing tub source geometry.
