@@ -1,5 +1,5 @@
 ---
-version: 0.7.0
+version: 0.8.0
 sensitivity: public
 ---
 
@@ -25,6 +25,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
 | `scad/casing-fit-test.scad` | Fit-test caller that maps current tub-source dimensions and named clearance candidates to a casing slot. |
 | `scad/testbed/peg_socket_fit_testbed.scad` | Cheap coupon for provisional peg/socket clearance and chamfer checks. |
+| `scad/testbed/casing_mouth_fit_gauge.scad` | Shallow front-mouth gauge for checking tub entry and top clearance before printing a full casing. |
 | `scad/testbed/casing-fit-trial-01.md` | Planned physical validation log for the #20 casing fit and peg/socket coupon print. |
 
 No shared `hutchfinity-dimensions.scad` file is part of this pass.
@@ -129,11 +130,12 @@ openscad -o /tmp/hutchfinity-knob-check.stl scad/knob.scad
 Physical validation packet:
 
 ```bash
+openscad -o /tmp/hutchfinity-casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad
 openscad -o /tmp/hutchfinity-casing-fit-regular-23u.stl scad/casing-fit-test.scad
 openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
 ```
 
-Record the physical result in `scad/testbed/casing-fit-trial-01.md`. Keep the default trial at zero explicit casing clearance first; if it binds, adjust the named side/back/top clearances in the fit-test caller rather than changing tub source geometry.
+Record the physical result in `scad/testbed/casing-fit-trial-01.md`. The mouth gauge is a cheap entry/ceiling check only; it does not replace full-depth casing slide validation. Keep the default trial at zero explicit casing clearance first; if it binds, adjust the named side/back/top clearances in the fit-test caller rather than changing tub source geometry.
 
 For visual review, render a PNG from the same file when OpenSCAD is available. If OpenSCAD is unavailable, static syntax and parameter review are still required, and the missing renderer is reported in the PR.
 

@@ -16,6 +16,7 @@ Validate the representative regular-tub casing interface from hutchfinity#20 wit
 
 | Artifact | Source | Export command |
 |---|---|---|
+| Mouth fit gauge | `scad/testbed/casing_mouth_fit_gauge.scad` | `openscad -o /tmp/hutchfinity-casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad` |
 | Regular 23u casing fit target | `scad/casing-fit-test.scad` | `openscad -o /tmp/hutchfinity-casing-fit-regular-23u.stl scad/casing-fit-test.scad` |
 | Peg/socket clearance coupon | `scad/testbed/peg_socket_fit_testbed.scad` | `openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad` |
 
@@ -24,6 +25,7 @@ Validate the representative regular-tub casing interface from hutchfinity#20 wit
 
 | Artifact | Render status | Measured STL bounds | Expected bounds | Result |
 |---|---|---:|---:|---|
+| Mouth fit gauge | Manifold | `389.2 x 48.0 x 94.24mm` | `389.2 x 48.0 x 94.24mm` | Match |
 | Regular 23u casing fit target | Manifold | `389.2 x 280.2 x 94.24mm` | `389.2 x 280.2 x 94.24mm` | Match |
 | Peg/socket clearance coupon | Manifold | `122.0 x 46.0 x 20.0mm` | `122.0 x 46.0 x 20.0mm` | Match |
 
@@ -36,7 +38,8 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 | Tub exterior XY target | `255.2 x 339.2mm` |
 | Casing slot, width-wise | `339.2 x 255.2 x 84.24mm` |
 | Side/back/top slot clearance | `0.0 / 0.0 / 0.0mm` |
-| Side wall / back wall / top | `25 / 25 / 10mm` |
+| Side wall / back wall / top | `25 / 25 / 10mm` full casing; mouth gauge uses `8mm` back stop |
+| Mouth gauge slot depth | `40.0mm` |
 | Peg diameter | `8.0mm` |
 | Peg socket clearances | `0.30`, `0.45`, `0.60mm` |
 | Peg/socket chamfer | `2.5mm` |
@@ -58,10 +61,13 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 
 | Check | Result |
 |---|---|
+| Mouth gauge accepts tub entrance without forced spreading | TBD |
+| Mouth gauge top clearance avoids immediate rub | TBD |
 | Casing prints inverted without supports | TBD |
 | Top riding surface is flat enough for drawer slide | TBD |
 | Tub enters slot without forced spreading | TBD |
 | Tub slides full depth without binding | TBD |
+| Mouth gauge result agrees with full casing mouth behavior | TBD |
 | Closed position has acceptable side play | TBD |
 | Back clearance is acceptable at full insertion | TBD |
 | Top clearance avoids rubbing lip/items | TBD |
@@ -73,6 +79,7 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 
 | Observation | Design response |
 |---|---|
+| Mouth gauge binds at side walls | Increase `SIDE_CLEARANCE` before spending a full casing print. |
 | Tub binds at side walls | Increase `SIDE_CLEARANCE` in `casing-fit-test.scad`; do not change tub source geometry in this issue. |
 | Tub bottoms against back before front is acceptable | Increase `BACK_CLEARANCE`. |
 | Tub rubs top surface | Increase `TOP_CLEARANCE` or revisit tested tub height. |
