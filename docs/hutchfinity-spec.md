@@ -1,5 +1,5 @@
 ---
-version: 0.8.1
+version: 0.9.0
 sensitivity: public
 ---
 
@@ -78,8 +78,8 @@ There is no `bottom_thickness` term. The casing has no floor/bottom plate.
 | `top_thickness` | `10` | Prototype ceiling/riding surface; bed-facing in print orientation. |
 | `peg_spacing` | `190` | Single target spacing. Count is derived per side and positions divide evenly between corners. |
 | `peg_diameter`, `peg_clearance` | `8, 0.45` | Prototype peg/socket fit values. |
-| `peg_socket_depth`, `peg_chamfer` | `10, 2.5` | Prototype socket cuts through the 10mm ceiling with generous chamfers at both ends. |
-| `enable_peg_holes` | `true` | Cuts prototype chamfered peg sockets by default. |
+| `peg_socket_depth`, `peg_chamfer` | `10, 2.5` | Prototype top-slab through-sockets and wall-foot sockets with generous chamfers at both ends. |
+| `enable_peg_holes` | `true` | Cuts prototype top-slab sockets and matching wall-foot sockets by default. |
 | `show_debug_markers` | `false` | Optional reference-point markers only when peg holes are disabled. |
 
 Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-slot clearance, bottom thickness, footer/base controls, `peg_count`, `peg_edge_margin`, and magnet placement parameters. Those belong to tub generation, assembly mapping, a future footer/base design, or a future validated interface.
@@ -88,9 +88,9 @@ Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-
 
 Magnet dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for magnet press-fit validation.
 
-The casing module cuts prototype peg sockets derived from `peg_spacing`. The pattern indexes perimeter corners, derives interval counts from the single spacing value, and divides each side evenly. This avoids separate X/Y peg-count knobs and avoids a public edge-margin parameter. Socket centers are internally inset only far enough for the chamfered holes to remain inside the footprint.
+The casing module cuts prototype peg sockets derived from `peg_spacing`. Socket centers are restricted to side-wall and back-wall footprints; the open front span has no sockets because there is no front wall to receive a peg from the casing above. Each casing has top-slab sockets for the casing above and matching wall-foot sockets for the casing below. This avoids separate X/Y peg-count knobs, avoids a public edge-margin parameter, and keeps peg locations tied to actual mating material.
 
-Peg sockets and pegs both use generous 2.5mm chamfers at their ends. In the casing, each socket is chamfered at the opening and at the deepest end of the cut. In `peg.scad`, each dowel end tapers down for easier insertion.
+Peg sockets and pegs both use generous 2.5mm chamfers at their ends. In the casing, top and wall-foot sockets are chamfered at the opening and at the deepest end of the cut. In `peg.scad`, each dowel end tapers down for easier insertion. The stack interface remains prototype geometry until the coupon and an actual casing pair are physically tested.
 
 `scad/testbed/peg_socket_fit_testbed.scad` renders a small clearance sweep using the same socket cutter and peg module: `0.30`, `0.45`, and `0.60mm` socket clearance around the 8mm prototype peg. The raised index marks count from left to right. This coupon is a physical validation aid, not a locked press-fit recipe.
 
@@ -143,7 +143,7 @@ For visual review, render a PNG from the same file when OpenSCAD is available. I
 
 - Casing dimensions are direct slot parameters, not coupled to tub internals.
 - The casing has no front and no bottom.
-- Same XY footprint casings are vertically stackable by prototype chamfered peg interfaces.
+- Same XY footprint casings reserve a prototype two-ended peg/socket interface for vertical stacking.
 - Tub body geometry is not rewritten to create the slide path.
 - Optional knob geometry has a broad, thin glue base for tub attachment.
 - Magnet geometry stays explicitly provisional until physical validation closes the dependency.

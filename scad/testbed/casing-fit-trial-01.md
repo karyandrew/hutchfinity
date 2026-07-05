@@ -30,8 +30,8 @@ Print the casing and mouth-gauge artifacts in their OpenSCAD orientation: the to
 | Artifact | What it actually proves | What it does not prove | CAD solid volume |
 |---|---|---|---:|
 | Mouth fit gauge | Tub can enter the representative width and immediate ceiling height without forced spreading or top rub. | Full-depth sliding friction, back clearance, long-wall bow, stack behavior, or peg behavior. | `617.6cm^3` |
-| Regular 23u casing fit target | Full-depth slot behavior for the current representative casing. | Final clearance recipe unless tested against a real printed tub and recorded. | `2979.1cm^3` |
-| Peg/socket clearance coupon | First-pass insertion/retention feel across three socket clearances. | Actual casing socket behavior under full slab stiffness, slicer infill, and stack loading. | `26.9cm^3` |
+| Regular 23u casing fit target | Full-depth slot behavior for the current representative casing. | Final clearance recipe unless tested against a real printed tub and recorded. | `2974.7cm^3` |
+| Peg/socket clearance coupon | First-pass insertion/retention feel across three socket clearances. | Actual casing pair behavior: top-slab socket plus wall-foot receiver, full slab stiffness, slicer infill, and stack loading. | `26.9cm^3` |
 
 The mouth gauge keeps full slot width and height because those are the dimensions being tested; it only reduces drawer-travel depth. Its CAD solid volume is about 21% of the full casing target before slicer infill. If it fails, change `SIDE_CLEARANCE` or `TOP_CLEARANCE` before spending plastic on the full casing.
 
@@ -88,6 +88,7 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 | Best peg coupon by insertion force | TBD |
 | Best peg coupon by retention | TBD |
 | Any socket cracking, whitening, or delamination | TBD |
+| Peg aligns top-slab socket to wall-foot receiver between two casing artifacts | TBD |
 
 ## Decision hooks
 
@@ -99,4 +100,5 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 | Tub rubs top surface | Increase `TOP_CLEARANCE` or revisit tested tub height. |
 | Tub rattles unacceptably | Keep clearance lower and inspect print/process variance first. |
 | No peg coupon has acceptable insertion and retention | Keep peg/socket provisional and move to a peg-profile testbed. |
+| Peg registers coupon but not actual casing pair | Keep coupon result as screening only; revise casing top/foot socket geometry. |
 | One coupon is clearly best | Update prototype `PEG_CLEARANCE` only after confirming on an actual casing socket. |

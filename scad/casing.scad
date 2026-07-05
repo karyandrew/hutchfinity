@@ -1,7 +1,8 @@
 // casing.scad
-// version: 0.4.0
+// version: 0.5.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
-// no front, no bottom. Peg sockets are prototype geometry; magnet wells remain deferred.
+// no front, no bottom. Top and wall-foot peg sockets are prototype geometry;
+// magnet wells remain deferred.
 
 $fn = 64;
 EPS = 0.01;
@@ -34,8 +35,10 @@ function peg_socket_diameter(peg_diameter, peg_clearance) = peg_diameter + peg_c
 function peg_socket_inset(peg_diameter, peg_clearance, peg_chamfer) =
     peg_socket_diameter(peg_diameter, peg_clearance) / 2 + peg_chamfer;
 
-// Peg reference points are derived from one spacing target. Corners are always
-// indexed; extra points divide the side evenly when the span exceeds spacing.
+// Peg reference points are derived from one spacing target. Only side and back
+// wall footprints get sockets; the open front span has no wall-foot receiver.
+// Corners are indexed through the side-wall rows, while the back row adds only
+// middle positions to avoid duplicates.
 function peg_axis_intervals(span, peg_spacing, inset) =
     max(1, ceil((span - 2 * inset) / peg_spacing));
 function peg_axis_positions(span, peg_spacing, inset) =
@@ -45,10 +48,9 @@ function peg_axis_middle_positions(span, peg_spacing, inset) =
     let(intervals = peg_axis_intervals(span, peg_spacing, inset), usable = span - 2 * inset)
     intervals <= 1 ? [] : [for (i = [1 : intervals - 1]) inset + i * usable / intervals];
 function peg_reference_positions(width, depth, peg_spacing, inset) = concat(
-    [for (x = peg_axis_positions(width, peg_spacing, inset)) [x, inset]],
-    [for (y = peg_axis_middle_positions(depth, peg_spacing, inset)) [width - inset, y]],
-    [for (x = peg_axis_positions(width, peg_spacing, inset)) [x, depth - inset]],
-    [for (y = peg_axis_middle_positions(depth, peg_spacing, inset)) [inset, y]]
+    [for (y = peg_axis_positions(depth, peg_spacing, inset)) [inset, y]],
+    [for (y = peg_axis_positions(depth, peg_spacing, inset)) [width - inset, y]],
+    [for (x = peg_axis_middle_positions(width, peg_spacing, inset)) [x, depth - inset]]
 );
 function peg_count(width, depth, peg_spacing, inset) =
     len(peg_reference_positions(width, depth, peg_spacing, inset));
@@ -65,9 +67,9 @@ module casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, t
     }
 }
 
-module chamfered_peg_socket_cut(position, socket_diameter, socket_depth, socket_chamfer) {
+module chamfered_peg_socket_cut(position, socket_diameter, socket_depth, socket_chamfer, z=0) {
     chamfer = min(socket_chamfer, socket_depth / 2);
-    translate([position[0], position[1], -EPS])
+    translate([position[0], position[1], z - EPS])
     union() {
         cylinder(d=socket_diameter, h=socket_depth + 2 * EPS);
         cylinder(d1=socket_diameter + 2 * chamfer, d2=socket_diameter, h=chamfer + EPS);
@@ -79,6 +81,17 @@ module chamfered_peg_socket_cut(position, socket_diameter, socket_depth, socket_
 module chamfered_peg_socket_cuts(positions, socket_diameter, socket_depth, socket_chamfer) {
     for (p = positions)
         chamfered_peg_socket_cut(p, socket_diameter, socket_depth, socket_chamfer);
+}
+
+module chamfered_peg_foot_socket_cuts(positions, socket_diameter, socket_depth, socket_chamfer, print_z) {
+    for (p = positions)
+        chamfered_peg_socket_cut(
+            p,
+            socket_diameter,
+            socket_depth,
+            socket_chamfer,
+            print_z - socket_depth
+        );
 }
 
 module peg_debug_markers(positions) {
@@ -124,8 +137,16 @@ module hutchfinity_casing(
 
     difference() {
         casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness);
-        if (enable_peg_holes)
+        if (enable_peg_holes) {
             chamfered_peg_socket_cuts(peg_positions, socket_diameter, socket_depth, peg_chamfer);
+            chamfered_peg_foot_socket_cuts(
+                peg_positions,
+                socket_diameter,
+                socket_depth,
+                peg_chamfer,
+                print_z
+            );
+        }
     }
 
     if (show_debug_markers && !enable_peg_holes)
