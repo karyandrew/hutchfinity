@@ -3,7 +3,7 @@ sensitivity: public
 type: log
 date: 2026-07-04
 testbed: casing-fit-test v0.1.0, casing.scad v0.7.0, peg_socket_fit_testbed v0.3.0, and peg_stack_interface_testbed v0.5.0
-status: planned; stack-land model revised 2026-07-05
+status: planned; stack-land model rejected 2026-07-05
 ---
 
 # Casing fit trial 01 — planned
@@ -11,6 +11,8 @@ status: planned; stack-land model revised 2026-07-05
 ## Purpose
 
 Validate the representative regular-tub casing interface from hutchfinity#20 without conflating tub-process compensation, casing slot clearance, or peg/socket press-fit.
+
+2026-07-05 correction: do not print the external stack-land casing as the next physical target. The PRD now requires flat casing side and back exterior faces, so external stack lands/pads/bosses are invalid even though they move peg holes away from thin edges.
 
 ## Print artifacts
 
@@ -31,7 +33,7 @@ Print the casing and mouth-gauge artifacts in their OpenSCAD orientation: the to
 | Artifact | What it actually proves | What it does not prove | CAD solid volume |
 |---|---|---|---:|
 | Mouth fit gauge | Tub can enter the representative width and immediate ceiling height without forced spreading or top rub. | Full-depth sliding friction, back clearance, long-wall bow, stack behavior, or peg behavior. | `617.6cm^3` |
-| Regular 23u casing fit target | Full-depth slot behavior for the current representative casing, including external stack lands for casing-to-casing pegs. | Final clearance recipe unless tested against a real printed tub and recorded. | `3469.4cm^3` |
+| Regular 23u casing fit target | Rejected stack-land geometry; do not use as the next print target. | A valid flat-side/back casing or final clearance recipe. | `3469.4cm^3` |
 | Peg/socket clearance coupon | First-pass insertion/retention feel across three socket clearances. | Actual casing pair behavior: top-slab socket plus wall-foot receiver, full slab stiffness, slicer infill, and stack loading. | `26.3cm^3` |
 | Peg stack interface coupon | Whether a 20mm peg can mate a lower top-slab through-socket to an upper stack-land wall-foot blind receiver without face interference. | Full casing stack squareness, long-wall tolerance, or retention under load. | `59.1cm^3` |
 
@@ -39,7 +41,7 @@ The mouth gauge keeps full slot width and height because those are the dimension
 
 2026-07-05 critique update: the original peg was only a chamfered cylinder. `scad/peg.scad` now uses a six-sided crush-rib profile: 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. Regenerate the peg/socket and stack-interface coupons before physical testing.
 
-2026-07-05 stack-land update: the side/back wall centerline model was still treating the 25mm wall strip as the whole receiver. The casing now adds integrated external stack lands around peg sites: `40mm` wide by `50mm` long. The 25mm side/back walls and 10mm ceiling remain unchanged as slot values; the extra stack land sits outside the drawer slot and moves the socket into broad casing-to-casing receiver material.
+2026-07-05 rejected stack-land update: the side/back wall centerline model was treating the 25mm wall strip as the whole receiver, but the external `40 x 50mm` stack-land correction breaks the flat side/back requirement. Keep the lesson, not the geometry: peg sockets need more thoughtful placement without protruding from the casing sides/back.
 
 2026-07-05 peg-print update: the printable peg artifact now lays the peg on its side with a six-sided core plus crush ribs. Assembly/test-fit semantics still use the peg as a vertical stack connector after printing.
 
@@ -54,7 +56,7 @@ The mouth gauge keeps full slot width and height because those are the dimension
 
 The peg/socket coupon Y envelope includes loose pegs placed in front of the coupon blocks. Coupon blocks occupy `Y=0..26mm`; laid-down peg centers are at `Y=-16mm`, so the full exported Y envelope is about `-20.3..26mm`. The laid-down pegs reduce the coupon's exported Z envelope from the old upright-peg `20mm` to `10.6mm`.
 
-The peg stack interface coupon now deliberately uses the casing stack-land condition rather than a centered socket in a bare 25mm side-wall strip. The current coupon uses a `40 x 50mm` land with the socket centered in the land, matching `casing.scad`.
+The peg stack interface coupon now documents the rejected stack-land condition rather than a valid product target. The current coupon uses a `40 x 50mm` land with the socket centered in the land, matching the rejected `casing.scad` experiment.
 
 ## Geometry under test
 
@@ -64,15 +66,15 @@ The peg stack interface coupon now deliberately uses the casing stack-land condi
 | Casing slot, width-wise | `339.2 x 255.2 x 84.24mm` |
 | Side/back/top slot clearance | `0.0 / 0.0 / 0.0mm` |
 | Side wall / back wall / top | `25 / 25 / 10mm` full casing; mouth gauge uses `8mm` back stop |
-| Stack land width / length | `40 / 50mm`, external to the drawer slot |
+| Stack land width / length | Rejected; side/back exterior faces must remain flat |
 | Mouth gauge slot depth | `40.0mm` |
 | Peg diameter | `8.0mm` |
 | Peg socket clearances | `0.30`, `0.45`, `0.60mm` |
 | Peg/socket chamfer | `2.5mm` |
-| Peg socket placement | Centered in integrated side/back stack lands; side-row end inset `25mm` with current values |
+| Peg socket placement | Unresolved after rejecting external stack lands |
 | Peg profile | Laid-down six-sided core with six crush ribs; `7.4mm` core and `8.6mm` rib peaks by default |
 | Casing socket faces | Installed top opens on print `Z=0`; installed bottom/wall-foot sockets open on print `Z=print_z` |
-| Peg stack interface coupon | `40 x 50mm` stack land, centered socket, `10mm` lower through-socket + `10mm` upper blind receiver + `20mm` peg |
+| Peg stack interface coupon | Current stack-land coupon is rejected as a product target; keep only as a failed design reference |
 
 ## Setup to record
 
@@ -120,4 +122,5 @@ The peg stack interface coupon now deliberately uses the casing stack-land condi
 | No peg coupon has acceptable insertion and retention | Keep peg/socket provisional and move to a peg-profile testbed. |
 | Ribbed peg is too tight or shaves badly | Reduce rib peak overage, increase socket clearance, or add a dedicated peg-profile sweep. |
 | Peg registers coupon but not actual casing pair | Keep coupon result as screening only; revise casing top/foot socket geometry. |
+| Peg strategy requires external side/back protrusions | Reject the geometry and redesign around flat exterior casing faces. |
 | One coupon is clearly best | Update prototype `PEG_CLEARANCE` only after confirming on an actual casing socket. |

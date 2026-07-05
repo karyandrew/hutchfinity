@@ -15,7 +15,7 @@ A parametric, modular drawer chest system built around gridfinity-extended tubs 
 - **Knobs** = optional glue-on pulls with broad, thin glue bases
 - **Magnets** = optional press-fit retention + extended-warning detent
 
-Tubs slide drawer-style on the top of the casing below (or on a footer / tabletop for the bottom-most). Casings stack into chests of arbitrary height. Same stack-land footprint = stackable; varying heights are fine. Multi-column chest assembly is a v2 goal.
+Tubs slide drawer-style on the top of the casing below (or on a footer / tabletop for the bottom-most). Casings stack into chests of arbitrary height. Same flat casing footprint = stackable; varying heights are fine. Multi-column chest assembly is a v2 goal.
 
 ## Why half-pitch
 
