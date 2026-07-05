@@ -1,5 +1,5 @@
 ---
-version: 0.10.2
+version: 0.10.3
 sensitivity: public
 ---
 
@@ -82,6 +82,7 @@ There is no `bottom_thickness` term. The casing has no floor/bottom plate.
 | `peg_spacing` | `190` | Single target spacing. Count is derived per side and positions divide evenly between corners. |
 | `peg_diameter`, `peg_clearance` | `8, 0.45` | Prototype peg/socket fit values. |
 | `peg_socket_depth`, `peg_chamfer` | `10, 2.5` | Prototype top-slab through-sockets and wall-foot sockets with generous chamfers at both ends. |
+| `peg_socket_edge_land` | `4.0` | Minimum material left between the socket chamfer opening and the outside side/back wall edge. |
 | `enable_peg_holes` | `true` | Cuts prototype top-slab sockets and matching wall-foot sockets by default. |
 | `show_debug_markers` | `false` | Optional reference-point markers only when peg holes are disabled. |
 
@@ -91,7 +92,7 @@ Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-
 
 Magnet dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for magnet press-fit validation.
 
-The casing module cuts prototype peg sockets derived from `peg_spacing`. Socket centers are restricted to side-wall and back-wall footprints; the open front span has no sockets because there is no front wall to receive a peg from the casing above. Each casing has top-slab sockets for the casing above and matching wall-foot sockets for the casing below. This avoids separate X/Y peg-count knobs, avoids a public edge-margin parameter, and keeps peg locations tied to actual mating material.
+The casing module cuts prototype peg sockets derived from `peg_spacing`. Socket centers are restricted to side-wall and back-wall footprints; the open front span has no sockets because there is no front wall to receive a peg from the casing above. Each casing has top-slab sockets for the casing above and matching wall-foot sockets for the casing below. Socket centers are inset by the full chamfer opening radius plus `peg_socket_edge_land`; with the current 8.0mm peg, 0.45mm clearance, 2.5mm chamfer, and 4.0mm land, the first socket center sits `10.725mm` from the outside edge, leaving `4.0mm` of material beyond the chamfer. This avoids separate X/Y peg-count knobs, avoids a public edge-margin parameter, and keeps peg locations tied to actual mating material.
 
 Peg sockets use generous 2.5mm chamfers at their openings and deepest ends. `scad/peg.scad` is no longer a plain cylinder: the default peg is a six-rib star/crush profile with an 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. The stack interface remains prototype geometry until the coupon and an actual casing pair are physically tested.
 

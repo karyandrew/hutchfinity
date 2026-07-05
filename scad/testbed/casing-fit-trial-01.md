@@ -39,6 +39,8 @@ The mouth gauge keeps full slot width and height because those are the dimension
 
 2026-07-05 critique update: the original peg was only a chamfered cylinder. `scad/peg.scad` now defaults to a six-rib star/crush profile: 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. Regenerate the peg/socket and stack-interface coupons before physical testing.
 
+2026-07-05 edge-land update: the first ribbed-peg socket inset left the socket chamfer tangent to the outside casing edge. `scad/casing.scad` now adds `4.0mm` of edge land beyond the chamfer opening, moving the current socket center from `6.725mm` to `10.725mm` from the outside side/back edge.
+
 ## Pre-print render checks
 
 | Artifact | Render status | Measured STL bounds | Expected bounds | Result |
@@ -64,6 +66,7 @@ The peg stack interface coupon deliberately uses the casing side-wall edge condi
 | Peg diameter | `8.0mm` |
 | Peg socket clearances | `0.30`, `0.45`, `0.60mm` |
 | Peg/socket chamfer | `2.5mm` |
+| Peg socket edge land | `4.0mm` beyond the socket chamfer opening |
 | Peg profile | Six-rib star/crush peg; `7.4mm` core and `8.6mm` rib peaks by default |
 | Casing socket faces | Installed top opens on print `Z=0`; installed bottom/wall-foot sockets open on print `Z=print_z` |
 | Peg stack interface coupon | `25mm` side-wall strip, socket center at casing socket inset, `10mm` lower through-socket + `10mm` upper blind receiver + `20mm` peg |
