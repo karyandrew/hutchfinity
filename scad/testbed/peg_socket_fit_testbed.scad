@@ -1,6 +1,6 @@
 // peg_socket_fit_testbed.scad
-// version: 0.1.0
-// Cheap physical coupon for provisional Hutchfinity peg/socket fit.
+// version: 0.2.0
+// Cheap physical coupon for provisional Hutchfinity ribbed-peg/socket fit.
 
 use <../casing.scad>;
 use <../peg.scad>;

@@ -3,7 +3,7 @@ sensitivity: public
 type: log
 date: 2026-07-04
 testbed: casing-fit-test v0.1.0 and peg_socket_fit_testbed v0.1.0
-status: planned
+status: planned; model revised 2026-07-05
 ---
 
 # Casing fit trial 01 — planned
@@ -16,15 +16,15 @@ Validate the representative regular-tub casing interface from hutchfinity#20 wit
 
 | Artifact | Source | Export command |
 |---|---|---|
-| Mouth fit gauge | `scad/testbed/casing_mouth_fit_gauge.scad` | `openscad -o /tmp/hutchfinity-casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad` |
-| Regular 23u casing fit target | `scad/casing-fit-test.scad` | `openscad -o /tmp/hutchfinity-casing-fit-regular-23u.stl scad/casing-fit-test.scad` |
-| Peg/socket clearance coupon | `scad/testbed/peg_socket_fit_testbed.scad` | `openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad` |
-| Peg stack interface coupon | `scad/testbed/peg_stack_interface_testbed.scad` | `openscad -o /tmp/hutchfinity-peg-stack-interface-testbed.stl scad/testbed/peg_stack_interface_testbed.scad` |
+| Mouth fit gauge | `scad/testbed/casing_mouth_fit_gauge.scad` | `openscad -o preview/casing-fit-trial-01/casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad` |
+| Regular 23u casing fit target | `scad/casing-fit-test.scad` | `openscad -o preview/casing-fit-trial-01/casing-fit-regular-23u.stl scad/casing-fit-test.scad` |
+| Peg/socket clearance coupon | `scad/testbed/peg_socket_fit_testbed.scad` | `openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad` |
+| Peg stack interface coupon | `scad/testbed/peg_stack_interface_testbed.scad` | `openscad -o preview/casing-fit-trial-01/peg-stack-interface-testbed.stl scad/testbed/peg_stack_interface_testbed.scad` |
 
 
 ## Physical orientation
 
-Print the casing and mouth-gauge artifacts in their OpenSCAD orientation: the top slab is on the build plate and the side/back walls rise upward. For fit testing, flip the printed part into installed orientation: top slab above the tub, side walls down, open front at the drawer entrance. The tub should sit on a flat reference surface, tabletop, footer, or casing-below surrogate. Testing with the slab underneath the tub is invalid for drawer clearance.
+Print the casing and mouth-gauge artifacts in their OpenSCAD orientation: the top slab is on the build plate and the side/back walls rise upward. In that print view, the visible sockets on the wall-foot face are the installed-bottom sockets. The installed-top sockets open on the bed-facing `Z=0` top slab and can be easy to miss in a top-only preview. For fit testing, flip the printed part into installed orientation: top slab above the tub, side walls down, open front at the drawer entrance. The tub should sit on a flat reference surface, tabletop, footer, or casing-below surrogate. Testing with the slab underneath the tub is invalid for drawer clearance.
 
 ## Design critique before print
 
@@ -36,6 +36,8 @@ Print the casing and mouth-gauge artifacts in their OpenSCAD orientation: the to
 | Peg stack interface coupon | Whether a 20mm peg can mate a lower top-slab through-socket to an upper wall-foot blind receiver at the side-wall edge condition without face interference. | Full casing stack squareness, long-wall tolerance, or retention under load. | `24.9cm^3` |
 
 The mouth gauge keeps full slot width and height because those are the dimensions being tested; it only reduces drawer-travel depth. Its CAD solid volume is about 21% of the full casing target before slicer infill. If it fails, change `SIDE_CLEARANCE` or `TOP_CLEARANCE` before spending plastic on the full casing.
+
+2026-07-05 critique update: the original peg was only a chamfered cylinder. `scad/peg.scad` now defaults to a six-rib star/crush profile: 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. Regenerate the peg/socket and stack-interface coupons before physical testing.
 
 ## Pre-print render checks
 
@@ -62,6 +64,8 @@ The peg stack interface coupon deliberately uses the casing side-wall edge condi
 | Peg diameter | `8.0mm` |
 | Peg socket clearances | `0.30`, `0.45`, `0.60mm` |
 | Peg/socket chamfer | `2.5mm` |
+| Peg profile | Six-rib star/crush peg; `7.4mm` core and `8.6mm` rib peaks by default |
+| Casing socket faces | Installed top opens on print `Z=0`; installed bottom/wall-foot sockets open on print `Z=print_z` |
 | Peg stack interface coupon | `25mm` side-wall strip, socket center at casing socket inset, `10mm` lower through-socket + `10mm` upper blind receiver + `20mm` peg |
 
 ## Setup to record
@@ -93,6 +97,7 @@ The peg stack interface coupon deliberately uses the casing side-wall edge condi
 | Top clearance avoids rubbing lip/items | TBD |
 | Best peg coupon by insertion force | TBD |
 | Best peg coupon by retention | TBD |
+| Ribbed peg crushes without shaving or splitting socket walls | TBD |
 | Any socket cracking, whitening, or delamination | TBD |
 | Peg aligns top-slab socket to wall-foot receiver on stack-interface coupon | TBD |
 | Peg aligns top-slab socket to wall-foot receiver between two casing artifacts | TBD |
@@ -107,6 +112,6 @@ The peg stack interface coupon deliberately uses the casing side-wall edge condi
 | Tub rubs top surface | Increase `TOP_CLEARANCE` or revisit tested tub height. |
 | Tub rattles unacceptably | Keep clearance lower and inspect print/process variance first. |
 | No peg coupon has acceptable insertion and retention | Keep peg/socket provisional and move to a peg-profile testbed. |
-| Peg stack interface coupon does not seat flush | Revise top/foot socket depth, peg length, or mating-face geometry before full casing-pair testing. |
+| Ribbed peg is too tight or shaves badly | Reduce rib peak overage, increase socket clearance, or add a dedicated peg-profile sweep. |
 | Peg registers coupon but not actual casing pair | Keep coupon result as screening only; revise casing top/foot socket geometry. |
 | One coupon is clearly best | Update prototype `PEG_CLEARANCE` only after confirming on an actual casing socket. |

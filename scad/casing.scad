@@ -1,8 +1,8 @@
 // casing.scad
-// version: 0.5.0
+// version: 0.5.1
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
-// no front, no bottom. Top and wall-foot peg sockets are prototype geometry;
-// magnet wells remain deferred.
+// no front, no bottom. Installed-top and installed-bottom peg sockets are
+// prototype geometry; magnet wells remain deferred.
 
 $fn = 64;
 EPS = 0.01;
@@ -138,7 +138,11 @@ module hutchfinity_casing(
     difference() {
         casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness);
         if (enable_peg_holes) {
+            // In print orientation this opens on the bed-facing top slab.
+            // In installed orientation it is the top socket face.
             chamfered_peg_socket_cuts(peg_positions, socket_diameter, socket_depth, peg_chamfer);
+            // In print orientation this opens on the upper wall-foot face.
+            // In installed orientation it is the bottom socket face.
             chamfered_peg_foot_socket_cuts(
                 peg_positions,
                 socket_diameter,

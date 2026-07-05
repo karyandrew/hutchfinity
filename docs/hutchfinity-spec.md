@@ -1,5 +1,5 @@
 ---
-version: 0.10.1
+version: 0.10.2
 sensitivity: public
 ---
 
@@ -20,7 +20,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | File | Role |
 |---|---|
 | `scad/casing.scad` | Standalone casing shell. No tub import, no footer mode. |
-| `scad/peg.scad` | Prototype chamfered press-fit peg. |
+| `scad/peg.scad` | Prototype ribbed/star crush-fit peg. |
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
 | `scad/casing-fit-test.scad` | Fit-test caller that maps current tub-source dimensions and named clearance candidates to a casing slot. |
@@ -40,6 +40,8 @@ No shared `hutchfinity-dimensions.scad` file is part of this pass.
 | Z | Print Z. `Z=0` is the bed-facing top surface; walls rise in +Z from the top slab. |
 
 This convention keeps the STL in the intended no-support print orientation. In installed use, the bed-facing slab is the upper riding surface and the open side opposite it is the missing bottom. Documentation should name whether a dimension is a print-coordinate value or an installed-use value when ambiguity matters.
+
+Socket face naming is deliberately explicit: installed-top sockets open on print `Z=0` through the top slab, while installed-bottom sockets open on the print `Z=print_z` wall-foot faces. The casing still has no bottom plate.
 
 ## Dimensional formulas
 
@@ -91,9 +93,9 @@ Magnet dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchf
 
 The casing module cuts prototype peg sockets derived from `peg_spacing`. Socket centers are restricted to side-wall and back-wall footprints; the open front span has no sockets because there is no front wall to receive a peg from the casing above. Each casing has top-slab sockets for the casing above and matching wall-foot sockets for the casing below. This avoids separate X/Y peg-count knobs, avoids a public edge-margin parameter, and keeps peg locations tied to actual mating material.
 
-Peg sockets and pegs both use generous 2.5mm chamfers at their ends. In the casing, top and wall-foot sockets are chamfered at the opening and at the deepest end of the cut. In `peg.scad`, each dowel end tapers down for easier insertion. The stack interface remains prototype geometry until the coupon and an actual casing pair are physically tested.
+Peg sockets use generous 2.5mm chamfers at their openings and deepest ends. `scad/peg.scad` is no longer a plain cylinder: the default peg is a six-rib star/crush profile with an 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. The stack interface remains prototype geometry until the coupon and an actual casing pair are physically tested.
 
-`scad/testbed/peg_socket_fit_testbed.scad` renders a small clearance sweep using the same socket cutter and peg module: `0.30`, `0.45`, and `0.60mm` socket clearance around the 8mm prototype peg. The raised index marks count from left to right. This coupon is a physical validation aid, not a locked press-fit recipe.
+`scad/testbed/peg_socket_fit_testbed.scad` renders a small clearance sweep using the same socket cutter and ribbed peg module: `0.30`, `0.45`, and `0.60mm` socket clearance around the 8mm nominal prototype peg. The raised index marks count from left to right. This coupon is a physical validation aid, not a locked press-fit recipe.
 
 Magnet wells are deferred from `casing.scad` until the casing-side printability and press-fit recipe are validated. When added, chamfer can stay fixed inside the recipe rather than becoming a public casing argument.
 
@@ -107,35 +109,37 @@ Minimum first-pass check:
 openscad -o preview/casing-representative.stl scad/casing.scad
 ```
 
+Generated review artifacts should live under `preview/<issue-or-head>/` or another explicit trial directory. Avoid suffixes such as `final`; they do not say what changed or what commit produced the file.
+
 Fit-test caller check:
 
 ```bash
-openscad -o preview/casing-fit-regular-23u.stl scad/casing-fit-test.scad
-openscad -o /tmp/hutchfinity-fit-pr19-20u-check.stl -D FIT_TUB_HEIGHT_U=20 scad/casing-fit-test.scad
+openscad -o preview/casing-fit-trial-01/casing-fit-regular-23u.stl scad/casing-fit-test.scad
+openscad -o preview/casing-fit-trial-01/fit-pr19-20u-check.stl -D FIT_TUB_HEIGHT_U=20 scad/casing-fit-test.scad
 ```
 
 Peg/socket coupon check:
 
 ```bash
-openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
-openscad -o /tmp/hutchfinity-peg-stack-interface-testbed.stl scad/testbed/peg_stack_interface_testbed.scad
+openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
+openscad -o preview/casing-fit-trial-01/peg-stack-interface-testbed.stl scad/testbed/peg_stack_interface_testbed.scad
 ```
 
 Assembly caller check:
 
 ```bash
-openscad -o /tmp/hutchfinity-assembly-check.stl scad/hutchfinity-assembly.scad
-openscad -o /tmp/hutchfinity-peg-check.stl scad/peg.scad
-openscad -o /tmp/hutchfinity-knob-check.stl scad/knob.scad
+openscad -o preview/casing-fit-trial-01/assembly-check.stl scad/hutchfinity-assembly.scad
+openscad -o preview/casing-fit-trial-01/ribbed-peg-check.stl scad/peg.scad
+openscad -o preview/casing-fit-trial-01/knob-check.stl scad/knob.scad
 ```
 
 Physical validation packet:
 
 ```bash
-openscad -o /tmp/hutchfinity-casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad
-openscad -o /tmp/hutchfinity-casing-fit-regular-23u.stl scad/casing-fit-test.scad
-openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
-openscad -o /tmp/hutchfinity-peg-stack-interface-testbed.stl scad/testbed/peg_stack_interface_testbed.scad
+openscad -o preview/casing-fit-trial-01/casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad
+openscad -o preview/casing-fit-trial-01/casing-fit-regular-23u.stl scad/casing-fit-test.scad
+openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
+openscad -o preview/casing-fit-trial-01/peg-stack-interface-testbed.stl scad/testbed/peg_stack_interface_testbed.scad
 ```
 
 Record the physical result in `scad/testbed/casing-fit-trial-01.md`. Casing and mouth-gauge artifacts print inverted; flip them into installed orientation for fit testing, with the slab above the tub and the walls down. The mouth gauge is a cheaper entry/ceiling check only; it does not replace full-depth casing slide validation. Keep the default trial at zero explicit casing clearance first; if it binds, adjust the named side/back/top clearances in the fit-test caller rather than changing tub source geometry.

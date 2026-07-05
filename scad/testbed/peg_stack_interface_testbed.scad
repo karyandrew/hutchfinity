@@ -1,6 +1,6 @@
 // peg_stack_interface_testbed.scad
-// version: 0.2.0
-// Coupon for the two-ended Hutchfinity vertical stack peg interface.
+// version: 0.3.0
+// Coupon for the two-ended Hutchfinity vertical stack ribbed-peg interface.
 // This tests the side-wall edge condition: socket chamfers sit close to
 // the same outer edge they use in casing.scad, not centered in a block.
 
