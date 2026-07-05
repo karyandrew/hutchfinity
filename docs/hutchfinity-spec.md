@@ -1,5 +1,5 @@
 ---
-version: 0.5.0
+version: 0.6.0
 sensitivity: public
 ---
 
@@ -24,6 +24,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
 | `scad/casing-fit-test.scad` | Fit-test caller that maps current tub-source dimensions and named clearance candidates to a casing slot. |
+| `scad/testbed/peg_socket_fit_testbed.scad` | Cheap coupon for provisional peg/socket clearance and chamfer checks. |
 
 No shared `hutchfinity-dimensions.scad` file is part of this pass.
 
@@ -60,7 +61,7 @@ Thickness requirements are not finalized here. The printed part will not behave 
 | `outer_x` | `slot_width + 2 * side_thickness` | Includes left and right walls. |
 | `outer_y` | `slot_depth + back_thickness` | Includes back wall; no front wall. |
 | `print_z` | `top_thickness + slot_height` | Top slab plus wall height in print orientation. |
-| `peg_axis_intervals` | `max(1, ceil(span / peg_spacing))` | Derived; not an argument. |
+| `peg_axis_intervals` | `max(1, ceil((span - 2 * socket_inset) / peg_spacing))` | Derived; not an argument. |
 | `peg_count` | length of perimeter socket positions | Derived from one `peg_spacing`; not an argument. |
 
 There is no `bottom_thickness` term. The casing has no floor/bottom plate.
@@ -89,6 +90,8 @@ The casing module cuts prototype peg sockets derived from `peg_spacing`. The pat
 
 Peg sockets and pegs both use generous 2.5mm chamfers at their ends. In the casing, each socket is chamfered at the opening and at the deepest end of the cut. In `peg.scad`, each dowel end tapers down for easier insertion.
 
+`scad/testbed/peg_socket_fit_testbed.scad` renders a small clearance sweep using the same socket cutter and peg module: `0.30`, `0.45`, and `0.60mm` socket clearance around the 8mm prototype peg. The raised index marks count from left to right. This coupon is a physical validation aid, not a locked press-fit recipe.
+
 Magnet wells are deferred from `casing.scad` until the casing-side printability and press-fit recipe are validated. When added, chamfer can stay fixed inside the recipe rather than becoming a public casing argument.
 
 Footer behavior is outside `casing.scad`. A footer, tabletop, or future base/riser belongs in assembly-level design, not in the casing module argument surface.
@@ -106,6 +109,12 @@ Fit-test caller check:
 ```bash
 openscad -o preview/casing-fit-regular-23u.stl scad/casing-fit-test.scad
 openscad -o /tmp/hutchfinity-fit-pr19-20u-check.stl -D FIT_TUB_HEIGHT_U=20 scad/casing-fit-test.scad
+```
+
+Peg/socket coupon check:
+
+```bash
+openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
 ```
 
 Assembly caller check:
