@@ -1,5 +1,5 @@
 ---
-version: 0.10.0
+version: 0.10.1
 sensitivity: public
 ---
 
@@ -25,7 +25,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
 | `scad/casing-fit-test.scad` | Fit-test caller that maps current tub-source dimensions and named clearance candidates to a casing slot. |
 | `scad/testbed/peg_socket_fit_testbed.scad` | Cheap coupon for provisional peg/socket clearance and chamfer checks. |
-| `scad/testbed/peg_stack_interface_testbed.scad` | Cheap coupon for the two-ended top-slab socket to wall-foot receiver stack interface. |
+| `scad/testbed/peg_stack_interface_testbed.scad` | Cheap side-wall edge-condition coupon for the two-ended top-slab socket to wall-foot receiver stack interface. |
 | `scad/testbed/casing_mouth_fit_gauge.scad` | Shallow front-mouth gauge for checking tub entry and top clearance before printing a full casing. |
 | `scad/testbed/casing-fit-trial-01.md` | Planned physical validation log for the #20 casing fit and peg/socket coupon print. |
 

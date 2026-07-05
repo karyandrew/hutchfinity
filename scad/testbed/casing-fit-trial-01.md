@@ -33,7 +33,7 @@ Print the casing and mouth-gauge artifacts in their OpenSCAD orientation: the to
 | Mouth fit gauge | Tub can enter the representative width and immediate ceiling height without forced spreading or top rub. | Full-depth sliding friction, back clearance, long-wall bow, stack behavior, or peg behavior. | `617.6cm^3` |
 | Regular 23u casing fit target | Full-depth slot behavior for the current representative casing. | Final clearance recipe unless tested against a real printed tub and recorded. | `2974.7cm^3` |
 | Peg/socket clearance coupon | First-pass insertion/retention feel across three socket clearances. | Actual casing pair behavior: top-slab socket plus wall-foot receiver, full slab stiffness, slicer infill, and stack loading. | `26.9cm^3` |
-| Peg stack interface coupon | Whether a 20mm peg can mate a lower top-slab through-socket to an upper wall-foot blind receiver without face interference. | Full casing stack squareness, long-wall tolerance, or retention under load. | `34.0cm^3` |
+| Peg stack interface coupon | Whether a 20mm peg can mate a lower top-slab through-socket to an upper wall-foot blind receiver at the side-wall edge condition without face interference. | Full casing stack squareness, long-wall tolerance, or retention under load. | `24.9cm^3` |
 
 The mouth gauge keeps full slot width and height because those are the dimensions being tested; it only reduces drawer-travel depth. Its CAD solid volume is about 21% of the full casing target before slicer infill. If it fails, change `SIDE_CLEARANCE` or `TOP_CLEARANCE` before spending plastic on the full casing.
 
@@ -44,9 +44,11 @@ The mouth gauge keeps full slot width and height because those are the dimension
 | Mouth fit gauge | Manifold | `389.2 x 48.0 x 94.24mm` | `389.2 x 48.0 x 94.24mm` | Match |
 | Regular 23u casing fit target | Manifold | `389.2 x 280.2 x 94.24mm` | `389.2 x 280.2 x 94.24mm` | Match |
 | Peg/socket clearance coupon | Manifold | `122.0 x 46.0 x 20.0mm` | `122.0 x 46.0 x 20.0mm` | Match |
-| Peg stack interface coupon | Manifold | `78.0 x 56.0 x 20.0mm` | `78.0 x 56.0 x 20.0mm` | Match |
+| Peg stack interface coupon | Manifold | `60.0 x 56.0 x 20.0mm` | `60.0 x 56.0 x 20.0mm` | Match |
 
 The peg/socket coupon Y envelope includes loose pegs placed in front of the coupon blocks. Coupon blocks occupy `Y=0..26mm`; peg centers are at `Y=-16mm`, so the full exported Y envelope is `-20..26mm`.
+
+The peg stack interface coupon deliberately uses the casing side-wall edge condition rather than a centered socket in a block. The first draft used centered sockets and would have overestimated surrounding material; the committed coupon uses `SIDE_THICKNESS = 25mm` and `peg_socket_inset(...)` from `casing.scad`.
 
 ## Geometry under test
 
@@ -60,7 +62,7 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 | Peg diameter | `8.0mm` |
 | Peg socket clearances | `0.30`, `0.45`, `0.60mm` |
 | Peg/socket chamfer | `2.5mm` |
-| Peg stack interface coupon | `10mm` lower through-socket + `10mm` upper blind receiver + `20mm` peg |
+| Peg stack interface coupon | `25mm` side-wall strip, socket center at casing socket inset, `10mm` lower through-socket + `10mm` upper blind receiver + `20mm` peg |
 
 ## Setup to record
 
