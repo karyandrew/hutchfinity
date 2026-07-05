@@ -19,6 +19,16 @@ Validate the representative regular-tub casing interface from hutchfinity#20 wit
 | Regular 23u casing fit target | `scad/casing-fit-test.scad` | `openscad -o /tmp/hutchfinity-casing-fit-regular-23u.stl scad/casing-fit-test.scad` |
 | Peg/socket clearance coupon | `scad/testbed/peg_socket_fit_testbed.scad` | `openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad` |
 
+
+## Pre-print render checks
+
+| Artifact | Render status | Measured STL bounds | Expected bounds | Result |
+|---|---|---:|---:|---|
+| Regular 23u casing fit target | Manifold | `389.2 x 280.2 x 94.24mm` | `389.2 x 280.2 x 94.24mm` | Match |
+| Peg/socket clearance coupon | Manifold | `122.0 x 46.0 x 20.0mm` | `122.0 x 46.0 x 20.0mm` | Match |
+
+The peg/socket coupon Y envelope includes loose pegs placed in front of the coupon blocks. Coupon blocks occupy `Y=0..26mm`; peg centers are at `Y=-16mm`, so the full exported Y envelope is `-20..26mm`.
+
 ## Geometry under test
 
 | Value | Trial setting |
