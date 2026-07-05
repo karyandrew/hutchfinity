@@ -1,7 +1,7 @@
 // peg_stack_interface_testbed.scad
-// version: 0.4.0
+// version: 0.5.0
 // Coupon for the two-ended Hutchfinity vertical stack ribbed-peg interface.
-// This tests the side-wall centerline condition from casing.scad.
+// This tests the integrated stack-land condition from casing.scad.
 
 use <../casing.scad>;
 use <../peg.scad>;
@@ -14,16 +14,17 @@ PEG_LENGTH = 20.0;
 PEG_SOCKET_DEPTH = 10.0;
 PEG_CHAMFER = 2.5;
 
-SIDE_THICKNESS = 25.0;
-COUPON_X = SIDE_THICKNESS;
-COUPON_Y = 34.0;
+STACK_LAND_WIDTH = 40.0;
+STACK_LAND_LENGTH = 50.0;
+COUPON_X = STACK_LAND_WIDTH;
+COUPON_Y = STACK_LAND_LENGTH;
 TOP_COUPON_Z = PEG_SOCKET_DEPTH;
 FOOT_COUPON_Z = 20.0;
 COUPON_GAP = 10.0;
 PEG_GAP_Y = 18.0;
 function foot_origin_x() = COUPON_X + COUPON_GAP;
 function socket_diameter() = peg_socket_diameter(PEG_DIAMETER, PEG_CLEARANCE);
-function socket_x() = SIDE_THICKNESS / 2;
+function socket_x() = STACK_LAND_WIDTH / 2;
 function socket_center() = [socket_x(), COUPON_Y / 2];
 
 module top_slab_socket_coupon() {

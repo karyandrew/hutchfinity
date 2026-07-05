@@ -1,5 +1,5 @@
 ---
-version: 0.11.0
+version: 0.12.0
 sensitivity: public
 ---
 
@@ -13,7 +13,7 @@ This technical spec translates `docs/chest-prd.md` into module contracts for the
 
 The casing module is tub-agnostic. It accepts direct slot dimensions rather than importing `tub.scad` or deriving from tub cell count, pitch, or wall thickness. Assembly-level files such as `scad/hutchfinity-assembly.scad` choose casing slot dimensions that match a tub or preview target.
 
-The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm tall. The current representative casing is oriented width-wise for the regular tub: the casing opening width spans the tub long axis, while drawer travel uses the tub short axis. Stacked casings use the same outer XY footprint and prototype peg/socket geometry.
+The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm tall. The current representative casing is oriented width-wise for the regular tub: the casing opening width spans the tub long axis, while drawer travel uses the tub short axis. Stacked casings use the same stack-land footprint and prototype peg/socket geometry.
 
 ## Files
 
@@ -25,7 +25,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
 | `scad/casing-fit-test.scad` | Fit-test caller that maps current tub-source dimensions and named clearance candidates to a casing slot. |
 | `scad/testbed/peg_socket_fit_testbed.scad` | Cheap coupon for provisional peg/socket clearance and chamfer checks. |
-| `scad/testbed/peg_stack_interface_testbed.scad` | Cheap side-wall centerline coupon for the two-ended top-slab socket to wall-foot receiver stack interface. |
+| `scad/testbed/peg_stack_interface_testbed.scad` | Cheap stack-land coupon for the two-ended top-slab socket to wall-foot receiver stack interface. |
 | `scad/testbed/casing_mouth_fit_gauge.scad` | Shallow front-mouth gauge for checking tub entry and top clearance before printing a full casing. |
 | `scad/testbed/casing-fit-trial-01.md` | Planned physical validation log for the #20 casing fit and peg/socket coupon print. |
 
@@ -42,6 +42,8 @@ No shared `hutchfinity-dimensions.scad` file is part of this pass.
 This convention keeps the STL in the intended no-support print orientation. In installed use, the bed-facing slab is the upper riding surface and the open side opposite it is the missing bottom. Documentation should name whether a dimension is a print-coordinate value or an installed-use value when ambiguity matters.
 
 Socket face naming is deliberately explicit: installed-top sockets open on print `Z=0` through the top slab, while installed-bottom sockets open on the print `Z=print_z` wall-foot faces. The casing still has no bottom plate.
+
+Stack lands are integrated external casing material, not a footer, drawer support, or bottom plate. They give the casing-to-casing peg sockets broad material around the hole while keeping the drawer slot clear.
 
 ## Dimensional formulas
 
@@ -65,6 +67,8 @@ Thickness requirements are not finalized here. The printed part will not behave 
 | `slot_height` | `84.24mm` | Direct enclosed slot height for the current 23u source tub plus minimum lip estimate. |
 | `outer_x` | `slot_width + 2 * side_thickness` | Includes left and right walls. |
 | `outer_y` | `slot_depth + back_thickness` | Includes back wall; no front wall. |
+| `stack_outer_x` | `outer_x + 2 * max(0, stack_land_width - side_thickness)` | Physical X envelope when external side stack lands are enabled. |
+| `stack_outer_y` | `outer_y + max(0, stack_land_width - back_thickness)` | Physical Y envelope when external back stack lands are enabled. |
 | `print_z` | `top_thickness + slot_height` | Top slab plus wall height in print orientation. |
 | `peg_axis_intervals_between` | `max(1, ceil((end - start) / peg_spacing))` | Derived; not an argument. |
 | `peg_count` | length of perimeter socket positions | Derived from one `peg_spacing`; not an argument. |
@@ -79,6 +83,8 @@ There is no `bottom_thickness` term. The casing has no floor/bottom plate.
 | `side_thickness` | `25` | Prototype side wall value, not a final scale formula. |
 | `back_thickness` | `25` | Prototype back wall value, not a final scale formula. |
 | `top_thickness` | `10` | Prototype ceiling/riding surface; bed-facing in print orientation. |
+| `stack_land_width` | `40` | Prototype external casing-to-casing peg land width. The 25mm wall remains the drawer-slot wall; the extra land is outside the slot. |
+| `stack_land_length` | `50` | Prototype land length along the peg row. Side-row end inset is at least half this value. |
 | `peg_spacing` | `190` | Single target spacing. Count is derived per side and positions divide evenly between derived end insets. |
 | `peg_diameter`, `peg_clearance` | `8, 0.45` | Prototype peg/socket fit values. |
 | `peg_socket_depth`, `peg_chamfer` | `10, 2.5` | Prototype top-slab through-sockets and wall-foot sockets with generous chamfers at both ends. |
@@ -92,7 +98,9 @@ Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-
 
 Magnet dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for magnet press-fit validation.
 
-The casing module cuts prototype peg sockets derived from `peg_spacing`. Socket centers are restricted to side-wall and back-wall footprints; the open front span has no sockets because there is no front wall to receive a peg from the casing above. Each casing has top-slab sockets for the casing above and matching wall-foot sockets for the casing below. Socket centers sit on wall centerlines: `side_thickness / 2` for side-wall rows and `outer_y - back_thickness / 2` for the back-wall row. Side rows also stay away from the open-front and back corners using a derived end inset: `max(side_thickness, back_thickness, socket opening radius + peg_socket_edge_land)`. With the current 25mm side/back walls, 8.0mm peg, 0.45mm clearance, 2.5mm chamfer, and 4.0mm edge-land check, side-row centers are `12.5mm` from the outside side edge and at least `25mm` from the front/back end edges. This avoids separate X/Y peg-count knobs, avoids a public edge-margin parameter, and keeps peg locations tied to actual mating material without putting holes at corners.
+The casing module cuts prototype peg sockets derived from `peg_spacing`. The stack is casing-to-casing: the bottom wall feet of an upper casing sit on the top slab and stack lands of the casing below, and pegs register that pair. The open front span has no sockets because there is no front wall-foot receiver in the casing above.
+
+Socket centers sit in integrated external stack lands rather than in the bare 25mm side/back wall strip. With the current 25mm side/back walls and 40mm stack lands, each side land extends 15mm outward from the wall; the socket center is 20mm from either stack-land side edge. The representative full casing slot remains `339.2 x 255.2 x 84.24mm`; the physical stack-land envelope becomes `419.2 x 295.2 x 94.24mm`. Side rows stay away from the open-front and back corners using a derived end inset: `max(side_thickness, back_thickness, stack_land_length / 2, socket opening radius + peg_socket_edge_land)`, which is `25mm` with the current values. This avoids separate X/Y peg-count knobs and keeps peg locations tied to actual mating material without putting holes at casing corners or on thin wall edges.
 
 Peg sockets use generous 2.5mm chamfers at their openings and deepest ends. `scad/peg.scad` is no longer a plain cylinder: the default printable artifact is a laid-down six-sided core with six crush ribs, 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. The module `hutchfinity_peg()` still models the installed vertical peg for assembly use; `hutchfinity_peg_print_layout()` rotates it onto a flat-friendly face for standalone/testbed printing. The stack interface remains prototype geometry until the coupon and an actual casing pair are physically tested.
 
@@ -151,7 +159,7 @@ For visual review, render a PNG from the same file when OpenSCAD is available. I
 
 - Casing dimensions are direct slot parameters, not coupled to tub internals.
 - The casing has no front and no bottom.
-- Same XY footprint casings reserve a prototype two-ended peg/socket interface for vertical stacking.
+- Same stack-land footprint casings reserve a prototype two-ended peg/socket interface for vertical stacking.
 - Tub body geometry is not rewritten to create the slide path.
 - Optional knob geometry has a broad, thin glue base for tub attachment.
 - Magnet geometry stays explicitly provisional until physical validation closes the dependency.

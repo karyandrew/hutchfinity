@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 1.2.0
+version: 1.3.0
 ---
 
 # Hutchfinity Chest PRD
@@ -109,7 +109,7 @@ Pegs are mass-printable dowels for vertical casing stacks:
 - Pegs register and retain casing-to-casing stacking.
 - Side-by-side casing linking is out of scope for v1.
 - Compliant male geometry is an explicit exploration path: crush ribs, hollow/concave profiles, star-like polygons, or other shapes that make the peg deform more tolerantly than a solid cylinder.
-- Candidate peg shapes should likely print upright so the compliant features flex in the XY plane instead of relying on weak inter-layer bending.
+- Candidate peg shapes should be validated in the print orientation that best preserves lengthwise strength and compliant fit. The current prototype prints laid down, then installs vertically as a stack connector.
 
 Peg dimensions should use the same press-fit discipline as magnets: testbed first, then lock the recipe.
 

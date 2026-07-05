@@ -1,8 +1,8 @@
 // casing.scad
-// version: 0.6.0
+// version: 0.7.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
 // no front, no bottom. Installed-top and installed-bottom peg sockets are
-// prototype geometry; magnet wells remain deferred.
+// prototype casing-to-casing stack geometry; magnet wells remain deferred.
 
 $fn = 64;
 EPS = 0.01;
@@ -24,6 +24,8 @@ PEG_CLEARANCE = 0.45;
 PEG_SOCKET_DEPTH = TOP_THICKNESS;
 PEG_CHAMFER = 2.5;
 PEG_SOCKET_EDGE_LAND = 4.0;
+STACK_LAND_WIDTH = 40.0;
+STACK_LAND_LENGTH = 50.0;
 ENABLE_PEG_HOLES = true;
 SHOW_DEBUG_MARKERS = false;
 
@@ -37,14 +39,14 @@ function peg_socket_opening_radius(peg_diameter, peg_clearance, peg_chamfer) =
     peg_socket_diameter(peg_diameter, peg_clearance) / 2 + peg_chamfer;
 function peg_socket_inset(peg_diameter, peg_clearance, peg_chamfer, edge_land=PEG_SOCKET_EDGE_LAND) =
     peg_socket_opening_radius(peg_diameter, peg_clearance, peg_chamfer) + edge_land;
-function peg_socket_end_inset(side_thickness, back_thickness, peg_diameter, peg_clearance, peg_chamfer, edge_land) =
+function peg_socket_end_inset(side_thickness, back_thickness, peg_diameter, peg_clearance, peg_chamfer, edge_land, stack_land_length) =
     max(
-        max(side_thickness, back_thickness),
+        max(max(side_thickness, back_thickness), stack_land_length / 2),
         peg_socket_inset(peg_diameter, peg_clearance, peg_chamfer, edge_land)
     );
 
 // Peg reference points are derived from one spacing target. Centers sit on the
-// side/back wall centerlines and stay away from open-front/back/side corners.
+// centers of integrated external stack lands, not on bare side/back wall edges.
 function peg_axis_intervals_between(start, end, peg_spacing) =
     max(1, ceil((end - start) / peg_spacing));
 function peg_axis_positions_between(start, end, peg_spacing) =
@@ -53,18 +55,39 @@ function peg_axis_positions_between(start, end, peg_spacing) =
 function peg_axis_middle_positions_between(start, end, peg_spacing) =
     let(intervals = peg_axis_intervals_between(start, end, peg_spacing), usable = end - start)
     intervals <= 1 ? [] : [for (i = [1 : intervals - 1]) start + i * usable / intervals];
-function peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing, end_inset) = concat(
-    [for (y = peg_axis_positions_between(end_inset, depth - end_inset, peg_spacing))
-        [side_thickness / 2, y]],
-    [for (y = peg_axis_positions_between(end_inset, depth - end_inset, peg_spacing))
-        [width - side_thickness / 2, y]],
-    [for (x = peg_axis_middle_positions_between(end_inset, width - end_inset, peg_spacing))
-        [x, depth - back_thickness / 2]]
+function peg_side_socket_x_left(side_thickness, stack_land_width) =
+    side_thickness - stack_land_width / 2;
+function peg_side_socket_x_right(width, side_thickness, stack_land_width) =
+    width - side_thickness + stack_land_width / 2;
+function peg_back_socket_y(depth, back_thickness, stack_land_width) =
+    depth - back_thickness + stack_land_width / 2;
+function peg_side_y_positions(depth, peg_spacing, end_inset) =
+    peg_axis_positions_between(end_inset, depth - end_inset, peg_spacing);
+function peg_back_x_positions(width, peg_spacing, end_inset) =
+    peg_axis_middle_positions_between(end_inset, width - end_inset, peg_spacing);
+function peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing, end_inset, stack_land_width) = concat(
+    [for (y = peg_side_y_positions(depth, peg_spacing, end_inset))
+        [peg_side_socket_x_left(side_thickness, stack_land_width), y]],
+    [for (y = peg_side_y_positions(depth, peg_spacing, end_inset))
+        [peg_side_socket_x_right(width, side_thickness, stack_land_width), y]],
+    [for (x = peg_back_x_positions(width, peg_spacing, end_inset))
+        [x, peg_back_socket_y(depth, back_thickness, stack_land_width)]]
 );
-function peg_count(width, depth, side_thickness, back_thickness, peg_spacing, end_inset) =
-    len(peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing, end_inset));
+function peg_count(width, depth, side_thickness, back_thickness, peg_spacing, end_inset, stack_land_width) =
+    len(peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing, end_inset, stack_land_width));
 
-module casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness) {
+module casing_shell(
+    outer_x,
+    outer_y,
+    print_z,
+    side_thickness,
+    back_thickness,
+    top_thickness,
+    stack_land_width,
+    stack_land_length,
+    side_ys,
+    back_xs
+) {
     union() {
         // Top slab: bed-facing in print, upper riding surface in installed use.
         cube([outer_x, outer_y, top_thickness]);
@@ -73,6 +96,32 @@ module casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, t
         cube([side_thickness, outer_y, print_z]);
         translate([outer_x - side_thickness, 0, 0]) cube([side_thickness, outer_y, print_z]);
         translate([0, outer_y - back_thickness, 0]) cube([outer_x, back_thickness, print_z]);
+
+        // External stack lands give casing-to-casing peg sockets real material
+        // without adding a bottom plate or intruding into the drawer slot.
+        for (y = side_ys) {
+            translate([
+                side_thickness - stack_land_width,
+                y - stack_land_length / 2,
+                0
+            ])
+            cube([stack_land_width, stack_land_length, print_z]);
+
+            translate([
+                outer_x - side_thickness,
+                y - stack_land_length / 2,
+                0
+            ])
+            cube([stack_land_width, stack_land_length, print_z]);
+        }
+
+        for (x = back_xs)
+            translate([
+                x - stack_land_length / 2,
+                outer_y - back_thickness,
+                0
+            ])
+            cube([stack_land_length, stack_land_width, print_z]);
     }
 }
 
@@ -122,6 +171,8 @@ module hutchfinity_casing(
     peg_socket_depth=PEG_SOCKET_DEPTH,
     peg_chamfer=PEG_CHAMFER,
     peg_socket_edge_land=PEG_SOCKET_EDGE_LAND,
+    stack_land_width=STACK_LAND_WIDTH,
+    stack_land_length=STACK_LAND_LENGTH,
     enable_peg_holes=ENABLE_PEG_HOLES,
     show_debug_markers=SHOW_DEBUG_MARKERS
 ) {
@@ -137,15 +188,21 @@ module hutchfinity_casing(
         peg_diameter,
         peg_clearance,
         peg_chamfer,
-        peg_socket_edge_land
+        peg_socket_edge_land,
+        stack_land_length
     );
+    side_ys = peg_side_y_positions(outer_y, peg_spacing, socket_end_inset);
+    back_xs = peg_back_x_positions(outer_x, peg_spacing, socket_end_inset);
+    stack_side_ys = enable_peg_holes ? side_ys : [];
+    stack_back_xs = enable_peg_holes ? back_xs : [];
     peg_positions = peg_reference_positions(
         outer_x,
         outer_y,
         side_thickness,
         back_thickness,
         peg_spacing,
-        socket_end_inset
+        socket_end_inset,
+        stack_land_width
     );
 
     assert(slot_width > 0 && slot_depth > 0 && slot_height > 0,
@@ -159,16 +216,30 @@ module hutchfinity_casing(
         "peg socket depth must be positive and peg chamfer must be non-negative");
     assert(peg_socket_edge_land > 0,
         "peg socket edge land must leave material beyond the chamfer opening");
+    assert(stack_land_width >= max(side_thickness, back_thickness),
+        "stack land width must be at least the side/back wall thickness");
+    assert(stack_land_length > 0, "stack land length must be positive");
     assert(!enable_peg_holes ||
            (outer_x > 2 * socket_end_inset && outer_y > 2 * socket_end_inset),
         "peg sockets must fit inside the casing footprint");
     assert(!enable_peg_holes ||
-           (side_thickness / 2 > socket_opening_radius &&
-            back_thickness / 2 > socket_opening_radius),
-        "peg socket chamfer must fit inside the side/back wall thickness");
+           (stack_land_width / 2 >= socket_opening_radius + peg_socket_edge_land &&
+            stack_land_length / 2 >= socket_opening_radius + peg_socket_edge_land),
+        "peg socket chamfer must fit inside the stack land with edge land");
 
     difference() {
-        casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness);
+        casing_shell(
+            outer_x,
+            outer_y,
+            print_z,
+            side_thickness,
+            back_thickness,
+            top_thickness,
+            stack_land_width,
+            stack_land_length,
+            stack_side_ys,
+            stack_back_xs
+        );
         if (enable_peg_holes) {
             // In print orientation this opens on the bed-facing top slab.
             // In installed orientation it is the top socket face.
