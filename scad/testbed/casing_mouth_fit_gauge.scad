@@ -1,6 +1,8 @@
 // casing_mouth_fit_gauge.scad
-// version: 0.1.0
+// version: 0.1.1
 // Low-filament mouth gauge for the representative regular-tub casing slot.
+// Print in the same inverted orientation as casing.scad, then flip into
+// installed orientation for fit testing: top slab above the tub, walls down.
 
 use <../casing.scad>;
 

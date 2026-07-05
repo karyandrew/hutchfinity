@@ -21,6 +21,20 @@ Validate the representative regular-tub casing interface from hutchfinity#20 wit
 | Peg/socket clearance coupon | `scad/testbed/peg_socket_fit_testbed.scad` | `openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad` |
 
 
+## Physical orientation
+
+Print the casing and mouth-gauge artifacts in their OpenSCAD orientation: the top slab is on the build plate and the side/back walls rise upward. For fit testing, flip the printed part into installed orientation: top slab above the tub, side walls down, open front at the drawer entrance. The tub should sit on a flat reference surface, tabletop, footer, or casing-below surrogate. Testing with the slab underneath the tub is invalid for drawer clearance.
+
+## Design critique before print
+
+| Artifact | What it actually proves | What it does not prove | CAD solid volume |
+|---|---|---|---:|
+| Mouth fit gauge | Tub can enter the representative width and immediate ceiling height without forced spreading or top rub. | Full-depth sliding friction, back clearance, long-wall bow, stack behavior, or peg behavior. | `617.6cm^3` |
+| Regular 23u casing fit target | Full-depth slot behavior for the current representative casing. | Final clearance recipe unless tested against a real printed tub and recorded. | `2979.1cm^3` |
+| Peg/socket clearance coupon | First-pass insertion/retention feel across three socket clearances. | Actual casing socket behavior under full slab stiffness, slicer infill, and stack loading. | `26.9cm^3` |
+
+The mouth gauge keeps full slot width and height because those are the dimensions being tested; it only reduces drawer-travel depth. Its CAD solid volume is about 21% of the full casing target before slicer infill. If it fails, change `SIDE_CLEARANCE` or `TOP_CLEARANCE` before spending plastic on the full casing.
+
 ## Pre-print render checks
 
 | Artifact | Render status | Measured STL bounds | Expected bounds | Result |

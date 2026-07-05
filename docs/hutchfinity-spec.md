@@ -1,5 +1,5 @@
 ---
-version: 0.8.0
+version: 0.8.1
 sensitivity: public
 ---
 
@@ -135,7 +135,7 @@ openscad -o /tmp/hutchfinity-casing-fit-regular-23u.stl scad/casing-fit-test.sca
 openscad -o /tmp/hutchfinity-peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
 ```
 
-Record the physical result in `scad/testbed/casing-fit-trial-01.md`. The mouth gauge is a cheap entry/ceiling check only; it does not replace full-depth casing slide validation. Keep the default trial at zero explicit casing clearance first; if it binds, adjust the named side/back/top clearances in the fit-test caller rather than changing tub source geometry.
+Record the physical result in `scad/testbed/casing-fit-trial-01.md`. Casing and mouth-gauge artifacts print inverted; flip them into installed orientation for fit testing, with the slab above the tub and the walls down. The mouth gauge is a cheaper entry/ceiling check only; it does not replace full-depth casing slide validation. Keep the default trial at zero explicit casing clearance first; if it binds, adjust the named side/back/top clearances in the fit-test caller rather than changing tub source geometry.
 
 For visual review, render a PNG from the same file when OpenSCAD is available. If OpenSCAD is unavailable, static syntax and parameter review are still required, and the missing renderer is reported in the PR.
 
