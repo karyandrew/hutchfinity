@@ -1,5 +1,5 @@
 ---
-version: 0.14.0
+version: 0.15.0
 sensitivity: public
 ---
 
@@ -19,7 +19,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 
 | File | Role |
 |---|---|
-| `scad/casing.scad` | Standalone casing shell. No tub import, no footer mode. |
+| `scad/casing.scad` | Standalone casing shell with flat-wall stack peg sockets. No tub import, no footer mode. |
 | `scad/peg.scad` | Prototype laid-down hex-core crush-rib peg. |
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
@@ -85,7 +85,7 @@ There is no `bottom_thickness` term. The casing has no floor/bottom plate.
 | `peg_diameter`, `peg_clearance` | `8, 0.45` | Prototype peg/socket fit values. |
 | `peg_socket_depth`, `peg_chamfer` | `10, 2.5` | Prototype top-slab through-sockets and wall-foot sockets with generous chamfers at both ends. |
 | `peg_socket_edge_land` | `4.0` | Minimum material land used when checking socket chamfer clearance. |
-| `enable_peg_holes` | `false` | Disabled until peg/socket placement is redesigned around flat side/back exterior faces. |
+| `enable_peg_holes` | `true` | Cuts prototype top-slab sockets and matching wall-foot receiver sockets into the flat side/back wall footprints. |
 | `show_debug_markers` | `false` | Optional reference-point markers only when peg holes are disabled. |
 
 Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-slot clearance, bottom thickness, footer/base controls, `peg_count`, `peg_edge_margin`, and magnet placement parameters. Those belong to tub generation, assembly mapping, a future footer/base design, or a future validated interface.
@@ -94,11 +94,11 @@ Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-
 
 Magnet dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for magnet press-fit validation.
 
-The casing module keeps prototype peg-socket functions available but does not cut peg holes by default. The stack is casing-to-casing: the bottom wall feet of an upper casing sit on the top slab of the casing below, and pegs register that pair. The open front span has no sockets because there is no front wall-foot receiver in the casing above.
+The casing module cuts prototype peg sockets by default. The stack is casing-to-casing: the bottom wall feet of an upper casing sit on the top slab of the casing below, and pegs register that pair. The open front span has no sockets because there is no front wall-foot receiver in the casing above.
 
-The external stack-land approach tested in the previous model is rejected by the flat side/back requirement. The next peg/socket revision must preserve flat casing sides/back while avoiding corner-edge holes and keeping the casing supportless.
+The external stack-land approach tested in the previous model is rejected by the flat side/back requirement. Current casing sockets are centered in the 25mm side/back wall footprints and spaced from the open front and rear edges by the derived socket end inset.
 
-Peg sockets use generous 2.5mm chamfers at their openings and deepest ends. `scad/peg.scad` is no longer a plain cylinder: the default printable artifact is a laid-down six-sided core with six crush ribs, 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. The module `hutchfinity_peg()` still models the installed vertical peg for assembly use; `hutchfinity_peg_print_layout()` rotates it onto a flat-friendly face for standalone/testbed printing. The casing stack interface remains deferred until a flat-side/back socket placement is designed and tested on an actual casing pair.
+Peg sockets use generous 2.5mm chamfers at their openings and deepest ends. `scad/peg.scad` is no longer a plain cylinder: the default printable artifact is a laid-down six-sided core with six crush ribs, 8.0mm nominal diameter, 7.4mm core, 8.6mm rib peaks, 0.85mm rib width, and 0.75mm rib end relief before the end chamfers. The module `hutchfinity_peg()` still models the installed vertical peg for assembly use; `hutchfinity_peg_print_layout()` rotates it onto a flat-friendly face for standalone/testbed printing. The casing stack interface remains provisional until tested on an actual casing pair.
 
 `scad/testbed/peg_socket_fit_testbed.scad` renders a small clearance sweep using the same socket cutter and laid-down ribbed peg print module: `0.30`, `0.45`, and `0.60mm` socket clearance around the 8mm nominal prototype peg. The raised index marks count from left to right. This coupon is a physical validation aid, not a locked press-fit recipe.
 
@@ -155,7 +155,7 @@ For visual review, render a PNG from the same file when OpenSCAD is available. I
 
 - Casing dimensions are direct slot parameters, not coupled to tub internals.
 - The casing has no front and no bottom.
-- Same flat casing footprint casings reserve a prototype two-ended peg/socket interface for vertical stacking.
+- Same flat casing footprint casings cut a prototype two-ended peg/socket interface for vertical stacking.
 - Tub body geometry is not rewritten to create the slide path.
 - Optional knob geometry has a broad, thin glue base for tub attachment.
 - Magnet geometry stays explicitly provisional until physical validation closes the dependency.

@@ -1,8 +1,8 @@
 // casing.scad
-// version: 0.8.0
+// version: 0.9.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
-// no front, no bottom. Installed-top and installed-bottom peg sockets are
-// disabled by default while flat-side stack geometry is unresolved.
+// no front, no bottom. Installed-top and installed-bottom peg sockets are cut
+// into the flat side/back wall footprints by default.
 
 $fn = 64;
 EPS = 0.01;
@@ -24,7 +24,7 @@ PEG_CLEARANCE = 0.45;
 PEG_SOCKET_DEPTH = TOP_THICKNESS;
 PEG_CHAMFER = 2.5;
 PEG_SOCKET_EDGE_LAND = 4.0;
-ENABLE_PEG_HOLES = false;
+ENABLE_PEG_HOLES = true;
 SHOW_DEBUG_MARKERS = false;
 
 DEBUG_MARKER_D = 3.0;
@@ -44,7 +44,7 @@ function peg_socket_end_inset(side_thickness, back_thickness, peg_diameter, peg_
     );
 
 // Peg reference points are derived from one spacing target. Centers sit on the
-// side/back wall centerlines while the flat-side stack interface is redesigned.
+// side/back wall centerlines so stack sockets do not require exterior lands.
 function peg_axis_intervals_between(start, end, peg_spacing) =
     max(1, ceil((end - start) / peg_spacing));
 function peg_axis_positions_between(start, end, peg_spacing) =
