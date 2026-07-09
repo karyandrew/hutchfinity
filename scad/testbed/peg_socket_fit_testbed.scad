@@ -1,13 +1,14 @@
 // peg_socket_fit_testbed.scad
-// version: 0.3.0
-// Cheap physical coupon for provisional Hutchfinity laid-down ribbed-peg/socket fit.
+// version: 0.4.0
+// Cheap physical coupon for provisional Hutchfinity laid-down hex-peg/socket fit.
 
 use <../casing.scad>;
 use <../peg.scad>;
 
 $fn = 64;
 
-PEG_DIAMETER = 8.0;
+SOCKET_NOMINAL_DIAMETER = 8.0;
+PEG_DIAMETER = 8.45;
 PEG_LENGTH = 20.0;
 PEG_SOCKET_DEPTH = 10.0;
 PEG_CHAMFER = 2.5;
@@ -42,7 +43,7 @@ module socket_coupon(clearance, index) {
             cube([COUPON_X, COUPON_Y, COUPON_Z]);
             chamfered_peg_socket_cut(
                 socket_center(),
-                peg_socket_diameter(PEG_DIAMETER, clearance),
+                peg_socket_diameter(SOCKET_NOMINAL_DIAMETER, clearance),
                 PEG_SOCKET_DEPTH,
                 PEG_CHAMFER
             );

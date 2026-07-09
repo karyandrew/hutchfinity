@@ -1,5 +1,5 @@
 // casing_mouth_fit_gauge.scad
-// version: 0.1.1
+// version: 0.1.6
 // Low-filament mouth gauge for the representative regular-tub casing slot.
 // Print in the same inverted orientation as casing.scad, then flip into
 // installed orientation for fit testing: top slab above the tub, walls down.
@@ -9,11 +9,12 @@ use <../casing.scad>;
 PITCH_Z = 3.5;
 MINIMUM_LIP_Z = 3.74;
 
-REGULAR_TUB_EXTERIOR_Y = 339.2;
+REGULAR_TUB_EXTERIOR_X = 256.4;
+REGULAR_TUB_EXTERIOR_Y = 340.4;
 REGULAR_TUB_SOURCE_HEIGHT_U = 23;
 
-SIDE_CLEARANCE = 0.0;
-TOP_CLEARANCE = 0.0;
+SIDE_CLEARANCE = 1.0;
+TOP_CLEARANCE = 1.0;
 GAUGE_SLOT_DEPTH = 40.0;
 GAUGE_BACK_THICKNESS = 8.0;
 
@@ -43,14 +44,15 @@ module hutchfinity_casing_mouth_fit_gauge(
     tub_height = tub_total_height(tub_height_u);
 
     hutchfinity_casing(
-        slot_width = gauge_slot_width(REGULAR_TUB_EXTERIOR_Y, side_clearance),
+        slot_width = gauge_slot_width(REGULAR_TUB_EXTERIOR_X, side_clearance),
         slot_depth = gauge_slot_depth,
         slot_height = gauge_slot_height(tub_height, top_clearance),
         side_thickness = side_thickness,
         back_thickness = gauge_back_thickness,
         top_thickness = top_thickness,
         peg_spacing = peg_spacing,
-        enable_peg_holes = false
+        enable_peg_holes = false,
+        enable_magnet_holes = false
     );
 }
 

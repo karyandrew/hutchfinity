@@ -1,5 +1,5 @@
 // casing-fit-test.scad
-// version: 0.1.0
+// version: 0.4.2
 // Representative casing/tub fit target. This file maps current tub-source
 // dimensions to casing slot dimensions while keeping casing.scad tub-agnostic.
 
@@ -8,17 +8,17 @@ use <casing.scad>;
 PITCH_Z = 3.5;
 MINIMUM_LIP_Z = 3.74;
 
-REGULAR_TUB_EXTERIOR_X = 255.2;
-REGULAR_TUB_EXTERIOR_Y = 339.2;
+REGULAR_TUB_EXTERIOR_X = 256.4;
+REGULAR_TUB_EXTERIOR_Y = 340.4;
 REGULAR_TUB_SOURCE_HEIGHT_U = 23;
 PR19_REPRESENTATIVE_HEIGHT_U = 20;
 
 // Slot clearances are casing geometry, not slicer contour compensation.
 // SIDE_CLEARANCE is per side across X. BACK_CLEARANCE is extra depth at the
 // closed back; the open front has no front wall. TOP_CLEARANCE is ceiling play.
-SIDE_CLEARANCE = 0.0;
-BACK_CLEARANCE = 0.0;
-TOP_CLEARANCE = 0.0;
+SIDE_CLEARANCE = 1.0;
+BACK_CLEARANCE = 0.5;
+TOP_CLEARANCE = 1.0;
 
 // Use 23 for the current source tub. Use 20 only to recreate the PR #19
 // representative target while comparing against legacy renders.
@@ -52,13 +52,14 @@ module hutchfinity_regular_tub_fit_target(
     tub_height = tub_total_height(tub_height_u);
 
     hutchfinity_casing(
-        slot_width = fit_slot_width(REGULAR_TUB_EXTERIOR_Y, side_clearance),
-        slot_depth = fit_slot_depth(REGULAR_TUB_EXTERIOR_X, back_clearance),
+        slot_width = fit_slot_width(REGULAR_TUB_EXTERIOR_X, side_clearance),
+        slot_depth = fit_slot_depth(REGULAR_TUB_EXTERIOR_Y, back_clearance),
         slot_height = fit_slot_height(tub_height, top_clearance),
         side_thickness = side_thickness,
         back_thickness = back_thickness,
         top_thickness = top_thickness,
-        peg_spacing = peg_spacing
+        peg_spacing = peg_spacing,
+        casing_magnet_drawer_depth = REGULAR_TUB_EXTERIOR_Y
     );
 }
 
