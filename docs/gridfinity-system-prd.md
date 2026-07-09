@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 5.1.0
+version: 5.1.1
 ---
 
 # Gridfinity System PRD — Dental Practice Organization
@@ -105,9 +105,9 @@ Same-size tubs stack on each other (shared pitch_xy → matched lip pattern). Mi
 
 ### Wall thickness
 
-**W = 1.6mm** — vendor library auto-default for tubs at h≥16u (`gridfinity_basic_cup.scad:768`: `wall_thickness=0` → `1.6` when `num_z ≥ 16`). Set explicitly in `TUB_FLAGS` so the value is visible at the build call site.
+**W = 2.2mm** — explicit tub wall value. This is the CAD replacement for the `+0.6mm` slicer contour-compensation hack that improved printed tub stacking and strength; do not carry that compensation into casing wall thickness.
 
-Tubs aren't structural — they retain bins and provide the stacking lip. The prior v3.x value of 2.625mm (= 21/8 — "pitch elegance") was cosmetic, cost drawer slack, and ate print time without rigidity gain. Reversed in v4.0.0; the divisor framing is dropped. Cup walls are independently set by the cup library default of 1.2mm at h<16u; tubs and cups don't need to match.
+Tubs retain bins and provide the stacking lip, but the earlier `1.6mm` wall setting was too weak in physical prints. The prior v3.x value of 2.625mm (= 21/8 — "pitch elegance") is still rejected as cosmetic; `2.2mm` is the current physical-fit compromise. Cup walls are independently set by the cup library default of 1.2mm at h<16u; tubs and cups don't need to match.
 
 Floor thickness `floor_thickness=1.2mm` follows the same logic — vendor `default_floor_thickness` (line 518). Prior 3.5mm "floor sandwich" was over-spec; thinner floor + same body height grows the cavity Z. Z is just `Nu body`, and cavity Z is whatever's left after `floor_thickness`. v5.0.0 sets body height to **23u** (was 21u in v4.x) — sized so a 20h max bin's lip top sits at or below the lower body top, allowing tub-on-tub stacking without the upper tub crashing into bin lips. See [Vertical stack-fit](#vertical-stack-fit-half-pitch-correction) for the geometry derivation.
 
@@ -181,9 +181,9 @@ Three SKUs. Identical Z and depth (Y); only width (X) varies.
 
 | Tub | Cells (W × D × H) | pitch_xy (X × Y mm) | Cavity W × D (mm) | Cavity Z (mm) | Exterior W × D (mm) (= pitch_xy − C) | Total Z incl lip (mm) |
 |---|---|---|---|---|---|---|
-| Mini    | 6 × 16 × 23  | 129.7 × 339.7 | 126 × 336 | 79.3 | 129.2 × 339.2 | 84.2 |
-| Regular | 12 × 16 × 23 | 255.7 × 339.7 | 252 × 336 | 79.3 | 255.2 × 339.2 | 84.2 |
-| Mega    | 18 × 16 × 23 | 381.7 × 339.7 | 378 × 336 | 79.3 | 381.2 × 339.2 | 84.2 |
+| Mini    | 6 × 16 × 23  | 130.9 × 340.9 | 126 × 336 | 79.3 | 130.4 × 340.4 | 84.2 |
+| Regular | 12 × 16 × 23 | 256.9 × 340.9 | 252 × 336 | 79.3 | 256.4 × 340.4 | 84.2 |
+| Mega    | 18 × 16 × 23 | 382.9 × 340.9 | 378 × 336 | 79.3 | 382.4 × 340.4 | 84.2 |
 
 Mini bumped 5→6 cells X in v4.0.0; H bumped 21→23 in v5.0.0 (see Vertical stack-fit section).
 
@@ -192,7 +192,7 @@ Lip protrusion above body ≈ 3.74mm (constant — does NOT scale with pitch_z).
 | Param | Value (all 3 SKUs) |
 |---|---|
 | Pitch (cell grid) | 21 × 21 × 3.5mm |
-| Wall thickness | 1.6mm (vendor h≥16 default) |
+| Wall thickness | 2.2mm |
 | Base | Flat (`flat_base="gridfinity"`) |
 | Lip | `lip_style="minimum"` |
 | Floor | 1.2mm (vendor default) |

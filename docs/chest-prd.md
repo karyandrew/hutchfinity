@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 1.2.0
+version: 1.4.0
 ---
 
 # Hutchfinity Chest PRD
@@ -42,6 +42,7 @@ A single drawer slot is one tub plus one casing, with an optional knob. Chests g
 | HR-11 | **Press-fit dimensions are provisional until physical validation lands.** Use the current crush-rib testbed and magnet wiki as the live recipe source. | Trial-01 was PHATTY-process evidence; standard-settings validation is still pending. |
 | HR-12 | **All XY dimensions derive from tub cell count and pitch.** | Parametric source stays the contract; manually tuned outer dimensions are drift magnets. |
 | HR-13 | **v1 is general-purpose.** No domain-specific assumptions, labels, colors, storage categories, or workflow content belong in the chest architecture. | This repo is public OSS and the chest is a general organizer system. |
+| HR-14 | **Back and side exterior faces stay flat.** No external stack pads, lugs, bosses, ribs, lands, or other protrusions on the casing sides or back. | Flat sides/back keep modules visually clean, easy to place against each other or other objects, and true to the simple shell architecture. Stack registration must be solved without changing the exterior side/back planes. |
 
 ## Architecture
 
@@ -67,9 +68,10 @@ The casing is a single-piece inverted print:
 
 - Top face on the build plate.
 - Back and side walls print as vertical perimeters.
+- Back and side exterior faces remain flat planes.
 - No bottom face.
 - No front face.
-- Peg interface reference points are reserved for vertical stacking; final socket geometry remains testbed-gated.
+- Peg interface reference points are reserved for vertical stacking; final socket geometry remains testbed-gated and must not add side/back protrusions.
 - Magnet wells for the tub above are reserved, but their casing-side orientation is an implementation risk: blind wells opening on the final top surface may conflict with top-on-bed printing. Validate whether they print cleanly as bed-side features, move the wells to an insert/post-process operation, or revise the casing orientation before locking `casing.scad`.
 
 The inverted orientation is part of the product contract. If an implementation requires support material or bridges for the casing shell, it is violating the v1 intent.
@@ -109,7 +111,7 @@ Pegs are mass-printable dowels for vertical casing stacks:
 - Pegs register and retain casing-to-casing stacking.
 - Side-by-side casing linking is out of scope for v1.
 - Compliant male geometry is an explicit exploration path: crush ribs, hollow/concave profiles, star-like polygons, or other shapes that make the peg deform more tolerantly than a solid cylinder.
-- Candidate peg shapes should likely print upright so the compliant features flex in the XY plane instead of relying on weak inter-layer bending.
+- Candidate peg shapes should be validated in the print orientation that best preserves lengthwise strength and compliant fit. The current prototype prints laid down, then installs vertically as a stack connector.
 
 Peg dimensions should use the same press-fit discipline as magnets: testbed first, then lock the recipe.
 
@@ -164,6 +166,7 @@ Dimensional recipe authority lives in `wiki/magnet-press-fit.md` and the active 
 | Snap-fit pegs | Press-fit dowels are the simpler validation path. |
 | Pull-out tilt stop | Drawers intentionally come out cleanly in v1. |
 | Rail, slide, bearing, or roller hardware | Tub-on-casing-top sliding is the v1 mechanism. |
+| External stack lands, pads, bosses, lugs, or ribs on casing sides/back | Violates the flat side/back casing requirement. |
 | Domain-specific layouts, labels, colors, or workflows | Hutchfinity is a general-purpose public OSS system. |
 | Final magnet and peg press-fit dimensions | Physical validation is still open. |
 
@@ -207,6 +210,7 @@ System works when all hold:
 - Monolithic multi-drawer chest models.
 - Hidden bottom plates in the casing.
 - Front rails or captured drawer hardware in v1.
+- External stack pads, lands, lugs, bosses, or ribs that break flat casing sides/back.
 - Stale crush-rib dimensions copied from old issue text after newer trial data exists.
 - Public docs that cite private planning sources or domain-specific deployment context.
 - Adding lateral multi-column linking while the single-column vertical stack is still unvalidated.
