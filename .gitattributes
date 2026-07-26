@@ -1,0 +1,2 @@
+# Preserve pinned upstream whitespace without treating it as authored style.
+scad/gridfinity/vendor/basket/gridfinityBasket.scad whitespace=-trailing-space
