@@ -1,5 +1,5 @@
 // basket_carrier_probe.scad
-// version: 0.1.0
+// version: 0.2.0
 // Experimental, general-parameter Basket/Carrier probe for issue #26.
 // This is testbed geometry, not a fifth production module or a catalog SKU.
 //
@@ -31,11 +31,6 @@ PROBE_TOP_PADDING = 1.25;
 PROBE_XY_TOLERANCE = 0.5;
 PROBE_Z_TOLERANCE = 0.25;
 
-// Current provisional tub-side interface from tub.scad v0.2.2.
-PROBE_MAGNET_BORE_DIAMETER = 5.40;
-PROBE_MAGNET_RIB_TIP_DIAMETER = 5.25;
-PROBE_MAGNET_WELL_DEPTH = 1.10;
-PROBE_MAGNET_CHAMFER = 0.30;
 PROBE_MAGNET_FORE_AFT_INSET = 8.0;
 PROBE_MAGNET_PARAMEDIAN_OFFSET = 21.0;
 
@@ -134,10 +129,7 @@ module hutchfinity_basket_carrier_probe(
     xy_tolerance = PROBE_XY_TOLERANCE,
     z_tolerance = PROBE_Z_TOLERANCE,
     enable_magnet_holes = PROBE_MAGNETS,
-    magnet_bore_diameter = PROBE_MAGNET_BORE_DIAMETER,
-    magnet_rib_tip_diameter = PROBE_MAGNET_RIB_TIP_DIAMETER,
-    magnet_well_depth = PROBE_MAGNET_WELL_DEPTH,
-    magnet_chamfer = PROBE_MAGNET_CHAMFER,
+    magnet_recipe = hutchfinity_magnet_recipe_6x1_5(),
     magnet_fore_aft_inset = PROBE_MAGNET_FORE_AFT_INSET,
     magnet_paramedian_offset = PROBE_MAGNET_PARAMEDIAN_OFFSET
 ) {
@@ -167,6 +159,7 @@ module hutchfinity_basket_carrier_probe(
         magnet_fore_aft_inset,
         magnet_paramedian_offset
     );
+    magnet_well_depth = hutchfinity_magnet_recipe_well_depth(magnet_recipe);
 
     assert(cells_x > 0 && cells_y > 0 && cells_z > 0,
         "basket carrier cell counts must be positive");
@@ -178,6 +171,8 @@ module hutchfinity_basket_carrier_probe(
         str("unknown basket carrier floor mode: ", floor_mode));
     assert(upstream_grid_z >= 1,
         "mapped upstream grid height must be at least one standard unit");
+    assert(hutchfinity_magnet_recipe_is_valid(magnet_recipe),
+        "basket carrier magnet recipe must be valid");
     assert(!enable_magnet_holes || magnet_well_depth <
         basket_carrier_plain_floor_z(
             wall_thickness,
@@ -205,10 +200,7 @@ module hutchfinity_basket_carrier_probe(
             let($fn = 64)
                 hutchfinity_magnet_well_cuts(
                     magnet_positions,
-                    magnet_bore_diameter,
-                    magnet_rib_tip_diameter,
-                    magnet_well_depth,
-                    magnet_chamfer
+                    magnet_recipe
                 );
     }
 }
