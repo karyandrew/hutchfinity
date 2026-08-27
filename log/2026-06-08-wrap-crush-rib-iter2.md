@@ -8,26 +8,26 @@ issue: hutchfinity#7
 
 ## Summary
 
-Picked up hutchfinity#7 — Crush-rib testbed iteration 2. Updated `magnet_crush_rib_testbed.scad` from v1.3.0 to v1.4.0: bumped `WELL_D_ADD` 0.10→0.50mm (all magnets were sitting proud at trial-01 due to first-layer over-extrusion raising the well floor), refactored `WELL_R_ADD` from a scalar to a per-row array `[0.20, 0.05]` (row-0 5×1mm bore was effectively closed at PHATTY settings; row-1 6×1.5mm stays at 0.05), updated `well_r()` to index the array, corrected the col-0 baseline comment. Re-rendered STL (~82s full render) and three preview PNGs. Scaffolded `trial-log-02.md` with empty result tables ready for post-print fill-in. Shelving — physical print at standard settings (0.4mm nozzle / 0.2mm layer) is the V&V gate and isn't happening today.
+Picked up hutchfinity#7 — Crush-rib testbed iteration 2. Updated `magnet_crush_rib_testbed.scad` from v1.3.0 to v1.4.0: bumped `WELL_D_ADD` 0.10→0.50mm (all magnets were sitting proud at trial-01 due to first-layer over-extrusion raising the well floor), refactored `WELL_R_ADD` from a scalar to a per-row array `[0.20, 0.05]` (row-0 5×1mm bore was effectively closed at PHATTY settings; row-1 6×1.5mm stays at 0.05), and updated `well_r()` to index the array. Re-rendered the STL (~82s full render) and generated three preview PNGs for review. The PNGs were later retained as uncommitted review outputs under the repository's generated-output policy. Scaffolded `trial-log-02.md` with empty result tables ready for post-print fill-in. Shelving — physical print at standard settings (0.4mm nozzle / 0.2mm layer) is the V&V gate and isn't happening today.
 
 ## Knowledge enumeration
 
 | # | Cat | Item | Artifact |
 |---|---|---|---|
 | 1 | Tool/gotcha | `kickoff-gate.impl.sh` bootstrap: only `touch .claude/kickoff` clears the gate when marker is absent. `printf … >` redirect is blocked; Write tool blocked by `guard-config.sh`. For `parent != main` sessions the parent ref can't be written into the marker via bootstrap — empty marker created instead (silently treated as `main` downstream). | hutchfinity#11, #12 |
-| 2 | Tool | OpenSCAD binary on macOS: `/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD`. Full render: ~82s for this testbed. Preview (`--preview`): ~0.4s. | In-code if needed |
+| 2 | Tool | The OpenSCAD CLI full render took ~82s for this testbed; preview mode took ~0.4s. | In-code if needed |
 | 3 | Pattern | Per-row SCAD params: replace scalar with array (`WELL_R_ADD = [0.20, 0.05]`), index in function (`WELL_R_ADD[row]`). No module overhead. | In SCAD code |
 
 ## V&V
 
-**Verification:** SCAD opens and renders without errors (assert guard passes, STL produced). Preview PNGs generated and reviewed — well geometry visually correct, row-0 bores visibly wider, wells visibly deeper.
+**Verification:** SCAD opens and renders without errors (assert guard passes, STL produced). Preview PNGs were generated and reviewed — well geometry visually correct, row-0 bores visibly wider, wells visibly deeper. The PNGs are review outputs rather than tracked deliverables.
 
 **Validation:** 🅿️ Shelved. Physical print at standard settings is the validation gate. Reopen criteria: trial-02 print results in hand.
 
 ## Step matrix
 
 ```
-⏭️ Wiki: no new durable wiki content this session — knowledge captured as friction issues
+✅ Wiki: testbed version, row-specific bore offsets, and nominal fit controls recorded in `wiki/magnet-press-fit.md`
 ✅ Friction issues filed: #11 — kickoff.md bootstrap doc gap, #12 — kickoff-gate bootstrap blocks Write/printf
 ✅ Friction judge: 1 filed, 5 skipped (label mismatch — hutchfinity lacks type/enhancement + self-report labels)
 ⏭️ Opus judge: N/A — 0 issues closed, shelved session

@@ -23,7 +23,9 @@
 // ── Parameters ───────────────────────────────────────────────────────────────
 
 PROTRUSIONS  = [0.05, 0.10, 0.15, 0.20, 0.25, 0.30]; // rib radial protrusion, mm
-// NOTE: col 0 protrusion (0.05) < WELL_R_ADD[0] (0.20) → ribs don't reach the magnet in row 0; true baseline.
+// Nominal fit is protrusion - WELL_R_ADD[row]. Row 0: cols 0–2 have
+// 0.15/0.10/0.05mm radial clearance, col 3 is zero fit, and cols 4–5 have
+// 0.05/0.10mm radial interference. Row 1: col 0 is zero fit.
 MAGNETS      = [[5.0, 1.0], [6.0, 1.5]];             // [OD mm, H mm] per row
 
 WELL_R_ADD   = [0.20, 0.05]; // added per side to magnet OD, per row: [5×1mm, 6×1.5mm]
