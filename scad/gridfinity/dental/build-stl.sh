@@ -13,13 +13,33 @@ cd "$(dirname "$0")/.."
 CUP=vendor/extended/gridfinity_basic_cup.scad
 BASE=vendor/extended/gridfinity_baseplate.scad
 OUT=stl
+OPENSCAD_BIN="${OPENSCAD_BIN:-openscad}"
+
+OPENSCAD_CMD=("$OPENSCAD_BIN")
+if [[ -n "${OPENSCAD_ARCH:-}" ]]; then
+  OPENSCAD_CMD=(arch "$OPENSCAD_ARCH" "$OPENSCAD_BIN")
+elif ! "$OPENSCAD_BIN" --version >/dev/null 2>&1; then
+  if [[ "$(uname -s)" == "Darwin" ]] &&
+     command -v arch >/dev/null 2>&1 &&
+     arch -x86_64 "$OPENSCAD_BIN" --version >/dev/null 2>&1; then
+    OPENSCAD_CMD=(arch -x86_64 "$OPENSCAD_BIN")
+  else
+    echo "OpenSCAD launcher failed: $OPENSCAD_BIN" >&2
+    "$OPENSCAD_BIN" --version >&2 || true
+    exit 1
+  fi
+fi
+
+run_openscad() {
+  "${OPENSCAD_CMD[@]}" "$@"
+}
 
 # Project-level tub constants (PRD v4.0.0 — fit math + tolerances).
-# pitch_xy formula: N × 21 + 2W + C = N×21 + 3.2 + 0.5 = N×21 + 3.7
+# pitch_xy formula: N × 21 + 2W + C = N×21 + 4.4 + 0.5 = N×21 + 4.9
 # Each cup is 1×1 cells of custom pitch; walls live outside the cell grid (HR-12).
-# wall_thickness=1.6 = library h≥16 default; floor_thickness=1.2 = library default.
-# Tubs aren't structural; the prior 2.625 / 3.5 values cost drawer slack + print time
-# for no rigidity gain.
+# wall_thickness=2.2 fixes the printed tub strength/stacking improvement previously
+# achieved with +0.6mm slicer contour compensation, while keeping that compensation
+# out of the casing model.
 # height=23h (=80.5mm body): at half-pitch (3.5mm/h), the bin's foot bottom rests at
 # tub interior cavity floor (Z=4.75) since the baseplate pocket is open through (4mm).
 # Bin lip top = 4.75 + N_bin*3.5 + 3.74. For tub-on-tub stacking the upper tub's
@@ -30,7 +50,7 @@ TUB_FLAGS=(
   -D 'height=[23,0]'
   -D 'width=[1,0]'
   -D 'depth=[1,0]'
-  -D 'wall_thickness=1.6'
+  -D 'wall_thickness=2.2'
   -D 'floor_thickness=1.2'
   -D 'lip_style="minimum"'
   -D 'flat_base="gridfinity"'
@@ -65,15 +85,15 @@ BIN_FLAGS=(
   -D 'horizontal_chambers=1'
 )
 
-# Tubs: name | cells X (mini=6, regular=12, mega=18) → pitch X = N×21 + 3.7
-openscad "${TUB_FLAGS[@]}" -D 'pitch=[129.7,339.7,3.5]' -o "$OUT/tub-mini.stl"    "$CUP"
-openscad "${TUB_FLAGS[@]}" -D 'pitch=[255.7,339.7,3.5]' -o "$OUT/tub-regular.stl" "$CUP"
-openscad "${TUB_FLAGS[@]}" -D 'pitch=[381.7,339.7,3.5]' -o "$OUT/tub-mega.stl"    "$CUP"
+# Tubs: name | cells X (mini=6, regular=12, mega=18) → pitch X = N×21 + 4.9
+run_openscad "${TUB_FLAGS[@]}" -D 'pitch=[130.9,340.9,3.5]' -o "$OUT/tub-mini.stl"    "$CUP"
+run_openscad "${TUB_FLAGS[@]}" -D 'pitch=[256.9,340.9,3.5]' -o "$OUT/tub-regular.stl" "$CUP"
+run_openscad "${TUB_FLAGS[@]}" -D 'pitch=[382.9,340.9,3.5]' -o "$OUT/tub-mega.stl"    "$CUP"
 
 # Baseplates: name | Width (mini bumped 5→6 to match new mini tub cavity)
-openscad "${BASEPLATE_FLAGS[@]}" -D 'Width=[6,0]'  -o "$OUT/baseplate-mini.stl"    "$BASE"
-openscad "${BASEPLATE_FLAGS[@]}" -D 'Width=[12,0]' -o "$OUT/baseplate-regular.stl" "$BASE"
-openscad "${BASEPLATE_FLAGS[@]}" -D 'Width=[18,0]' -o "$OUT/baseplate-mega.stl"    "$BASE"
+run_openscad "${BASEPLATE_FLAGS[@]}" -D 'Width=[6,0]'  -o "$OUT/baseplate-mini.stl"    "$BASE"
+run_openscad "${BASEPLATE_FLAGS[@]}" -D 'Width=[12,0]' -o "$OUT/baseplate-regular.stl" "$BASE"
+run_openscad "${BASEPLATE_FLAGS[@]}" -D 'Width=[18,0]' -o "$OUT/baseplate-mega.stl"    "$BASE"
 
 # Bins: name | width × depth × height (in cells; half-pitch units → 21mm XY, 3.5mm Z)
 # Footprints: 1×1, 2×1, 2×2 (baseline) + 2×9, 3×3, 2×4, 2×5, 5×9, 3×5, 6×2 (inventory, #272/#275).
@@ -82,15 +102,15 @@ openscad "${BASEPLATE_FLAGS[@]}" -D 'Width=[18,0]' -o "$OUT/baseplate-mega.stl" 
 # 23h tub holds 20h max bin with 2.01mm clearance below upper tub bottom when stacked.
 # Bins rotate freely on the square 21mm foot grid → W×D is a label, not a placement
 # constraint; the long axis seats along whichever tub axis has ≥ cells (all tubs 16-deep).
-openscad "${BIN_FLAGS[@]}" -D 'width=[1,0]' -D 'depth=[1,0]' -D 'height=[5,0]'  -o "$OUT/bin-1x1x5h.stl"  "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[1,0]' -D 'height=[5,0]'  -o "$OUT/bin-2x1x5h.stl"  "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[2,0]' -D 'height=[5,0]'  -o "$OUT/bin-2x2x5h.stl"  "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[1,0]' -D 'depth=[1,0]' -D 'height=[10,0]' -o "$OUT/bin-1x1x10h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[1,0]' -D 'height=[10,0]' -o "$OUT/bin-2x1x10h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[2,0]' -D 'height=[10,0]' -o "$OUT/bin-2x2x10h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[1,0]' -D 'depth=[1,0]' -D 'height=[20,0]' -o "$OUT/bin-1x1x20h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[1,0]' -D 'height=[20,0]' -o "$OUT/bin-2x1x20h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[2,0]' -D 'height=[20,0]' -o "$OUT/bin-2x2x20h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[1,0]' -D 'depth=[1,0]' -D 'height=[5,0]'  -o "$OUT/bin-1x1x5h.stl"  "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[1,0]' -D 'height=[5,0]'  -o "$OUT/bin-2x1x5h.stl"  "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[2,0]' -D 'height=[5,0]'  -o "$OUT/bin-2x2x5h.stl"  "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[1,0]' -D 'depth=[1,0]' -D 'height=[10,0]' -o "$OUT/bin-1x1x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[1,0]' -D 'height=[10,0]' -o "$OUT/bin-2x1x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[2,0]' -D 'height=[10,0]' -o "$OUT/bin-2x2x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[1,0]' -D 'depth=[1,0]' -D 'height=[20,0]' -o "$OUT/bin-1x1x20h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[1,0]' -D 'height=[20,0]' -o "$OUT/bin-2x1x20h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[2,0]' -D 'height=[20,0]' -o "$OUT/bin-2x2x20h.stl" "$CUP"
 
 # Inventory-driven SKUs (#272/#275). X2D / PETG. flat_base library default "off".
 # SKU names are GEOMETRY (W×D×H cells), item-agnostic. The item→SKU map lives in the
@@ -106,25 +126,25 @@ openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[2,0]' -D 'height=[20,0]' 
 #   3×5×10h  interior ~60.4 × ~102.4mm, 35mm well
 #   6×2×5h   interior ~123.4 × ~39.4mm, 17.5mm well
 #   6×2×10h  interior ~123.4 × ~39.4mm, 35mm well
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[9,0]' -D 'height=[10,0]' -o "$OUT/bin-2x9x10h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[3,0]' -D 'depth=[3,0]' -D 'height=[10,0]' -o "$OUT/bin-3x3x10h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[4,0]' -D 'height=[10,0]' -o "$OUT/bin-2x4x10h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[5,0]' -D 'height=[10,0]' -o "$OUT/bin-2x5x10h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[5,0]' -D 'depth=[9,0]' -D 'height=[5,0]'  -o "$OUT/bin-5x9x5h.stl"  "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[3,0]' -D 'depth=[5,0]' -D 'height=[10,0]' -o "$OUT/bin-3x5x10h.stl" "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[6,0]' -D 'depth=[2,0]' -D 'height=[5,0]'  -o "$OUT/bin-6x2x5h.stl"  "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[6,0]' -D 'depth=[2,0]' -D 'height=[10,0]' -o "$OUT/bin-6x2x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[9,0]' -D 'height=[10,0]' -o "$OUT/bin-2x9x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[3,0]' -D 'depth=[3,0]' -D 'height=[10,0]' -o "$OUT/bin-3x3x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[4,0]' -D 'height=[10,0]' -o "$OUT/bin-2x4x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[5,0]' -D 'height=[10,0]' -o "$OUT/bin-2x5x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[5,0]' -D 'depth=[9,0]' -D 'height=[5,0]'  -o "$OUT/bin-5x9x5h.stl"  "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[3,0]' -D 'depth=[5,0]' -D 'height=[10,0]' -o "$OUT/bin-3x5x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[6,0]' -D 'depth=[2,0]' -D 'height=[5,0]'  -o "$OUT/bin-6x2x5h.stl"  "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[6,0]' -D 'depth=[2,0]' -D 'height=[10,0]' -o "$OUT/bin-6x2x10h.stl" "$CUP"
 
 # Owner-requested ad-hoc SKU (#282). Geometry-first / item-agnostic.
 #   2×3×10h  interior ~39.4 × ~60.4mm, 35mm well
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[3,0]'  -D 'height=[10,0]' -o "$OUT/bin-2x3x10h.stl"  "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[3,0]'  -D 'height=[10,0]' -o "$OUT/bin-2x3x10h.stl"  "$CUP"
 
 # Owner-requested ad-hoc SKU batch (#284). Geometry-first / item-agnostic.
 #   3×3×5h    interior ~60.4 × ~60.4mm,  17.5mm well
 #   4×6×10h   interior ~81.4 × ~123.4mm, 35mm well
 #   8×2×10h   interior ~165.4 × ~39.4mm, 35mm well
 #   2×10×10h  interior ~39.4 × ~207.4mm, 35mm well
-openscad "${BIN_FLAGS[@]}" -D 'width=[3,0]' -D 'depth=[3,0]'  -D 'height=[5,0]'  -o "$OUT/bin-3x3x5h.stl"   "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[4,0]' -D 'depth=[6,0]'  -D 'height=[10,0]' -o "$OUT/bin-4x6x10h.stl"  "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[8,0]' -D 'depth=[2,0]'  -D 'height=[10,0]' -o "$OUT/bin-8x2x10h.stl"  "$CUP"
-openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[10,0]' -D 'height=[10,0]' -o "$OUT/bin-2x10x10h.stl" "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[3,0]' -D 'depth=[3,0]'  -D 'height=[5,0]'  -o "$OUT/bin-3x3x5h.stl"   "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[4,0]' -D 'depth=[6,0]'  -D 'height=[10,0]' -o "$OUT/bin-4x6x10h.stl"  "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[8,0]' -D 'depth=[2,0]'  -D 'height=[10,0]' -o "$OUT/bin-8x2x10h.stl"  "$CUP"
+run_openscad "${BIN_FLAGS[@]}" -D 'width=[2,0]' -D 'depth=[10,0]' -D 'height=[10,0]' -o "$OUT/bin-2x10x10h.stl" "$CUP"
