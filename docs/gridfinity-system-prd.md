@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 5.1.1
+version: 5.1.2
 ---
 
 # Gridfinity System PRD — Dental Practice Organization
@@ -250,7 +250,7 @@ System works when all hold:
 
 1. **Drawer fit.** Each tub size seats in its target drawer (per Drawer compatibility table). Closes and opens without binding. Finger-access clearance preserved.
 2. **Stackability.** Two same-size tubs stack stably on a level surface; lift the upper tub from the lip without lower tub coming with it under <500g vertical force.
-3. **Baseplate seat.** Baseplate sits flat on the tub floor with 0.25mm/side clearance; doesn't lift when bins are removed.
+3. **Baseplate seat.** Baseplate sits flat on the tub floor at 0mm nominal design clearance; any observed slack comes from print variance. It doesn't lift when bins are removed.
 4. **Bin retrieval.** Items in any bin can be picked with a college plier or a finger; one-handed; no tools to extract the bin itself.
 5. **Mix-and-match.** Bins move from any tub to any other tub and seat correctly without re-fitting.
 6. **Staff-printable.** A trained assistant prints a replacement bin from STL → slicer → printer → done. No agent intervention.
