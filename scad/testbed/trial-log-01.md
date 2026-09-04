@@ -2,7 +2,11 @@
 sensitivity: public
 type: log
 date: 2026-06-07
+date_modified: 2026-09-04
 testbed: magnet_crush_rib_testbed v1.2.0
+sources:
+  - https://github.com/karyandrew/second-brain/issues/2249
+  - magnet_crush_rib_testbed.scad
 ---
 
 # Crush-rib trial 01 — 2026-06-07
@@ -17,6 +21,29 @@ testbed: magnet_crush_rib_testbed v1.2.0
 | Testbed | `magnet_crush_rib_testbed.scad` v1.2.0 (v1.3.0 in this PR corrects label positioning, reduces $fn, and adds an assert guard — no well or rib geometry changes; trial data is valid for both) |
 | Rib count | 8 @ 45° spacing |
 | Chamfer | 0.3mm lead-in |
+
+## Measurement convention — nominal net radial interference
+
+The source parameter `PROTRUSIONS[col]` is the rib-tip protrusion inward from the
+nominal well wall. It is not, by itself, the interference against the magnet,
+because the well already includes radial clearance:
+
+```text
+nominal well radius = magnet radius + WELL_R_ADD
+rib-tip radius = nominal well radius - protrusion
+nominal net radial interference = protrusion - WELL_R_ADD
+```
+
+For this testbed, `WELL_R_ADD = 0.05 mm`. Therefore column 0's `0.05 mm`
+protrusion produces **0.00 mm nominal net interference**. It is the
+zero-engagement baseline, not a light interference-fit condition. Columns 1–5
+produce 0.05–0.25 mm nominal net radial interference.
+
+“Nominal” matters: extrusion width, flow, shrinkage, polygonization, first-layer
+behavior, and print orientation can move the printed bore and rib-tip dimensions.
+The physical result tests the complete printed system. The derived value below
+states the intended geometry so clearance, zero-fit, and true interference are
+not conflated.
 
 ### Process profile — PHATTY MAX 0.6 nozzle - 0.5.0
 
@@ -107,38 +134,52 @@ testbed: magnet_crush_rib_testbed v1.2.0
 
 ### Row A — 5×1mm magnets (nominal well-Ø 5.1mm, well-depth 1.1mm)
 
-| Col | Protrusion | Result |
-|---|---|---|
-| 0 | 0.05mm | Inserted (only one that went in) |
-| 1 | 0.10mm | Would not insert |
-| 2 | 0.15mm | Would not insert |
-| 3 | 0.20mm | Would not insert |
-| 4 | 0.25mm | Would not insert |
-| 5 | 0.30mm | Would not insert |
+| Col | Rib protrusion | Nominal net radial interference | Result |
+|---|---:|---:|---|
+| 0 | 0.05mm | **0.00mm — zero-engagement baseline** | Inserted (only one that went in) |
+| 1 | 0.10mm | 0.05mm | Would not insert |
+| 2 | 0.15mm | 0.10mm | Would not insert |
+| 3 | 0.20mm | 0.15mm | Would not insert |
+| 4 | 0.25mm | 0.20mm | Would not insert |
+| 5 | 0.30mm | 0.25mm | Would not insert |
 
-Over-extrusion + coarse layer geometry effectively closed the bore. The nominal 0.1mm bore clearance is insufficient at PHATTY settings — the bore is already undersize before ribs are considered.
+Over-extrusion + coarse layer geometry effectively closed the bore. The nominal
+0.1mm bore clearance is insufficient at PHATTY settings — the bore is already
+undersize before ribs are considered. The baseline's successful insertion does
+not establish that a positive nominal interference fit worked.
 
 ### Row B — 6×1.5mm magnets (nominal well-Ø 6.1mm, well-depth 1.6mm)
 
-| Col | Protrusion | Result |
-|---|---|---|
-| 0 | 0.05mm | Inserted, pulls right back out |
-| 1 | 0.10mm | Inserted, pulls right back out |
-| 2 | 0.15mm | Inserted, pulls right back out |
-| 3 | 0.20mm | Inserted, pulls right back out |
-| 4 | 0.25mm | ✅ Holds |
-| 5 | 0.30mm | ✅ Holds |
+| Col | Rib protrusion | Nominal net radial interference | Result |
+|---|---:|---:|---|
+| 0 | 0.05mm | **0.00mm — zero-engagement baseline** | Inserted, pulls right back out |
+| 1 | 0.10mm | 0.05mm | Inserted, pulls right back out |
+| 2 | 0.15mm | 0.10mm | Inserted, pulls right back out |
+| 3 | 0.20mm | 0.15mm | Inserted, pulls right back out |
+| 4 | 0.25mm | 0.20mm | ✅ Holds |
+| 5 | 0.30mm | 0.25mm | ✅ Holds |
 
-**All 6×1.5mm magnets sit proud of the plate surface.** Effective well depth less than nominal 1.6mm due to first-layer over-extrusion raising the floor.
+**All 6×1.5mm magnets sit proud of the plate surface.** Effective well depth less
+than nominal 1.6mm due to first-layer over-extrusion raising the floor.
 
-**Preference: shy is better than proud** for this use case — magnets in tub foot wells and casing arrays must not protrude above their surface or they interfere with mating geometry.
+**Preference: shy is better than proud** for this use case — magnets in tub foot
+wells and casing arrays must not protrude above their surface or they interfere
+with mating geometry.
 
 ## Design implications for next iteration
 
-1. **Well depth**: increase extra depth from +0.10mm to +0.5mm minimum. Needs physical validation at target print settings.
+1. **Well depth**: increase extra depth from +0.10mm to +0.5mm minimum. Needs
+   physical validation at target print settings.
 
-2. **5×1mm bore**: nominal Ø + 0.1mm is insufficient at PHATTY settings. Either: (a) increase bore clearance to +0.3–0.4mm for PHATTY, or (b) reprint at standard settings (0.4mm nozzle / 0.2mm layer) to characterize rib geometry cleanly before adding extrusion-width compensation.
+2. **5×1mm bore**: nominal Ø + 0.1mm is insufficient at PHATTY settings. Either:
+   (a) increase bore clearance to +0.3–0.4mm for PHATTY, or (b) reprint at
+   standard settings (0.4mm nozzle / 0.2mm layer) to characterize rib geometry
+   cleanly before adding extrusion-width compensation.
 
-3. **6×1.5mm recipe (tentative)**: 0.25mm protrusion holds at PHATTY. Pending flush/shy well depth confirmation and validation at standard settings before locking for casing.scad.
+3. **6×1.5mm recipe (tentative)**: 0.25mm rib protrusion, equal to **0.20mm
+   nominal net radial interference**, holds at PHATTY. Pending flush/shy well
+   depth confirmation and validation at standard settings before locking for
+   `casing.scad`.
 
-4. **Print settings for next testbed**: standard (0.4mm nozzle / 0.2mm layer height) — PHATTY is too coarse for features this small.
+4. **Print settings for next testbed**: standard (0.4mm nozzle / 0.2mm layer
+   height) — PHATTY is too coarse for features this small.
