@@ -1,7 +1,7 @@
 ---
 type: evergreen
 sensitivity: public
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Magnet press-fit — crush-rib recipe
@@ -56,9 +56,9 @@ Printer: Sovol SV08 MAX. Process: 0.6mm nozzle, 0.59mm layer, 1.4mm line width, 
 
 ## Testbed
 
-`scad/testbed/magnet_crush_rib_testbed.scad` v1.3.0 — 6×2 grid sweeping rib protrusion 0.05–0.30mm for both magnet sizes. Print at target process settings to characterize per-printer recipe.
+`scad/testbed/magnet_crush_rib_testbed.scad` v1.4.0 — 6×2 grid sweeping rib protrusion 0.05–0.30mm for both magnet sizes. Trial-02 uses `WELL_R_ADD = [0.20, 0.05]` for the 5×1mm and 6×1.5mm rows respectively, plus `WELL_D_ADD = 0.50mm`. Print at target process settings to characterize the per-printer recipe.
 
-**Column 0 (0.05mm protrusion) is a zero-engagement baseline**, not a low-friction test: protrusion = WELL_R_ADD → net interference = 0. Useful as a reference for how the bore fits uncompressed.
+Nominal radial fit is `protrusion - WELL_R_ADD[row]`. In the 5×1mm row, columns 0–2 are clearance controls, column 3 is zero fit, and columns 4–5 provide 0.05mm and 0.10mm radial interference. In the 6×1.5mm row, column 0 is zero fit and columns 1–5 provide 0.05–0.25mm radial interference. These are nominal geometry values, not physical-fit results.
 
 ## Open issues
 
