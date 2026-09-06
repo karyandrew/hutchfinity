@@ -6,4 +6,4 @@ sensitivity: public
 
 | Page | Description |
 |---|---|
-| [magnet-press-fit.md](magnet-press-fit.md) | Crush-rib press-fit recipe for 5×1mm and 6×1.5mm disc magnets |
+| [magnet-press-fit.md](magnet-press-fit.md) | Canonical 6 x 1.5mm product contract and historical mixed-size crush-rib trials |

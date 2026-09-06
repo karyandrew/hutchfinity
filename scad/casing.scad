@@ -1,5 +1,5 @@
 // casing.scad
-// version: 0.10.6
+// version: 0.11.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
 // no front, no bottom. Installed-top and installed-bottom peg sockets are cut
 // into the flat side/back wall footprints by default. Casing magnet wells are
@@ -30,10 +30,6 @@ PEG_CHAMFER = 2.5;
 PEG_SOCKET_EDGE_LAND = 4.0;
 ENABLE_PEG_HOLES = true;
 ENABLE_MAGNET_HOLES = true;
-CASING_MAGNET_BORE_DIAMETER = 6.40;
-CASING_MAGNET_RIB_TIP_DIAMETER = 6.10;
-CASING_MAGNET_WELL_DEPTH = 1.60;
-CASING_MAGNET_CHAMFER = 0.30;
 CASING_MAGNET_FORE_AFT_INSET = 8.0;
 CASING_MAGNET_PARAMEDIAN_OFFSET = 21.0;
 EXTENDED_WARNING_TRAVEL_FRACTION = 0.75;
@@ -159,10 +155,7 @@ module hutchfinity_casing(
     peg_socket_edge_land=PEG_SOCKET_EDGE_LAND,
     enable_peg_holes=ENABLE_PEG_HOLES,
     enable_magnet_holes=ENABLE_MAGNET_HOLES,
-    casing_magnet_bore_diameter=CASING_MAGNET_BORE_DIAMETER,
-    casing_magnet_rib_tip_diameter=CASING_MAGNET_RIB_TIP_DIAMETER,
-    casing_magnet_well_depth=CASING_MAGNET_WELL_DEPTH,
-    casing_magnet_chamfer=CASING_MAGNET_CHAMFER,
+    casing_magnet_recipe=hutchfinity_magnet_recipe_6x1_5(),
     casing_magnet_fore_aft_inset=CASING_MAGNET_FORE_AFT_INSET,
     casing_magnet_paramedian_offset=CASING_MAGNET_PARAMEDIAN_OFFSET,
     casing_magnet_drawer_depth=undef,
@@ -186,6 +179,8 @@ module hutchfinity_casing(
     magnet_drawer_depth = is_undef(casing_magnet_drawer_depth) ?
         slot_depth :
         casing_magnet_drawer_depth;
+    magnet_bore_diameter = hutchfinity_magnet_recipe_bore_diameter(casing_magnet_recipe);
+    magnet_well_depth = hutchfinity_magnet_recipe_well_depth(casing_magnet_recipe);
     side_ys = peg_side_y_positions(outer_y, peg_spacing, socket_end_inset);
     back_xs = peg_back_x_positions(outer_x, peg_spacing, socket_end_inset);
     peg_positions = peg_reference_positions(
@@ -216,23 +211,19 @@ module hutchfinity_casing(
         "peg socket depth must be positive and peg chamfer must be non-negative");
     assert(peg_socket_edge_land > 0,
         "peg socket edge land must leave material beyond the chamfer opening");
-    assert(casing_magnet_bore_diameter > 0 && casing_magnet_rib_tip_diameter > 0,
-        "casing magnet diameters must be positive");
-    assert(casing_magnet_rib_tip_diameter <= casing_magnet_bore_diameter,
-        "casing magnet rib-tip diameter must not exceed bore diameter");
-    assert(casing_magnet_well_depth > 0 && casing_magnet_chamfer >= 0,
-        "casing magnet well depth must be positive and chamfer must be non-negative");
-    assert(casing_magnet_fore_aft_inset > casing_magnet_bore_diameter / 2,
+    assert(hutchfinity_magnet_recipe_is_valid(casing_magnet_recipe),
+        "casing magnet recipe must be valid");
+    assert(casing_magnet_fore_aft_inset > magnet_bore_diameter / 2,
         "casing magnet fore/aft inset must keep wells inside the tub footprint");
     assert(casing_magnet_paramedian_offset >= 0,
         "casing magnet paramedian offset must be non-negative");
-    assert(casing_magnet_paramedian_offset < slot_width / 2 - casing_magnet_bore_diameter / 2,
+    assert(casing_magnet_paramedian_offset < slot_width / 2 - magnet_bore_diameter / 2,
         "casing magnet paramedian columns must stay inside the slot width");
     assert(extended_warning_travel_fraction > 0 && extended_warning_travel_fraction < 1,
         "extended warning travel fraction must be between 0 and 1");
     assert(!enable_magnet_holes || magnet_drawer_depth > 2 * casing_magnet_fore_aft_inset,
         "casing magnet drawer depth must leave room for closed-position fore/aft wells");
-    assert(!enable_magnet_holes || casing_magnet_well_depth < top_thickness,
+    assert(!enable_magnet_holes || magnet_well_depth < top_thickness,
         "casing magnet wells must be shallower than the top slab");
     assert(!enable_magnet_holes ||
            casing_extended_warning_magnet_y(magnet_drawer_depth, casing_magnet_fore_aft_inset, extended_warning_travel_fraction) >
@@ -265,10 +256,7 @@ module hutchfinity_casing(
         if (enable_magnet_holes)
             hutchfinity_magnet_well_cuts(
                 magnet_positions,
-                casing_magnet_bore_diameter,
-                casing_magnet_rib_tip_diameter,
-                casing_magnet_well_depth,
-                casing_magnet_chamfer
+                casing_magnet_recipe
             );
     }
 
