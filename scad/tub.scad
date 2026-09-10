@@ -1,6 +1,6 @@
 // tub.scad
-// version: 0.2.2
-// Hutchfinity tub wrappers with provisional bottom magnet wells.
+// version: 0.3.0
+// Hutchfinity tub wrappers with canonical bottom magnet wells.
 
 use <magnet_well.scad>;
 
@@ -14,10 +14,7 @@ STANDARD_TUB_EXTERIOR_Y = 340.4;
 MINI_TUB_STL = "gridfinity/stl/tub-mini.stl";
 REGULAR_TUB_STL = "gridfinity/stl/tub-regular.stl";
 MEGA_TUB_STL = "gridfinity/stl/tub-mega.stl";
-TUB_MAGNET_BORE_DIAMETER = 5.40;
-TUB_MAGNET_RIB_TIP_DIAMETER = 5.25;
-TUB_MAGNET_WELL_DEPTH = 1.10;
-TUB_MAGNET_CHAMFER = 0.30;
+TUB_FOOT_CAVITY_FLOOR_ENVELOPE = 4.75;
 TUB_MAGNET_FORE_AFT_INSET = 8.0;
 TUB_MAGNET_PARAMEDIAN_OFFSET = 21.0;
 
@@ -33,27 +30,24 @@ module hutchfinity_tub_from_stl(
     enable_magnet_holes = true,
     tub_x = REGULAR_TUB_EXTERIOR_X,
     tub_y = STANDARD_TUB_EXTERIOR_Y,
-    tub_magnet_bore_diameter = TUB_MAGNET_BORE_DIAMETER,
-    tub_magnet_rib_tip_diameter = TUB_MAGNET_RIB_TIP_DIAMETER,
-    tub_magnet_well_depth = TUB_MAGNET_WELL_DEPTH,
-    tub_magnet_chamfer = TUB_MAGNET_CHAMFER,
+    tub_magnet_recipe = hutchfinity_magnet_recipe_6x1_5(),
     tub_magnet_fore_aft_inset = TUB_MAGNET_FORE_AFT_INSET,
     tub_magnet_paramedian_offset = TUB_MAGNET_PARAMEDIAN_OFFSET
 ) {
     magnet_positions = tub_magnet_positions(tub_x, tub_y, tub_magnet_fore_aft_inset, tub_magnet_paramedian_offset);
+    magnet_bore_diameter = hutchfinity_magnet_recipe_bore_diameter(tub_magnet_recipe);
+    magnet_well_depth = hutchfinity_magnet_recipe_well_depth(tub_magnet_recipe);
 
     assert(tub_x > 0 && tub_y > 0, "tub dimensions must be positive");
-    assert(tub_magnet_bore_diameter > 0 && tub_magnet_rib_tip_diameter > 0,
-        "tub magnet diameters must be positive");
-    assert(tub_magnet_rib_tip_diameter <= tub_magnet_bore_diameter,
-        "tub magnet rib-tip diameter must not exceed bore diameter");
-    assert(tub_magnet_well_depth > 0 && tub_magnet_chamfer >= 0,
-        "tub magnet well depth must be positive and chamfer must be non-negative");
-    assert(tub_magnet_fore_aft_inset > tub_magnet_bore_diameter / 2,
+    assert(hutchfinity_magnet_recipe_is_valid(tub_magnet_recipe),
+        "tub magnet recipe must be valid");
+    assert(!enable_magnet_holes || magnet_well_depth <= TUB_FOOT_CAVITY_FLOOR_ENVELOPE,
+        "tub magnet wells must stay inside the 4.75mm foot/cavity-floor envelope");
+    assert(tub_magnet_fore_aft_inset > magnet_bore_diameter / 2,
         "tub magnet fore/aft inset must keep wells inside the tub footprint");
     assert(tub_magnet_paramedian_offset >= 0,
         "tub magnet paramedian offset must be non-negative");
-    assert(tub_magnet_paramedian_offset < tub_x / 2 - tub_magnet_bore_diameter / 2,
+    assert(tub_magnet_paramedian_offset < tub_x / 2 - magnet_bore_diameter / 2,
         "tub magnet paramedian columns must stay inside the tub footprint");
 
     difference() {
@@ -61,20 +55,14 @@ module hutchfinity_tub_from_stl(
         if (enable_magnet_holes)
             hutchfinity_magnet_well_cuts(
                 magnet_positions,
-                tub_magnet_bore_diameter,
-                tub_magnet_rib_tip_diameter,
-                tub_magnet_well_depth,
-                tub_magnet_chamfer
+                tub_magnet_recipe
             );
     }
 }
 
 module hutchfinity_mini_tub(
     enable_magnet_holes = true,
-    tub_magnet_bore_diameter = TUB_MAGNET_BORE_DIAMETER,
-    tub_magnet_rib_tip_diameter = TUB_MAGNET_RIB_TIP_DIAMETER,
-    tub_magnet_well_depth = TUB_MAGNET_WELL_DEPTH,
-    tub_magnet_chamfer = TUB_MAGNET_CHAMFER,
+    tub_magnet_recipe = hutchfinity_magnet_recipe_6x1_5(),
     tub_magnet_fore_aft_inset = TUB_MAGNET_FORE_AFT_INSET,
     tub_magnet_paramedian_offset = TUB_MAGNET_PARAMEDIAN_OFFSET
 ) {
@@ -83,10 +71,7 @@ module hutchfinity_mini_tub(
         enable_magnet_holes,
         MINI_TUB_EXTERIOR_X,
         STANDARD_TUB_EXTERIOR_Y,
-        tub_magnet_bore_diameter,
-        tub_magnet_rib_tip_diameter,
-        tub_magnet_well_depth,
-        tub_magnet_chamfer,
+        tub_magnet_recipe,
         tub_magnet_fore_aft_inset,
         tub_magnet_paramedian_offset
     );
@@ -94,10 +79,7 @@ module hutchfinity_mini_tub(
 
 module hutchfinity_regular_tub(
     enable_magnet_holes = true,
-    tub_magnet_bore_diameter = TUB_MAGNET_BORE_DIAMETER,
-    tub_magnet_rib_tip_diameter = TUB_MAGNET_RIB_TIP_DIAMETER,
-    tub_magnet_well_depth = TUB_MAGNET_WELL_DEPTH,
-    tub_magnet_chamfer = TUB_MAGNET_CHAMFER,
+    tub_magnet_recipe = hutchfinity_magnet_recipe_6x1_5(),
     tub_magnet_fore_aft_inset = TUB_MAGNET_FORE_AFT_INSET,
     tub_magnet_paramedian_offset = TUB_MAGNET_PARAMEDIAN_OFFSET
 ) {
@@ -106,10 +88,7 @@ module hutchfinity_regular_tub(
         enable_magnet_holes,
         REGULAR_TUB_EXTERIOR_X,
         STANDARD_TUB_EXTERIOR_Y,
-        tub_magnet_bore_diameter,
-        tub_magnet_rib_tip_diameter,
-        tub_magnet_well_depth,
-        tub_magnet_chamfer,
+        tub_magnet_recipe,
         tub_magnet_fore_aft_inset,
         tub_magnet_paramedian_offset
     );
@@ -117,10 +96,7 @@ module hutchfinity_regular_tub(
 
 module hutchfinity_mega_tub(
     enable_magnet_holes = true,
-    tub_magnet_bore_diameter = TUB_MAGNET_BORE_DIAMETER,
-    tub_magnet_rib_tip_diameter = TUB_MAGNET_RIB_TIP_DIAMETER,
-    tub_magnet_well_depth = TUB_MAGNET_WELL_DEPTH,
-    tub_magnet_chamfer = TUB_MAGNET_CHAMFER,
+    tub_magnet_recipe = hutchfinity_magnet_recipe_6x1_5(),
     tub_magnet_fore_aft_inset = TUB_MAGNET_FORE_AFT_INSET,
     tub_magnet_paramedian_offset = TUB_MAGNET_PARAMEDIAN_OFFSET
 ) {
@@ -129,10 +105,7 @@ module hutchfinity_mega_tub(
         enable_magnet_holes,
         MEGA_TUB_EXTERIOR_X,
         STANDARD_TUB_EXTERIOR_Y,
-        tub_magnet_bore_diameter,
-        tub_magnet_rib_tip_diameter,
-        tub_magnet_well_depth,
-        tub_magnet_chamfer,
+        tub_magnet_recipe,
         tub_magnet_fore_aft_inset,
         tub_magnet_paramedian_offset
     );

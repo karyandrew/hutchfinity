@@ -2,11 +2,11 @@
 sensitivity: public
 type: log
 date: 2026-07-04
-testbed: casing-fit-test v0.4.2, casing.scad v0.10.6, tub.scad v0.2.2, magnet_well.scad v0.1.0, and peg_socket_fit_testbed v0.4.0
-status: magnetic print set regenerated with 2.2mm tub walls, 1.0mm side clearance, and 1.0mm top clearance; peg/socket coupon printed 2026-07-08; casing/tub physical validation pending
+testbed: casing-fit-test v0.4.2, casing.scad v0.11.0, tub.scad v0.3.0, magnet_well.scad v0.2.0, magnet_well_shape_inspection.scad v0.2.0, and peg_socket_fit_testbed v0.4.0
+status: pre-canonical magnetic artifacts are superseded and must be regenerated; peg/socket coupon printed 2026-07-08; casing/tub and 2.30mm magnet-depth physical validation pending
 ---
 
-# Casing fit trial 01 — magnetic print set pending physical validation
+# Casing fit trial 01 — regenerate canonical magnetic print set before physical validation
 
 ## Purpose
 
@@ -20,7 +20,11 @@ Validate the representative regular-tub casing interface from hutchfinity#20 wit
 
 2026-07-09 magnet alignment correction: tub bottom wells use the same median and paramedian X columns as casing wells, with front/back rows along Y. In the regular aligned assembly, both parts use X columns `133.2 / 154.2 / 175.2mm` and Y rows `8.0 / 332.4mm`.
 
+2026-08-15 magnet-recipe correction: Tub, Casing, Basket/Carrier, and the product coupon now consume one canonical 6 x 1.5mm recipe from `scad/magnet_well.scad`: `6.10mm` bore, `5.60mm` rib-tip diameter from `0.25mm` radial crush, eight `0.80mm` ribs, `0.30mm` lead-in chamfer, and `2.30mm` depth. The `0.25mm` crush result is physically established; the selected `2.30mm` depth still requires a new physical print. Any magnetic STL or render recorded before this correction is historical evidence, not an authorized print target.
+
 ## Print artifacts
+
+Regenerate every magnetic artifact from the current source before printing. Do not reuse the pre-canonical STLs described in the historical render tables below.
 
 | Artifact | Source | Export command |
 |---|---|---|
@@ -28,11 +32,10 @@ Validate the representative regular-tub casing interface from hutchfinity#20 wit
 | Regular 23u casing fit target | `scad/casing-fit-test.scad` | `openscad -o preview/casing-fit-trial-01/casing-fit-regular-23u.stl scad/casing-fit-test.scad` |
 | Regular magnetic tub | `scad/tub.scad` | `openscad -o preview/casing-fit-trial-01/tub-regular-magnetic.stl scad/tub.scad` |
 | Aligned inspection set | `scad/testbed/full_magnetic_drawer_inspection_set.scad` | `openscad -o preview/casing-fit-trial-01/aligned-inspection/casing-installed.stl -D INSPECTION_PART=1 scad/testbed/full_magnetic_drawer_inspection_set.scad` |
-| Magnet-well shape coupon | `scad/testbed/magnet_well_shape_inspection.scad` | `openscad -o preview/casing-fit-trial-01/magnet-well-shape-inspection.stl scad/testbed/magnet_well_shape_inspection.scad` |
+| Canonical magnet-well coupon | `scad/testbed/magnet_well_shape_inspection.scad` | `openscad -o preview/casing-fit-trial-01/magnet-well-shape-inspection.stl scad/testbed/magnet_well_shape_inspection.scad` |
 | Peg/socket clearance coupon | `scad/testbed/peg_socket_fit_testbed.scad` | `openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad` |
 | Hex peg set | `scad/testbed/hex_peg_set.scad` | `openscad -o preview/casing-fit-trial-01/hex-peg-set-7.stl scad/testbed/hex_peg_set.scad` |
 | Mini/regular/mega magnetic print set | `scad/testbed/mini_regular_mega_print_set.scad` | `scad/testbed/build-mini-regular-mega-print-set.sh` |
-
 
 ## Physical orientation
 
@@ -40,12 +43,12 @@ Print the casing and mouth-gauge artifacts in their OpenSCAD orientation: the to
 
 ## Design critique before print
 
-| Artifact | What it actually proves | What it does not prove | CAD solid volume |
-|---|---|---|---:|
-| Mouth fit gauge | Tub can enter the representative width and immediate ceiling height without forced spreading or top rub. | Full-depth sliding friction, back clearance, long-wall bow, stack behavior, peg behavior, or magnetic retention. | Regenerated manifold STL |
-| Regular 23u casing fit target | Full-depth slot behavior for the flat-side/back representative casing, including visible stack sockets and nine casing magnet wells. | Final clearance recipe unless tested against a real printed tub and recorded; validated peg/stack or magnet behavior. | Regenerated manifold STL |
-| Regular magnetic tub | Bottom magnet-well printability and fit against the casing magnet pattern. | Casing slide behavior by itself; non-regular tub behavior. | Regenerated manifold STL |
-| Peg/socket clearance coupon | First-pass insertion/retention feel across three socket clearances. | Actual casing pair behavior: top-slab socket plus wall-foot receiver, full slab stiffness, slicer infill, and stack loading. | Regenerated manifold STL |
+| Artifact | What it actually proves | What it does not prove | CAD status |
+|---|---|---|---|
+| Mouth fit gauge | Tub can enter the representative width and immediate ceiling height without forced spreading or top rub. | Full-depth sliding friction, back clearance, long-wall bow, stack behavior, peg behavior, or magnetic retention. | Regenerate from current source. |
+| Regular 23u casing fit target | Full-depth slot behavior for the flat-side/back representative casing, including visible stack sockets and nine casing magnet wells. | Final clearance recipe unless tested against a real printed tub and recorded; validated peg/stack or magnet behavior. | Regenerate after the canonical-recipe change. |
+| Regular magnetic tub | Bottom magnet-well printability and fit against the casing magnet pattern. | Casing slide behavior by itself; non-regular tub behavior. | Regenerate after the canonical-recipe change. |
+| Peg/socket clearance coupon | First-pass insertion/retention feel across three socket clearances. | Actual casing pair behavior: top-slab socket plus wall-foot receiver, full slab stiffness, slicer infill, and stack loading. | Existing physical result remains valid. |
 
 The mouth gauge keeps full slot width and height because those are the dimensions being tested; it only reduces drawer-travel depth. Its CAD solid volume is about 21% of the full casing target before slicer infill. If it fails, change `SIDE_CLEARANCE` or `TOP_CLEARANCE` before spending plastic on the full casing.
 
@@ -55,25 +58,29 @@ The mouth gauge keeps full slot width and height because those are the dimension
 
 2026-07-07 peg-print update: the printable peg artifact now lays a plain hex peg on one flat face. Assembly/test-fit semantics still use the peg as a vertical stack connector after printing.
 
-## Pre-print render checks
+## Historical pre-canonical render checks
+
+These measurements describe the superseded magnetic artifact set. Retain them as provenance, but replace them with current-source measurements before physical casing/tub validation.
 
 | Artifact | Render status | Measured STL bounds | Expected bounds | Result |
 |---|---|---:|---:|---|
 | Mouth fit gauge | Manifold | `308.4 x 48.0 x 95.24mm` | `308.4 x 48.0 x 95.24mm` | Match |
-| Regular 23u casing fit target | Manifold with stack sockets and casing magnet wells | `308.4 x 365.9 x 95.24mm` | `308.4 x 365.9 x 95.24mm` | Match |
-| Regular magnetic tub | Manifold with bottom magnet wells | `256.395 x 340.397 x 84.24mm` | `256.4 x 340.4 x 84.24mm` | Match within imported STL tessellation |
+| Regular 23u casing fit target | Manifold with stack sockets and casing magnet wells | `308.4 x 365.9 x 95.24mm` | `308.4 x 365.9 x 95.24mm` | Historical match; magnetic geometry superseded. |
+| Regular magnetic tub | Manifold with bottom magnet wells | `256.395 x 340.397 x 84.24mm` | `256.4 x 340.4 x 84.24mm` | Historical match; magnetic geometry superseded. |
 | Peg/socket clearance coupon | Manifold | `122.0 x 46.225 x 10.6mm` | `122.0 x 46.225 x 10.6mm` including `0.6mm` index marks over `10mm` socket blocks | Match |
 | Hex peg set | Manifold, 7 parts | `110.0 x 30.45 x 7.318mm` | `110.0 x 30.45 x 7.318mm` | Match |
-| Magnet-well shape coupon | Manifold | `54.0 x 22.0 x 4.0mm` | Two face coupons showing tub and casing well profiles | Match |
+| Magnet-well shape coupon | Manifold | `54.0 x 22.0 x 4.0mm` | Two face coupons showing the former divergent profiles | Historical only; replace with the single canonical coupon. |
 
-### Mini/regular/mega print set
+### Historical mini/regular/mega print set
 
 The committed generator is `scad/testbed/mini_regular_mega_print_set.scad`; the
 committed packet builder is `scad/testbed/build-mini-regular-mega-print-set.sh`.
 It exports the casing, magnetic tub, copied grid baseplate, glue-on knob, and
 seven loose hex pegs to `preview/casing-fit-trial-01/mini-regular-mega-print-set/`.
+The bounds below are retained as pre-canonical provenance; regenerate the magnetic
+parts before printing.
 
-| Artifact | Measured STL bounds |
+| Artifact | Historical measured STL bounds |
 |---|---:|
 | `casing-mini-23u-magnetic.stl` | `182.400 x 365.900 x 95.240mm` |
 | `casing-regular-23u-magnetic.stl` | `308.400 x 365.900 x 95.240mm` |
@@ -104,8 +111,9 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 | Structural thickness change | No casing `+0.6mm`; tub source wall thickness is now `2.2mm` to absorb the printed-tub contour-compensation lesson in CAD. |
 | Stack land width / length | Rejected; side/back exterior faces must remain flat |
 | Mouth gauge slot depth | `40.0mm` |
-| Casing magnet wells | Nine wells: three median/paramedian columns at closed front row, closed rear row, and 75% rear-magnet warning row; 8-rib bore-minus-notch profile, `6.40mm` bore, `6.10mm` rib-tip diameter, `1.60mm` deep, `0.30mm` chamfer |
-| Tub magnet wells | Six bottom wells: two front/back rows by three median/paramedian columns; 8-rib bore-minus-notch profile, `5.40mm` bore, `5.25mm` rib-tip diameter, `1.10mm` deep, `0.30mm` chamfer |
+| Shared 6 x 1.5mm magnet-well geometry | `6.10mm` bore; `5.60mm` rib-tip diameter from `0.25mm` radial crush; eight ribs at 45-degree spacing; `0.80mm` rib width; `0.30mm` lead-in chamfer; `2.30mm` depth pending physical confirmation |
+| Casing magnet positions | Nine wells: three median/paramedian columns at closed front row, closed rear row, and 75% rear-magnet warning row |
+| Tub magnet positions | Six bottom wells: two front/back rows by three median/paramedian columns |
 | Magnet lateral columns | Median plus `+/-21.0mm` paramedian offsets for optional extra retention |
 | Nominal tub-to-slot clearance | `1.0mm` per side, `0.5mm` closed back, `1.0mm` top in CAD |
 | Aligned-STL side clearance | Tub is aligned to leave the full `1.0mm` per side clearance in the casing slot. |
@@ -114,7 +122,7 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 | Peg diameter | `8.45mm` point-to-point hex |
 | Peg socket clearances | `0.30`, `0.45`, `0.60mm` around an `8.0mm` nominal socket diameter |
 | Peg/socket chamfer | `2.5mm` |
-| Peg socket placement | Enabled in `casing.scad` v0.10.4; sockets center in the flat side/back wall footprints |
+| Peg socket placement | Enabled in `casing.scad`; sockets center in the flat side/back wall footprints |
 | Peg profile | Plain laid-down hex peg; no crush ribs |
 | Hex peg set count | `7`, matching the representative casing's socket count per stack interface |
 | Casing socket faces | Installed-top sockets open on print `Z=0`; installed-bottom wall-foot receivers open on print `Z=print_z` |
@@ -151,8 +159,9 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 | Hex peg inserts without shaving or splitting socket walls | TBD |
 | Any socket cracking, whitening, or delamination | TBD |
 | Peg aligns top-slab socket to wall-foot receiver between two casing artifacts | TBD |
-| Tub magnet wells accept 5mm magnets without cracking or loose fall-out | TBD |
-| Casing magnet wells accept 6mm magnets without cracking or loose fall-out | TBD |
+| Tub wells accept the canonical 6 x 1.5mm magnets without cracking or loose fall-out | TBD |
+| Casing wells accept the canonical 6 x 1.5mm magnets without cracking or loose fall-out | TBD |
+| Canonical 2.30mm depth seats magnets shy or flush rather than proud | TBD |
 | Closed magnet alignment and retention are useful | TBD |
 | 75% travel warning detent is noticeable without feeling like a hard stop | TBD |
 | Tub wall-source CAD fix for the printed `+0.6mm` contour-compensation result | Implemented as `2.2mm` tub walls in CAD; physical print validation pending. |
@@ -172,7 +181,7 @@ The peg/socket coupon Y envelope includes loose pegs placed in front of the coup
 | Hex peg is too tight or shaves badly | Reduce point-to-point peg diameter, increase socket clearance, or add a dedicated peg-profile sweep. |
 | Peg strategy requires external side/back protrusions | Reject the geometry and redesign around flat exterior casing faces. |
 | One coupon is clearly best | Confirm against the actual casing sockets before updating prototype `PEG_CLEARANCE`. |
-| Tub magnets are loose | Increase the tub bore/tip fit or revisit the 5mm pocket recipe before changing casing magnet positions. |
-| Casing magnets are loose | Move from the default 6mm pocket toward the stronger `6mm R20/P20` candidate before changing magnet count. |
-| Magnet wells are too tight or split walls | Loosen the bore/tip fit or reduce chamfer before changing the midline/paramedian array layout. |
+| Canonical magnet wells are loose | Record which interface and print process failed, then revise the shared 6 x 1.5mm recipe or define an evidence-backed interface variant; do not create a part-specific copy. |
+| Canonical magnet wells are too tight or split walls | Record the physical evidence and revise the shared recipe; do not diverge Tub and Casing geometry. |
+| Magnets remain proud at 2.30mm depth | Increase shared depth only after confirming the available Tub, Casing, and Basket/Carrier material envelopes. |
 | Tub source remains weaker than tubs printed with `+0.6mm` contour compensation | Revisit tub wall/pathing source; do not thicken the casing or rely on slicer contour compensation. |
