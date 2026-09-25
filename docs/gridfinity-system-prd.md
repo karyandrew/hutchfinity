@@ -257,7 +257,7 @@ System works when all hold:
 7. **Glance-to-find.** Person who's seen the color legend once can locate the tub for a category in <3s on a shelf or in an open drawer.
 8. **2-bin operatory pattern.** Empty back-position is visible at a glance; restock between patients.
 9. **Subjective.** Team reaction is "holy shit this is sweet," not "what the fuck is this mess." Owner judges; agents don't override.
-10. **Print-lane validation gate.** The matching [#37](https://github.com/karyandrew/hutchfinity/issues/37) lane is `PASS_CURRENT_PROFILE` before its production run is dispatched under [#38](https://github.com/karyandrew/hutchfinity/issues/38).
+10. **Artifact- and printer-lane validation gate.** Before production, the exact artifact family and printer/profile/material tuple must have a current matching #37 `PASS_CURRENT_PROFILE` receipt that remains valid under #37's invalidation rules. Large tubs/large parts use the SV08 large-part lane; bins/cups use the X2D bin/cup lane by default. #38 may start only the matching production run; a pass in one lane does not authorize another.
 
 ## Open items (do NOT silently decide)
 
