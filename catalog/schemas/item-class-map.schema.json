@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/item-class-map.schema.json",
+  "title": "Hutchfinity item-class mapping v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "item_class_id", "item_class_hash", "preferred_sku", "fallback_skus", "selected_orientation", "fit_margins_mm", "flat_floor_margins_mm", "quantity_capacity", "retrieval_clearance_mm", "source_and_output_hashes", "validation_lane", "validation_receipt", "physical_fit_state", "physical_fit_receipt", "selection_status", "rationale", "private_mapping_owner", "candidate_evaluations"],
+  "properties": {
+    "schema": {"const": "hutchfinity-item-class-map/v1"},
+    "item_class_id": {"type": "string", "minLength": 1},
+    "item_class_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "preferred_sku": {"type": ["string", "null"], "pattern": "^bin-[0-9]+x[0-9]+x[0-9]+h$"},
+    "fallback_skus": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^bin-[0-9]+x[0-9]+x[0-9]+h$"}},
+    "selected_orientation": {"type": ["string", "null"]},
+    "fit_margins_mm": {"oneOf": [{"$ref": "#/$defs/nullableAxes"}, {"type": "null"}]},
+    "flat_floor_margins_mm": {"oneOf": [{"$ref": "#/$defs/nullableXY"}, {"type": "null"}]},
+    "quantity_capacity": {"type": ["integer", "null"], "minimum": 0},
+    "retrieval_clearance_mm": {"$ref": "#/$defs/nullableAxes"},
+    "source_and_output_hashes": {"type": "array", "items": {"$ref": "#/$defs/hash"}},
+    "validation_lane": {"type": ["string", "null"]},
+    "validation_receipt": {"type": ["string", "null"]},
+    "physical_fit_state": {"enum": ["not_run", "pass", "fail", "inconclusive", "stale"]},
+    "physical_fit_receipt": {"type": ["string", "null"]},
+    "selection_status": {"enum": ["PROVISIONAL", "ACCEPTED", "REJECTED", "CUSTOM_SKU_REQUIRED"]},
+    "rationale": {"type": "string", "minLength": 1},
+    "private_mapping_owner": {"const": "external/private"},
+    "candidate_evaluations": {"type": "array", "items": {"$ref": "#/$defs/evaluation"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"selection_status": {"const": "ACCEPTED"}}, "required": ["selection_status"]},
+      "then": {
+        "properties": {
+          "physical_fit_state": {"const": "pass"},
+          "physical_fit_receipt": {"type": "string", "minLength": 1},
+          "validation_lane": {"type": "string", "minLength": 1},
+          "validation_receipt": {"type": "string", "minLength": 1},
+          "preferred_sku": {"type": "string"},
+          "source_and_output_hashes": {"type": "array", "minItems": 1}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "hash": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}},
+    "nullableAxes": {"type": "object", "additionalProperties": false, "required": ["x", "y", "z"], "properties": {"x": {"type": ["number", "null"]}, "y": {"type": ["number", "null"]}, "z": {"type": ["number", "null"]}}},
+    "nullableXY": {"type": "object", "additionalProperties": false, "required": ["x", "y"], "properties": {"x": {"type": ["number", "null"]}, "y": {"type": ["number", "null"]}}},
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sku", "orientation", "outcome", "required_envelope_mm", "wall_span_margins_mm", "flat_floor_margins_mm", "quantity_capacity", "unknown_axes", "reasons"],
+      "properties": {
+        "sku": {"type": "string"},
+        "orientation": {"type": "string"},
+        "outcome": {"enum": ["pass", "fail", "inconclusive"]},
+        "required_envelope_mm": {"$ref": "#/$defs/nullableAxes"},
+        "wall_span_margins_mm": {"$ref": "#/$defs/nullableAxes"},
+        "flat_floor_margins_mm": {"$ref": "#/$defs/nullableXY"},
+        "quantity_capacity": {"type": ["integer", "null"], "minimum": 0},
+        "unknown_axes": {"type": "array", "uniqueItems": true, "items": {"enum": ["x", "y", "z"]}},
+        "reasons": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    }
+  }
+}

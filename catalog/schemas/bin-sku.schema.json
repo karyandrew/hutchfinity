@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/bin-sku.schema.json",
+  "title": "Hutchfinity bin SKU v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "sku", "cells_x", "cells_y", "height_units", "nominal_pitch_mm", "external_bounds_mm", "verified_internal_bounds_mm", "wall_floor_lip_contract", "handling_contract", "base_interface", "catalog_state", "source_output_link_state", "source_commit", "source_files_and_hashes", "output_hashes", "validation_state", "validated_printer_lanes"],
+  "properties": {
+    "schema": {"const": "hutchfinity-bin-sku/v1"},
+    "sku": {"type": "string", "pattern": "^bin-[0-9]+x[0-9]+x[0-9]+h$"},
+    "cells_x": {"type": "integer", "minimum": 1},
+    "cells_y": {"type": "integer", "minimum": 1},
+    "height_units": {"type": "integer", "minimum": 1},
+    "nominal_pitch_mm": {"const": 21.0},
+    "external_bounds_mm": {"oneOf": [{"$ref": "#/$defs/axes"}, {"type": "null"}]},
+    "verified_internal_bounds_mm": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["verification_basis", "wall_span_mm", "conservative_flat_floor_span_mm", "floor_z_mm", "floor_edge_radius_mm", "interior_corner_radius_mm", "top_open"],
+          "properties": {
+            "verification_basis": {"enum": ["current_source_geometry", "physical_measurement"]},
+            "wall_span_mm": {"$ref": "#/$defs/axes"},
+            "conservative_flat_floor_span_mm": {"$ref": "#/$defs/xy"},
+            "floor_z_mm": {"type": "number", "minimum": 0},
+            "floor_edge_radius_mm": {"type": "number", "minimum": 0},
+            "interior_corner_radius_mm": {"type": "number", "minimum": 0},
+            "top_open": {"type": "boolean"}
+          }
+        }
+      ]
+    },
+    "wall_floor_lip_contract": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["wall_thickness_mm", "floor_height_mm", "floor_edge_radius_mm", "lip_style", "top_obstruction", "fit_caveat"],
+          "properties": {
+            "wall_thickness_mm": {"type": "number", "exclusiveMinimum": 0},
+            "floor_height_mm": {"type": "number", "minimum": 0},
+            "floor_edge_radius_mm": {"type": "number", "minimum": 0},
+            "lip_style": {"const": "minimum"},
+            "top_obstruction": {"enum": ["none", "label", "cover", "other"]},
+            "fit_caveat": {"type": "string", "minLength": 1}
+          }
+        }
+      ]
+    },
+    "handling_contract": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["compartment_count", "visibility_supported", "retrieval_modes_supported"],
+          "properties": {
+            "compartment_count": {"type": "integer", "minimum": 1},
+            "visibility_supported": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["open", "labelled", "covered"]}},
+            "retrieval_modes_supported": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["finger_grab", "pinch", "pour", "lift_bundle"]}}
+          }
+        }
+      ]
+    },
+    "base_interface": {"const": "gridfinity-half-pitch-21mm"},
+    "catalog_state": {"enum": ["build_managed", "tracked_unmanaged"]},
+    "source_output_link_state": {"enum": ["unverified", "reproduced"]},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_files_and_hashes": {"$ref": "#/$defs/hashes"},
+    "output_hashes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256", "bytes", "mesh_aabb_mm", "mesh_volume_mm3", "triangle_count"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "bytes": {"type": "integer", "minimum": 1},
+          "mesh_aabb_mm": {"$ref": "#/$defs/axes"},
+          "mesh_volume_mm3": {"type": "number", "exclusiveMinimum": 0},
+          "triangle_count": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "validation_state": {"enum": ["source_only", "rendered", "printed", "physically_accepted", "stale"]},
+    "validated_printer_lanes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "axes": {"type": "object", "additionalProperties": false, "required": ["x", "y", "z"], "properties": {"x": {"type": "number", "minimum": 0}, "y": {"type": "number", "minimum": 0}, "z": {"type": "number", "minimum": 0}}},
+    "xy": {"type": "object", "additionalProperties": false, "required": ["x", "y"], "properties": {"x": {"type": "number", "minimum": 0}, "y": {"type": "number", "minimum": 0}}},
+    "hashes": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}}
+  }
+}
