@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 5.1.2
+version: 5.1.3
 ---
 
 # Gridfinity System PRD — Dental Practice Organization
@@ -231,10 +231,10 @@ Standard bin set — keep tight. Add only when inventory→bin mapping forces it
 | Pitch | 21 × 21 × 3.5mm |
 | Base | Foot pattern (`flat_base="off"`) |
 | Lip | `lip_style="minimum"` (note: reduced lip on small bins is a derived spec to preserve interior volume + finger access — not a separate requirement) |
-| Compartments | Single (`divx=1, divy=1`) baseline; multi-compartment as inventory demands |
+| Compartments | Single (`vertical_chambers=1`, `horizontal_chambers=1`) baseline; multi-compartment as inventory demands |
 | Color | Per inventory category (see Color codes table) |
 | Material | PETG (default) |
-| Printer | Bambu (P1S mid-calibration / A1 limited / X2D for autoclavable category — separate) |
+| Printer | X2D primary bin/cup lane under the matching current #37 validation receipt; SV08 only under its own matching validated lane; no retired-printer dependency |
 | Nozzle / layer | 0.4mm / 0.2mm |
 | Print constraint | No manual supports. No orientation tricks. Predictable for staff to run. (HR-5) |
 
@@ -257,18 +257,19 @@ System works when all hold:
 7. **Glance-to-find.** Person who's seen the color legend once can locate the tub for a category in <3s on a shelf or in an open drawer.
 8. **2-bin operatory pattern.** Empty back-position is visible at a glance; restock between patients.
 9. **Subjective.** Team reaction is "holy shit this is sweet," not "what the fuck is this mess." Owner judges; agents don't override.
-10. **Print-fleet validation gate.** [#66](https://github.com/karyandrew/3d-printing/issues/66) passed before production batch ([#68](https://github.com/karyandrew/3d-printing/issues/68)).
+10. **Artifact- and printer-lane validation gate.** Before production, the exact artifact family and printer/profile/material tuple must have a current matching #37 `PASS_CURRENT_PROFILE` receipt that remains valid under #37's invalidation rules. Large tubs/large parts use the SV08 large-part lane; bins/cups use the X2D bin/cup lane by default. #38 may start only the matching production run; a pass in one lane does not authorize another.
 
 ## Open items (do NOT silently decide)
 
 When you hit one of these, surface as a blocker — don't pick.
 
+The production split is no longer open: #37/#38 assign large tubs and large parts to the SV08 MAX lane and bins/cups to the X2D lane by default. Any substitution requires its own matching validation receipt and run manifest.
+
 | # | Item | Blocker |
 |---|---|---|
 | 1 | Bin sub-color within a tub (item type vs whole-tub-uniform) | UX question — owner |
 | 2 | Standard bin size set (final) | Inventory→bin mapping; expected to evolve months 1–2 of practice operation per inventory guide |
-| 3 | Bin printer assignment (P1S vs A1 vs X2D) | P1S calibration; potential P1S retirement |
-| 4 | Counter-use megatub footprint (when counter dimensions need a bigger SKU than 18×16) | Counter measurement; current mega is locked to 18×16 for cabinet x-wide compatibility |
+| 3 | Counter-use megatub footprint (when counter dimensions need a bigger SKU than 18×16) | Counter measurement; current mega is locked to 18×16 for cabinet x-wide compatibility |
 
 ## Implementation guidance
 
@@ -314,10 +315,7 @@ When you hit one of these, surface as a blocker — don't pick.
 - v3.0.0 doc-cleanup precursor (folded in): [3d-printing#138](https://github.com/karyandrew/3d-printing/issues/138)
 - Upstream ask: [kary-dental#52](https://github.com/karyandrew/kary-dental/issues/52)
 - Library: [Gridfinity Extended](https://github.com/ostat/gridfinity_extended_openscad) (vendored at `scad/gridfinity/vendor/extended/`)
-- Production gate: [3d-printing#66](https://github.com/karyandrew/3d-printing/issues/66) (validation sequence)
-- Production batch: [3d-printing#68](https://github.com/karyandrew/3d-printing/issues/68)
-- Printer fleet specs: [`docs/project-reference.md`](project-reference.md)
-- Validation sequence: [`docs/validation-sequence.md`](validation-sequence.md)
-- SV08 status: [`printer/sv08/handoff_state.md`](../printer/sv08/handoff_state.md)
+- Production validation lanes: [hutchfinity#37](https://github.com/karyandrew/hutchfinity/issues/37)
+- Production runs: [hutchfinity#38](https://github.com/karyandrew/hutchfinity/issues/38)
 - Sensitivity / HIPAA: bins do not store PHI. Patient data lives only in HIPAA-regulated systems per [`second-brain/.claude/rules/sensitivity.md`](https://github.com/karyandrew/second-brain/blob/main/.claude/rules/sensitivity.md).
 - Autoclavable workstream (separate PRD): [3d-printing#61](https://github.com/karyandrew/3d-printing/issues/61), [3d-printing#122](https://github.com/karyandrew/3d-printing/issues/122)
