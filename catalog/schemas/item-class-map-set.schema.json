@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/item-class-map-set.schema.json",
+  "title": "Hutchfinity item-class map set v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "catalog_source_commit", "mappings"],
+  "properties": {
+    "schema": {"const": "hutchfinity-item-class-map-set/v1"},
+    "catalog_source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "mappings": {"type": "array", "minItems": 1, "items": {"$ref": "https://example.invalid/hutchfinity/item-class-map.schema.json"}}
+  }
+}

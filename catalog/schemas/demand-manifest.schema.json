@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/demand-manifest.schema.json",
+  "title": "Hutchfinity non-authorizing demand manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "manifest_id", "as_of", "production_authorized", "artifact_demands", "private_quantity_source_ref"],
+  "properties": {
+    "schema": {"const": "hutchfinity-demand-manifest/v1"},
+    "manifest_id": {"type": "string", "minLength": 1},
+    "as_of": {"type": "string", "format": "date-time"},
+    "production_authorized": {"const": false},
+    "artifact_demands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item_class_id", "artifact_id_or_sku", "required_quantity", "allowed_materials", "allowed_colors", "validation_lane", "validation_receipt", "physical_fit_receipt", "source_and_output_hashes", "priority_class"],
+        "properties": {
+          "item_class_id": {"type": "string", "minLength": 1},
+          "artifact_id_or_sku": {"type": "string", "pattern": "^bin-[0-9]+x[0-9]+x[0-9]+h$"},
+          "required_quantity": {"type": "integer", "minimum": 1},
+          "allowed_materials": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "allowed_colors": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "validation_lane": {"type": "string", "minLength": 1},
+          "validation_receipt": {"type": "string", "minLength": 1},
+          "physical_fit_receipt": {"type": "string", "minLength": 1},
+          "source_and_output_hashes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "sha256"],
+              "properties": {
+                "path": {"type": "string", "minLength": 1},
+                "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+              }
+            }
+          },
+          "priority_class": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "private_quantity_source_ref": {"const": "external/private; no content copied"}
+  }
+}
