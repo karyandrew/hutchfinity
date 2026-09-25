@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/item-class.schema.json",
+  "title": "Hutchfinity neutral item class v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "item_class_id", "shape_class", "bounding_box_mm", "orientation_allowed", "minimum_quantity_per_bin", "preferred_quantity_per_bin", "grab_clearance_mm", "separator_or_compartment_need", "visibility_need", "retrieval_mode", "allowed_rotation", "compression_allowed", "rattle_tolerance", "special_constraints", "source_private_map_ref", "measured_or_estimated", "uncertainty_mm", "initial_evaluation_target_skus"],
+  "properties": {
+    "schema": {"const": "hutchfinity-item-class/v1"},
+    "item_class_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "shape_class": {"enum": ["rod", "roll", "stack", "packet", "bottle", "box", "flat_object", "irregular", "other"]},
+    "bounding_box_mm": {"$ref": "#/$defs/nullableAxes"},
+    "orientation_allowed": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["flat", "edge", "upright"]}},
+    "minimum_quantity_per_bin": {"type": ["integer", "null"], "minimum": 1},
+    "preferred_quantity_per_bin": {"type": ["integer", "null"], "minimum": 1},
+    "grab_clearance_mm": {"$ref": "#/$defs/nullableAxes"},
+    "separator_or_compartment_need": {"enum": ["none", "optional", "required"]},
+    "visibility_need": {"enum": ["open", "labelled", "covered", "either"]},
+    "retrieval_mode": {"enum": ["finger_grab", "pinch", "pour", "lift_bundle", "other"]},
+    "allowed_rotation": {"enum": ["none", "xy_swap", "free"]},
+    "compression_allowed": {"type": "boolean"},
+    "rattle_tolerance": {"enum": ["low", "medium", "high"]},
+    "special_constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum_internal_long_axis_mm", "requires_unobstructed_top", "flat_floor_contact_required", "force_or_postprocessing_allowed"],
+      "properties": {
+        "minimum_internal_long_axis_mm": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "requires_unobstructed_top": {"type": "boolean"},
+        "flat_floor_contact_required": {"type": "boolean"},
+        "force_or_postprocessing_allowed": {"const": false}
+      }
+    },
+    "source_private_map_ref": {"const": "external/private; no content copied"},
+    "measured_or_estimated": {"enum": ["measured", "estimated", "mixed"]},
+    "uncertainty_mm": {"$ref": "#/$defs/nullableAxes"},
+    "initial_evaluation_target_skus": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^bin-[0-9]+x[0-9]+x[0-9]+h$"}}
+  },
+  "$defs": {
+    "nullableAxes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "z"],
+      "properties": {
+        "x": {"type": ["number", "null"], "minimum": 0},
+        "y": {"type": ["number", "null"], "minimum": 0},
+        "z": {"type": ["number", "null"], "minimum": 0}
+      }
+    }
+  }
+}

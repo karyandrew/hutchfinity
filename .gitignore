@@ -12,7 +12,11 @@
 # Generated outputs (commit only via explicit release process)
 build/
 out/
-preview/
+preview/*
+!preview/issue-32/
+preview/issue-32/*
+!preview/issue-32/single-slot-hero.png
+!preview/issue-32/single-slot-exploded.png
 
 # OS noise
 .DS_Store
@@ -24,3 +28,6 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+
+# Ephemeral local runtime records
+.claude/praetor/

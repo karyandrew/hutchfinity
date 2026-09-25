@@ -1,0 +1,362 @@
+{
+  "schema": "hutchfinity-item-class-map-set/v1",
+  "catalog_source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+  "mappings": [
+    {
+      "schema": "hutchfinity-item-class-map/v1",
+      "item_class_id": "long-rod-178",
+      "item_class_hash": "398372d79595000641c47f51c6ea2072977ee234dcdf29b5e945bd8b1f68781f",
+      "preferred_sku": "bin-2x9x10h",
+      "fallback_skus": [
+        "bin-2x10x10h"
+      ],
+      "selected_orientation": "flat_xy_swap",
+      "fit_margins_mm": {
+        "x": null,
+        "y": 2.8,
+        "z": null
+      },
+      "flat_floor_margins_mm": {
+        "x": null,
+        "y": -2.3
+      },
+      "quantity_capacity": null,
+      "retrieval_clearance_mm": {
+        "x": 5.0,
+        "y": null,
+        "z": null
+      },
+      "source_and_output_hashes": [
+        {
+          "path": "scad/gridfinity/dental/build-stl.sh",
+          "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
+        },
+        {
+          "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
+          "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
+        },
+        {
+          "path": "scad/gridfinity/stl/bin-2x9x10h.stl",
+          "sha256": "22e765dbbd682c3ee506cbaf44b8249d56fdc331c3d8bbce3742acd31ef1113d"
+        }
+      ],
+      "validation_lane": null,
+      "validation_receipt": null,
+      "physical_fit_state": "not_run",
+      "physical_fit_receipt": null,
+      "selection_status": "PROVISIONAL",
+      "rationale": "Publicly named candidate retained as a physical-fit target, but source evidence is incomplete or conservative floor geometry is inconclusive; it is not a passing fit claim.",
+      "private_mapping_owner": "external/private",
+      "candidate_evaluations": [
+        {
+          "sku": "bin-2x10x10h",
+          "orientation": "flat_xy_swap",
+          "outcome": "inconclusive",
+          "required_envelope_mm": {
+            "x": null,
+            "y": 183.3,
+            "z": null
+          },
+          "wall_span_margins_mm": {
+            "x": null,
+            "y": 23.8,
+            "z": null
+          },
+          "flat_floor_margins_mm": {
+            "x": null,
+            "y": 18.7
+          },
+          "quantity_capacity": null,
+          "unknown_axes": [
+            "x",
+            "z"
+          ],
+          "reasons": [
+            "unknown required envelope axes: x, z"
+          ]
+        },
+        {
+          "sku": "bin-2x9x10h",
+          "orientation": "flat_xy_swap",
+          "outcome": "inconclusive",
+          "required_envelope_mm": {
+            "x": null,
+            "y": 183.3,
+            "z": null
+          },
+          "wall_span_margins_mm": {
+            "x": null,
+            "y": 2.8,
+            "z": null
+          },
+          "flat_floor_margins_mm": {
+            "x": null,
+            "y": -2.3
+          },
+          "quantity_capacity": null,
+          "unknown_axes": [
+            "x",
+            "z"
+          ],
+          "reasons": [
+            "unknown required envelope axes: x, z"
+          ]
+        }
+      ]
+    },
+    {
+      "schema": "hutchfinity-item-class-map/v1",
+      "item_class_id": "square-stack-49",
+      "item_class_hash": "33150dfcc7c3772840d135af1d8b4914cd2e3de05161e75e13e06f7a41e5e181",
+      "preferred_sku": "bin-3x3x10h",
+      "fallback_skus": [
+        "bin-3x5x10h"
+      ],
+      "selected_orientation": "flat",
+      "fit_margins_mm": {
+        "x": 5.6,
+        "y": 5.6,
+        "z": 0.54
+      },
+      "flat_floor_margins_mm": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "quantity_capacity": 1,
+      "retrieval_clearance_mm": {
+        "x": 5.0,
+        "y": 5.0,
+        "z": 2.0
+      },
+      "source_and_output_hashes": [
+        {
+          "path": "scad/gridfinity/dental/build-stl.sh",
+          "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
+        },
+        {
+          "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
+          "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
+        },
+        {
+          "path": "scad/gridfinity/stl/bin-3x3x10h.stl",
+          "sha256": "7f1532ed7c25f168929273b1094602a2f15a07262623fa8358e49a0fae199845"
+        }
+      ],
+      "validation_lane": null,
+      "validation_receipt": null,
+      "physical_fit_state": "not_run",
+      "physical_fit_receipt": null,
+      "selection_status": "PROVISIONAL",
+      "rationale": "Smallest build-managed candidate passing source-derived geometry, handling, quantity, and retrieval constraints; physical fit has not run.",
+      "private_mapping_owner": "external/private",
+      "candidate_evaluations": [
+        {
+          "sku": "bin-3x3x10h",
+          "orientation": "flat",
+          "outcome": "pass",
+          "required_envelope_mm": {
+            "x": 54.5,
+            "y": 54.5,
+            "z": 32.5
+          },
+          "wall_span_margins_mm": {
+            "x": 5.6,
+            "y": 5.6,
+            "z": 0.54
+          },
+          "flat_floor_margins_mm": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "quantity_capacity": 1,
+          "unknown_axes": [],
+          "reasons": []
+        },
+        {
+          "sku": "bin-3x5x10h",
+          "orientation": "flat",
+          "outcome": "pass",
+          "required_envelope_mm": {
+            "x": 54.5,
+            "y": 54.5,
+            "z": 32.5
+          },
+          "wall_span_margins_mm": {
+            "x": 5.6,
+            "y": 47.6,
+            "z": 0.54
+          },
+          "flat_floor_margins_mm": {
+            "x": 0.5,
+            "y": 42.5
+          },
+          "quantity_capacity": 1,
+          "unknown_axes": [],
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "schema": "hutchfinity-item-class-map/v1",
+      "item_class_id": "short-roll-40x15",
+      "item_class_hash": "7a7b70d570e9dc4899823d2747e070f15fa2a87847674078596987ab8444463e",
+      "preferred_sku": "bin-2x4x10h",
+      "fallback_skus": [
+        "bin-2x5x10h"
+      ],
+      "selected_orientation": "flat_xy_swap",
+      "fit_margins_mm": {
+        "x": 20.6,
+        "y": 39.6,
+        "z": 15.54
+      },
+      "flat_floor_margins_mm": {
+        "x": 15.5,
+        "y": 34.5
+      },
+      "quantity_capacity": 2,
+      "retrieval_clearance_mm": {
+        "x": 1.0,
+        "y": 3.0,
+        "z": 2.0
+      },
+      "source_and_output_hashes": [
+        {
+          "path": "scad/gridfinity/dental/build-stl.sh",
+          "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
+        },
+        {
+          "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
+          "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
+        },
+        {
+          "path": "scad/gridfinity/stl/bin-2x4x10h.stl",
+          "sha256": "8d2867f65bb6aabeab844b10b2c0fd031da7607b10d0f264e8214eb2c343719f"
+        }
+      ],
+      "validation_lane": null,
+      "validation_receipt": null,
+      "physical_fit_state": "not_run",
+      "physical_fit_receipt": null,
+      "selection_status": "PROVISIONAL",
+      "rationale": "Smallest build-managed candidate passing source-derived geometry, handling, quantity, and retrieval constraints; physical fit has not run.",
+      "private_mapping_owner": "external/private",
+      "candidate_evaluations": [
+        {
+          "sku": "bin-2x4x10h",
+          "orientation": "flat_xy_swap",
+          "outcome": "pass",
+          "required_envelope_mm": {
+            "x": 18.5,
+            "y": 41.5,
+            "z": 17.5
+          },
+          "wall_span_margins_mm": {
+            "x": 20.6,
+            "y": 39.6,
+            "z": 15.54
+          },
+          "flat_floor_margins_mm": {
+            "x": 15.5,
+            "y": 34.5
+          },
+          "quantity_capacity": 2,
+          "unknown_axes": [],
+          "reasons": []
+        },
+        {
+          "sku": "bin-2x5x10h",
+          "orientation": "flat_xy_swap",
+          "outcome": "pass",
+          "required_envelope_mm": {
+            "x": 18.5,
+            "y": 41.5,
+            "z": 17.5
+          },
+          "wall_span_margins_mm": {
+            "x": 20.6,
+            "y": 60.6,
+            "z": 15.54
+          },
+          "flat_floor_margins_mm": {
+            "x": 15.5,
+            "y": 55.5
+          },
+          "quantity_capacity": 4,
+          "unknown_axes": [],
+          "reasons": []
+        }
+      ]
+    },
+    {
+      "schema": "hutchfinity-item-class-map/v1",
+      "item_class_id": "flat-185x82x13",
+      "item_class_hash": "b554349b3e3139838807d4073a7b79135f261131687005a1b397bcf739fe6ace",
+      "preferred_sku": "bin-5x9x5h",
+      "fallback_skus": [],
+      "selected_orientation": "flat_xy_swap",
+      "fit_margins_mm": {
+        "x": 15.1,
+        "y": 0.6,
+        "z": 1.04
+      },
+      "flat_floor_margins_mm": {
+        "x": 9.5,
+        "y": -5.0
+      },
+      "quantity_capacity": null,
+      "retrieval_clearance_mm": {
+        "x": 0.5,
+        "y": 5.0,
+        "z": 1.0
+      },
+      "source_and_output_hashes": [
+        {
+          "path": "scad/gridfinity/dental/build-stl.sh",
+          "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
+        },
+        {
+          "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
+          "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
+        },
+        {
+          "path": "scad/gridfinity/stl/bin-5x9x5h.stl",
+          "sha256": "15537396837f3e4ed896b54f616719b07e596bae8acf7efeeefaf4f0079bdbee"
+        }
+      ],
+      "validation_lane": null,
+      "validation_receipt": null,
+      "physical_fit_state": "not_run",
+      "physical_fit_receipt": null,
+      "selection_status": "PROVISIONAL",
+      "rationale": "Publicly named candidate retained as a physical-fit target, but source evidence is incomplete or conservative floor geometry is inconclusive; it is not a passing fit claim.",
+      "private_mapping_owner": "external/private",
+      "candidate_evaluations": [
+        {
+          "sku": "bin-5x9x5h",
+          "orientation": "flat_xy_swap",
+          "outcome": "inconclusive",
+          "required_envelope_mm": {
+            "x": 87.5,
+            "y": 186.0,
+            "z": 14.5
+          },
+          "wall_span_margins_mm": {
+            "x": 15.1,
+            "y": 0.6,
+            "z": 1.04
+          },
+          "flat_floor_margins_mm": {
+            "x": 9.5,
+            "y": -5.0
+          },
+          "quantity_capacity": null,
+          "unknown_axes": [],
+          "reasons": [
+            "conservative flat-floor span is negative; wall span alone is not a fit oracle"
+          ]
+        }
+      ]
+    }
+  ]
+}

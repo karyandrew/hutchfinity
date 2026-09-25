@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/physical-fit-receipt.schema.json",
+  "title": "Hutchfinity physical-fit receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "receipt_id", "item_class_id", "item_class_hash", "sku", "artifact_sha256", "validation_lane", "validation_receipt", "sample_kind", "sample_dimensions_mm", "sample_uncertainty_mm", "tested_quantity", "checks", "workarounds", "result", "performed_at"],
+  "properties": {
+    "schema": {"const": "hutchfinity-physical-fit-receipt/v1"},
+    "receipt_id": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "item_class_id": {"type": "string", "minLength": 1},
+    "item_class_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "sku": {"type": "string", "pattern": "^bin-[0-9]+x[0-9]+x[0-9]+h$"},
+    "artifact_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "validation_lane": {"type": "string", "minLength": 1},
+    "validation_receipt": {"type": "string", "minLength": 1},
+    "sample_kind": {"enum": ["representative_sample", "dimensional_surrogate"]},
+    "sample_dimensions_mm": {"$ref": "#/$defs/positiveAxes"},
+    "sample_uncertainty_mm": {"$ref": "#/$defs/nonnegativeAxes"},
+    "tested_quantity": {"type": "integer", "minimum": 1},
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["load_unload", "quantity", "retrieval", "adjacent_interference", "base_engagement", "ordinary_handling"],
+      "properties": {
+        "load_unload": {"enum": ["pass", "fail", "inconclusive"]},
+        "quantity": {"enum": ["pass", "fail", "inconclusive"]},
+        "retrieval": {"enum": ["pass", "fail", "inconclusive"]},
+        "adjacent_interference": {"enum": ["pass", "fail", "inconclusive"]},
+        "base_engagement": {"enum": ["pass", "fail", "inconclusive"]},
+        "ordinary_handling": {"enum": ["pass", "fail", "inconclusive"]}
+      }
+    },
+    "workarounds": {"type": "array", "uniqueItems": true, "items": {"enum": ["force", "sanding", "deformation", "liner", "divider", "orientation", "other"]}},
+    "result": {"enum": ["pass", "fail", "inconclusive"]},
+    "performed_at": {"type": "string", "format": "date-time"}
+  },
+  "$defs": {
+    "positiveAxes": {"type": "object", "additionalProperties": false, "required": ["x", "y", "z"], "properties": {"x": {"type": "number", "exclusiveMinimum": 0}, "y": {"type": "number", "exclusiveMinimum": 0}, "z": {"type": "number", "exclusiveMinimum": 0}}},
+    "nonnegativeAxes": {"type": "object", "additionalProperties": false, "required": ["x", "y", "z"], "properties": {"x": {"type": "number", "minimum": 0}, "y": {"type": "number", "minimum": 0}, "z": {"type": "number", "minimum": 0}}}
+  }
+}

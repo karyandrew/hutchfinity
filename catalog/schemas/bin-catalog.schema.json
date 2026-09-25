@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/bin-catalog.schema.json",
+  "title": "Hutchfinity bin catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "source_commit", "source_files_and_hashes", "inventory_summary", "items"],
+  "properties": {
+    "schema": {"const": "hutchfinity-bin-catalog/v1"},
+    "source_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_files_and_hashes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/hash"}},
+    "inventory_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tracked_bin_outputs", "build_managed_outputs", "tracked_unmanaged_outputs", "source_output_links_reproduced"],
+      "properties": {
+        "tracked_bin_outputs": {"type": "integer", "minimum": 0},
+        "build_managed_outputs": {"type": "integer", "minimum": 0},
+        "tracked_unmanaged_outputs": {"type": "integer", "minimum": 0},
+        "source_output_links_reproduced": {"type": "integer", "minimum": 0}
+      }
+    },
+    "items": {"type": "array", "minItems": 1, "items": {"$ref": "https://example.invalid/hutchfinity/bin-sku.schema.json"}}
+  },
+  "$defs": {
+    "hash": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}
