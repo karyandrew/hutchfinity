@@ -1,0 +1,296 @@
+{
+  "schema_version": 2,
+  "packet_id": "hutchfinity-32-deterministic-source-packet",
+  "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+  "source_tree": "fc72c3570498e9df0b2b7076252ded80e07a4cb7",
+  "source_commit_date": "2026-09-09T23:51:02-04:00",
+  "source_tree_clean": true,
+  "openscad_version": "OpenSCAD version 2026.09.23",
+  "scene_ids": [
+    "single-slot-hero",
+    "single-slot-exploded"
+  ],
+  "provenance": {
+    "current_geometry_inputs": [
+      "29273ab21605eba859088c18fd1bc50087d86709:scad/casing.scad",
+      "29273ab21605eba859088c18fd1bc50087d86709:scad/tub.scad",
+      "29273ab21605eba859088c18fd1bc50087d86709:scad/knob.scad",
+      "29273ab21605eba859088c18fd1bc50087d86709:scad/peg.scad",
+      "29273ab21605eba859088c18fd1bc50087d86709:scad/magnet_well.scad",
+      "29273ab21605eba859088c18fd1bc50087d86709:scad/gridfinity/stl/tub-regular.stl"
+    ],
+    "excluded_inputs": [
+      "Draft PR #31 magnet recipe",
+      "Uncommitted issue #29 low-floor and floor-mode geometry"
+    ],
+    "archive_method": "git archive of source_commit into an owned temporary tree",
+    "presentation_overlay": [
+      "scad/presentation/single-slot-hero.scad",
+      "scad/presentation/single-slot-exploded.scad"
+    ]
+  },
+  "consumed_blobs": [
+    {
+      "path": "AGENTS.md",
+      "git_blob": "f622a1a3934f30353fe1ea76173f1e8021278c8d",
+      "sha256": "20f3d395745788ce0c759e259d792e240bdd711b799996b4225de0e1b44ce56d",
+      "role": "repository instructions"
+    },
+    {
+      "path": "README.md",
+      "git_blob": "dbada8fb0066acf4b972ab2203421da3de12621a",
+      "sha256": "3e8e5ab4a877812af8ec6c82ec6a98a08d2de0e28fcdf7e6e24e1dc76cf95d8b",
+      "role": "status and public product description"
+    },
+    {
+      "path": "docs/chest-prd.md",
+      "git_blob": "69e0137f1d1a575c866a0a69ca2f2ea2c50fe03b",
+      "sha256": "8c4d1836ccc68cd958e6c7382c1e07d212e017160fc20d2181fa50abe19bcae3",
+      "role": "product authority"
+    },
+    {
+      "path": "docs/gridfinity-system-prd.md",
+      "git_blob": "14f9c3565f841c9e74720f34f75f0cb341a1eb62",
+      "sha256": "30185e22923f1e5f4ffe9aa922f5220005ea98b1176243e60c94a11c3b865c61",
+      "role": "regular tub dimensions and compatibility context"
+    },
+    {
+      "path": "docs/hutchfinity-spec.md",
+      "git_blob": "fcaa1bacd07b6b1ee4907ccbdfb57212d1238f40",
+      "sha256": "7e33744e3cd1eb2dca5d37a0d5362930d09c1e54e118a0134890019dabbb9f16",
+      "role": "module and installed-coordinate contract"
+    },
+    {
+      "path": "log/2026-09-09-wrap-fit-and-floor-modes.md",
+      "git_blob": "df448d77ff7d7c51367788432948ed45979ae43f",
+      "sha256": "069be45c6b14553d12b7f9811812d6d803de69d7e97c2ac1e9d5029b392ff53b",
+      "role": "observation and provisionality boundary"
+    },
+    {
+      "path": "scad/hutchfinity-assembly.scad",
+      "git_blob": "443abae707cb1c6ec4496b6094a35843a356570c",
+      "sha256": "13ffcd1a4df7212c874e1b0bafee167925df2d613fbc61464afde46e2c23f39a",
+      "role": "current assembly caller reference"
+    },
+    {
+      "path": "scad/testbed/full_magnetic_drawer_inspection_set.scad",
+      "git_blob": "47b98c0a27316855351bb8c8b32a3b0c6e8c1761",
+      "sha256": "b390eb695eaf8b3ff4210b201ad4f8b42f5bbf136b4abd7863ddc53a18a11246",
+      "role": "installed-coordinate reference"
+    },
+    {
+      "path": "scad/casing.scad",
+      "git_blob": "7ba847fe6097066d05b1e6ac885d9277616c56b8",
+      "sha256": "c3c013a5d1b662935de8a045a7bc0e8ec0c82bb5905baa68153a0e349bb411ed",
+      "role": "render dependency",
+      "scenes": ["single-slot-hero", "single-slot-exploded"]
+    },
+    {
+      "path": "scad/tub.scad",
+      "git_blob": "0ef4b1c671315ec8268ff44e4a04748a3603dacb",
+      "sha256": "fb50cc9fcfe01591fbc3eb7dcc5e5a5b9d746250f0f5b826c0a4e283c75fb747",
+      "role": "render dependency",
+      "scenes": ["single-slot-hero", "single-slot-exploded"]
+    },
+    {
+      "path": "scad/knob.scad",
+      "git_blob": "27d9f505be45eb8e6605c4479ca360b798a84115",
+      "sha256": "2a7ab163ba69c88b3dd3f4e38079ce26b3c21811f40e23778b0604694d3b025f",
+      "role": "render dependency",
+      "scenes": ["single-slot-hero", "single-slot-exploded"]
+    },
+    {
+      "path": "scad/peg.scad",
+      "git_blob": "51c09821691fc9a6f5cb9b8167aec64f6bbbe9e8",
+      "sha256": "2a3d2e3853b91cd14dd6f83d45c136772899306298980467464fd1ddc3db892c",
+      "role": "render dependency",
+      "scenes": ["single-slot-exploded"]
+    },
+    {
+      "path": "scad/magnet_well.scad",
+      "git_blob": "0b2f7b47e985fa98be0825314b1371e5f23e8589",
+      "sha256": "67d3e0cea220b3820625861864402db79d756df3eccca6a4ef27ab140fa1b394",
+      "role": "transitive render dependency",
+      "scenes": ["single-slot-hero", "single-slot-exploded"]
+    },
+    {
+      "path": "scad/gridfinity/stl/tub-regular.stl",
+      "git_blob": "5c91010c5dc8ae5516457bef615d28b447d04ca8",
+      "sha256": "a54f6588d0c71fa5d1fc0c77f1554804194b9a8515bf573187d49c325e9f31c2",
+      "role": "transitive render dependency",
+      "scenes": ["single-slot-hero", "single-slot-exploded"]
+    }
+  ],
+  "packet_files": [
+    {
+      "path": "scad/presentation/single-slot-hero.scad",
+      "sha256": "432814be0c7a9f888ddef0c7279ed840062acdc59eddf12a7b27651b01b4fef5"
+    },
+    {
+      "path": "scad/presentation/single-slot-exploded.scad",
+      "sha256": "cab5ec9dc2749ce4fbac481ce02f4c4976da7060f7339687115458b539c74a06"
+    },
+    {
+      "path": "scripts/render-presentation-packet.sh",
+      "sha256": "c8a3d5b69ebec2a00680089671f91c89b6019f5a5d63285cd3fdd8076897e18f"
+    },
+    {
+      "path": "scripts/verify_presentation_packet.py",
+      "sha256": "96f881ce22ef54cc876d7f71d1a180c20f44cff6ce86d96ad5fe417e51636c06"
+    },
+    {
+      "path": "scripts/test_presentation_packet_negative.py",
+      "sha256": "5de771f913a79942ee5e2fb612eaaec12967b7321e7cd4cc19d722e9cbf25917"
+    },
+    {
+      "path": "docs/presentation/hutchfinity-32-source-packet.md",
+      "sha256": "1079e57eca49e2a162d7f01f93f98e54c19ede01614abdaa12ba8e9e296123f2"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "single-slot-hero",
+      "source": "scad/presentation/single-slot-hero.scad",
+      "required_parts": {
+        "casing": 1,
+        "tub": 1,
+        "knob": 1
+      },
+      "transforms_mm_degrees": {
+        "casing": {"translate": [308.4, 0, 0], "rotate": [0, 180, 0]},
+        "tub": {"translate": [154.2, 20.2, -95.24], "rotate": [0, 0, 0]},
+        "knob": {"translate": [154.2, -150, -59.24], "rotate": [90, 0, 0]},
+        "product_scale": [1, 1, 1]
+      },
+      "camera": {
+        "input_form": "eye_x,eye_y,eye_z,center_x,center_y,center_z",
+        "input": [975.28, -1074.6, 599, 154, 70, -50],
+        "resolved_translation": [154, 70, -50],
+        "resolved_rotation": [65.26503269825116, 0, 35.660414425002386],
+        "resolved_distance": 1551.0676962660268,
+        "fov_degrees": 22.5,
+        "projection": "perspective"
+      },
+      "render_dependencies": [
+        "scad/casing.scad",
+        "scad/gridfinity/stl/tub-regular.stl",
+        "scad/knob.scad",
+        "scad/magnet_well.scad",
+        "scad/presentation/single-slot-hero.scad",
+        "scad/tub.scad"
+      ],
+      "geometry_summary": {
+        "simple": true,
+        "vertices": 8514,
+        "facets": 17016,
+        "bounding_box_min": [0, -169, -95.24],
+        "bounding_box_max": [308.4, 365.9, 0]
+      },
+      "output": {
+        "path": "preview/issue-32/single-slot-hero.png",
+        "dimensions": [2048, 2048],
+        "sha256": "0adb88b18957c7b7669f38b0a2afa989ac765135cb2da50d7d25274cb384d183"
+      },
+      "image_margin": {
+        "background_rgb": [248, 248, 248],
+        "background_tolerance": 8,
+        "minimum_margin_fraction": 0.05,
+        "foreground_bounds_inclusive": [199, 508, 1943, 1580],
+        "margins_left_top_right_bottom": [199, 508, 104, 467]
+      }
+    },
+    {
+      "id": "single-slot-exploded",
+      "source": "scad/presentation/single-slot-exploded.scad",
+      "required_parts": {
+        "casing": 1,
+        "tub": 1,
+        "knob": 1,
+        "peg": 7
+      },
+      "transforms_mm_degrees": {
+        "casing": {"translate": [308.4, 0, 0], "rotate": [0, 180, 0]},
+        "tub": {"translate": [154.2, -34.8, -187.24], "rotate": [0, 0, 0]},
+        "knob": {"translate": [154.2, -430, -204.24], "rotate": [90, 0, 0]},
+        "pegs": {
+          "translate_z": 72,
+          "rotate": [0, 0, 0],
+          "xy_positions": [
+            [12.5, 25],
+            [12.5, 182.95],
+            [12.5, 340.9],
+            [295.9, 25],
+            [295.9, 182.95],
+            [295.9, 340.9],
+            [154.2, 353.4]
+          ]
+        },
+        "product_scale": [1, 1, 1]
+      },
+      "camera": {
+        "input_form": "eye_x,eye_y,eye_z,center_x,center_y,center_z",
+        "input": [1149.5, -1896.1, 1106.9, 154, -80, -80],
+        "resolved_translation": [154, -80, -80],
+        "resolved_rotation": [60.18334367619087, 0, 28.729466454943918],
+        "resolved_distance": 2387.0423268136656,
+        "fov_degrees": 22.5,
+        "projection": "perspective"
+      },
+      "render_dependencies": [
+        "scad/casing.scad",
+        "scad/gridfinity/stl/tub-regular.stl",
+        "scad/knob.scad",
+        "scad/magnet_well.scad",
+        "scad/peg.scad",
+        "scad/presentation/single-slot-exploded.scad",
+        "scad/tub.scad"
+      ],
+      "geometry_summary": {
+        "simple": true,
+        "vertices": 8682,
+        "facets": 17324,
+        "bounding_box_min": [0, -449, -221.24],
+        "bounding_box_max": [308.4, 365.9, 92]
+      },
+      "output": {
+        "path": "preview/issue-32/single-slot-exploded.png",
+        "dimensions": [1800, 2400],
+        "sha256": "2fcbc80fec3fd243c01cdfdfd8c1ed8d1321507f780c8ece9852d6b7a82c4698"
+      },
+      "image_margin": {
+        "background_rgb": [248, 248, 248],
+        "background_tolerance": 8,
+        "minimum_margin_fraction": 0.05,
+        "foreground_bounds_inclusive": [327, 374, 1704, 1999],
+        "margins_left_top_right_bottom": [327, 374, 95, 400]
+      }
+    }
+  ],
+  "render": {
+    "backend": "Manifold",
+    "mode": "render",
+    "colorscheme": "Tomorrow",
+    "alpha": false,
+    "color_type": "RGB",
+    "background": "opaque clean background from the Tomorrow colorscheme",
+    "part_colors": {
+      "meaning": "presentation-only separable colors; not semantic masks or product requirements",
+      "casing": [0.74, 0.77, 0.8, 1],
+      "tub": [0.32, 0.52, 0.63, 1],
+      "knob": [0.18, 0.2, 0.22, 1],
+      "peg": [0.72, 0.54, 0.3, 1]
+    }
+  },
+  "commands": [
+    "OPENSCAD=openscad ./scripts/render-presentation-packet.sh",
+    "python3 ./scripts/test_presentation_packet_negative.py --openscad openscad"
+  ],
+  "reproducibility": {
+    "geometry": "deterministic",
+    "raster_bytes": "deterministic",
+    "scope": "two independent git-archive trees on the same OpenSCAD wrapper and local environment",
+    "cross_environment_note": "Byte stability across different OpenSCAD builds, graphics stacks, operating systems, or architectures is not claimed."
+  },
+  "readiness": "CONDITIONAL",
+  "claim_boundary": "Mechanically complete deterministic source packet; pre-1.0 magnet, peg/socket, full-scale drawer-fit, glue-durability, and future tub floor-mode interfaces remain physically provisional."
+}
