@@ -24,3 +24,6 @@ Thumbs.db
 *~
 .vscode/
 .idea/
+
+# Ephemeral local runtime records
+.claude/praetor/
