@@ -57,6 +57,47 @@ class CatalogTests(unittest.TestCase):
                 self.assertEqual(git("rev-parse", "HEAD"), catalog_module.source_commit())
                 self.assertNotEqual(source_head, catalog_module.source_commit())
 
+    def test_source_revision_refuses_shallow_history(self) -> None:
+        environment = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+        environment.update({
+            "GIT_AUTHOR_NAME": "Fixture",
+            "GIT_AUTHOR_EMAIL": "fixture@example.invalid",
+            "GIT_COMMITTER_NAME": "Fixture",
+            "GIT_COMMITTER_EMAIL": "fixture@example.invalid",
+        })
+        with tempfile.TemporaryDirectory(prefix="catalog-shallow-") as raw:
+            root = Path(raw)
+            source_repo = root / "source"
+            shallow_repo = root / "shallow"
+            source_repo.mkdir()
+
+            def git(cwd: Path, *args: str) -> str:
+                return subprocess.check_output(
+                    ["git", *args], cwd=cwd, env=environment, text=True,
+                ).strip()
+
+            git(source_repo, "init", "--quiet")
+            source = source_repo / catalog_module.CUP_SOURCE
+            source.parent.mkdir(parents=True)
+            source.write_text("// owned synthetic geometry revision one\n")
+            git(source_repo, "add", ".")
+            git(source_repo, "commit", "--quiet", "-m", "source one")
+            source.write_text("// owned synthetic geometry revision two\n")
+            git(source_repo, "add", ".")
+            git(source_repo, "commit", "--quiet", "-m", "source two")
+            subprocess.run(
+                [
+                    "git", "clone", "--quiet", "--depth", "1",
+                    source_repo.resolve().as_uri(), str(shallow_repo),
+                ],
+                check=True,
+                env=environment,
+            )
+            self.assertEqual("true", git(shallow_repo, "rev-parse", "--is-shallow-repository"))
+            with mock.patch.object(catalog_module, "ROOT", shallow_repo):
+                with self.assertRaisesRegex(ValueError, "full Git history is required"):
+                    catalog_module.source_commit()
+
     @staticmethod
     def passing_receipt(mapping: dict) -> dict:
         artifact_hash = next(row["sha256"] for row in mapping["source_and_output_hashes"] if row["path"].endswith(".stl"))

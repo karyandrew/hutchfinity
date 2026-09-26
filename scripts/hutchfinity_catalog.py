@@ -97,6 +97,12 @@ def source_commit() -> str:
     for key in GIT_SELECTOR_ENV:
         environment.pop(key, None)
     environment["GIT_WORK_TREE"] = str(ROOT)
+    history = subprocess.run(
+        ["git", "rev-parse", "--is-shallow-repository"], cwd=ROOT, check=True,
+        text=True, stdout=subprocess.PIPE, env=environment,
+    ).stdout.strip()
+    if history != "false":
+        raise ValueError("full Git history is required for source revision binding")
     return subprocess.run(
         ["git", "log", "-1", "--format=%H", "HEAD", "--", str(BUILD_SOURCE), str(CUP_SOURCE), str(STL_DIR)], cwd=ROOT, check=True, text=True,
         stdout=subprocess.PIPE, env=environment,
