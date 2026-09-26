@@ -1,6 +1,6 @@
 {
   "schema": "hutchfinity-bin-catalog/v1",
-  "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+  "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
   "source_files_and_hashes": [
     {
       "path": "scad/gridfinity/dental/build-stl.sh",
@@ -32,7 +32,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -74,7 +74,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -116,7 +116,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -196,7 +196,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -276,7 +276,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -356,7 +356,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -398,7 +398,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -440,7 +440,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -482,7 +482,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -524,7 +524,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -566,7 +566,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -608,7 +608,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -650,7 +650,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -692,7 +692,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -734,7 +734,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -776,7 +776,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -818,7 +818,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -860,7 +860,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -902,7 +902,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -944,7 +944,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -986,7 +986,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1028,7 +1028,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1070,7 +1070,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1112,7 +1112,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1154,7 +1154,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1196,7 +1196,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1238,7 +1238,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1280,7 +1280,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1322,7 +1322,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1364,7 +1364,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1444,7 +1444,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1486,7 +1486,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1528,7 +1528,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1608,7 +1608,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1688,7 +1688,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1768,7 +1768,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1848,7 +1848,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -1928,7 +1928,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2008,7 +2008,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2088,7 +2088,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2130,7 +2130,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2172,7 +2172,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2252,7 +2252,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2294,7 +2294,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2336,7 +2336,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2416,7 +2416,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2458,7 +2458,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2500,7 +2500,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2542,7 +2542,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2584,7 +2584,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2626,7 +2626,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2668,7 +2668,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2710,7 +2710,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2752,7 +2752,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2794,7 +2794,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2836,7 +2836,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2878,7 +2878,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -2958,7 +2958,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3000,7 +3000,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3042,7 +3042,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3084,7 +3084,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3126,7 +3126,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3168,7 +3168,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3248,7 +3248,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3290,7 +3290,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3370,7 +3370,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3412,7 +3412,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3454,7 +3454,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3496,7 +3496,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3576,7 +3576,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3618,7 +3618,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3660,7 +3660,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3702,7 +3702,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3744,7 +3744,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3786,7 +3786,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3828,7 +3828,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3870,7 +3870,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3912,7 +3912,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3954,7 +3954,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -3996,7 +3996,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4038,7 +4038,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4080,7 +4080,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4122,7 +4122,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4164,7 +4164,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4206,7 +4206,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4248,7 +4248,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4290,7 +4290,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4332,7 +4332,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4374,7 +4374,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4416,7 +4416,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4458,7 +4458,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4500,7 +4500,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4542,7 +4542,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4622,7 +4622,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4664,7 +4664,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4706,7 +4706,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4748,7 +4748,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4790,7 +4790,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4832,7 +4832,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4874,7 +4874,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4916,7 +4916,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -4958,7 +4958,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5000,7 +5000,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5042,7 +5042,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5084,7 +5084,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5126,7 +5126,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5168,7 +5168,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5210,7 +5210,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5252,7 +5252,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5294,7 +5294,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5336,7 +5336,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5378,7 +5378,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5420,7 +5420,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5462,7 +5462,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5504,7 +5504,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5546,7 +5546,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5588,7 +5588,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5630,7 +5630,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5672,7 +5672,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5714,7 +5714,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5756,7 +5756,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5798,7 +5798,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "tracked_unmanaged",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5878,7 +5878,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -5958,7 +5958,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -6038,7 +6038,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
@@ -6118,7 +6118,7 @@
       "base_interface": "gridfinity-half-pitch-21mm",
       "catalog_state": "build_managed",
       "source_output_link_state": "unverified",
-      "source_commit": "29273ab21605eba859088c18fd1bc50087d86709",
+      "source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
       "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/dental/build-stl.sh",
