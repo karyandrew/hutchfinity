@@ -1,0 +1,11 @@
+{
+  "schema": "hutchfinity-evidence-admission/v1",
+  "authority_id": "repository-production-admission",
+  "authority_revision": "v1",
+  "purpose": "Unconfigured admission contract; enrollment requires independent governance and observed evidence.",
+  "evidence_scope": "real",
+  "configuration": "unconfigured",
+  "profiles": [],
+  "lanes": [],
+  "admissions": []
+}

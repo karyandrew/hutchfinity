@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/admission-decision.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "admission_id",
+    "authority_id",
+    "authority_revision",
+    "physical_fit_receipt",
+    "lane_receipt",
+    "validation_lane",
+    "item_class_id",
+    "sku",
+    "admission_scope",
+    "selection_status",
+    "production_authorized",
+    "integrated_system_accepted",
+    "real_evidence_authority_configured",
+    "profile"
+  ],
+  "properties": {
+    "admission_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "authority_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "authority_revision": {
+      "type": "string",
+      "minLength": 1
+    },
+    "physical_fit_receipt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lane_receipt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "validation_lane": {
+      "type": "string",
+      "minLength": 1
+    },
+    "item_class_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sku": {
+      "type": "string",
+      "minLength": 1
+    },
+    "admission_scope": {
+      "enum": [
+        "real",
+        "synthetic_test_only"
+      ]
+    },
+    "selection_status": {
+      "enum": [
+        "ACCEPTED",
+        "SYNTHETIC_ACCEPTED"
+      ]
+    },
+    "production_authorized": {
+      "const": false
+    },
+    "integrated_system_accepted": {
+      "const": false
+    },
+    "real_evidence_authority_configured": {
+      "type": "boolean"
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "revision",
+        "sha256"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    }
+  }
+}

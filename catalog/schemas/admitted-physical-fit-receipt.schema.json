@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/admitted-physical-fit-receipt.schema.json",
+  "title": "Hutchfinity physical-fit receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_id",
+    "item_class_id",
+    "item_class_hash",
+    "sku",
+    "artifact_sha256",
+    "validation_lane",
+    "validation_receipt",
+    "sample_kind",
+    "sample_dimensions_mm",
+    "sample_uncertainty_mm",
+    "tested_quantity",
+    "checks",
+    "workarounds",
+    "result",
+    "performed_at",
+    "evidence_scope",
+    "profile",
+    "source_commit",
+    "source_and_output_hashes",
+    "sample_count",
+    "selected_orientation"
+  ],
+  "properties": {
+    "schema": {
+      "const": "hutchfinity-physical-fit-receipt/v2"
+    },
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "item_class_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "item_class_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sku": {
+      "type": "string",
+      "pattern": "^bin-[0-9]+x[0-9]+x[0-9]+h$"
+    },
+    "artifact_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "validation_lane": {
+      "type": "string",
+      "minLength": 1
+    },
+    "validation_receipt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sample_kind": {
+      "enum": [
+        "representative_sample",
+        "dimensional_surrogate"
+      ]
+    },
+    "sample_dimensions_mm": {
+      "$ref": "#/$defs/positiveAxes"
+    },
+    "sample_uncertainty_mm": {
+      "$ref": "#/$defs/nonnegativeAxes"
+    },
+    "tested_quantity": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "load_unload",
+        "quantity",
+        "retrieval",
+        "adjacent_interference",
+        "base_engagement",
+        "ordinary_handling"
+      ],
+      "properties": {
+        "load_unload": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "quantity": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "retrieval": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "adjacent_interference": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "base_engagement": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "ordinary_handling": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        }
+      }
+    },
+    "workarounds": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "force",
+          "sanding",
+          "deformation",
+          "liner",
+          "divider",
+          "orientation",
+          "other"
+        ]
+      }
+    },
+    "result": {
+      "enum": [
+        "pass",
+        "fail",
+        "inconclusive",
+        "not_run",
+        "stale"
+      ]
+    },
+    "performed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidence_scope": {
+      "enum": [
+        "real",
+        "synthetic_test_only"
+      ]
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "revision",
+        "sha256"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "source_and_output_hashes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "sample_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "selected_orientation": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "$defs": {
+    "positiveAxes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "properties": {
+        "x": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "y": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "z": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "nonnegativeAxes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x",
+        "y",
+        "z"
+      ],
+      "properties": {
+        "x": {
+          "type": "number",
+          "minimum": 0
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0
+        },
+        "z": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

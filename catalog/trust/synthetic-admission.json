@@ -1,0 +1,54 @@
+{
+  "schema": "hutchfinity-evidence-admission/v1",
+  "authority_id": "repository-test-admission",
+  "authority_revision": "test-v1",
+  "purpose": "Synthetic software controls only; no physical observations or production authority.",
+  "evidence_scope": "synthetic_test_only",
+  "configuration": "configured",
+  "profiles": [
+    {
+      "profile_id": "synthetic-profile",
+      "revision": "test-v1",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "state": "current"
+    }
+  ],
+  "lanes": [
+    {
+      "lane_id": "synthetic-lane",
+      "state": "current",
+      "profile": {
+        "profile_id": "synthetic-profile",
+        "revision": "test-v1",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "artifact_family": "bin_cup"
+    }
+  ],
+  "admissions": [
+    {
+      "admission_id": "synthetic-pair-v1",
+      "state": "current",
+      "item_class_id": "square-stack-49",
+      "item_class_hash": "33150dfcc7c3772840d135af1d8b4914cd2e3de05161e75e13e06f7a41e5e181",
+      "sku": "bin-3x3x10h",
+      "lane_id": "synthetic-lane",
+      "profile": {
+        "profile_id": "synthetic-profile",
+        "revision": "test-v1",
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "minimum_sample_count": 2,
+      "physical": {
+        "receipt_id": "synthetic-fit-v1",
+        "path": "catalog/receipts/synthetic-physical-fit.json",
+        "sha256": "bb87884b8ab89382eb093c5730ef3a963b999f666841d64c75ff1fc245da38c6"
+      },
+      "lane": {
+        "receipt_id": "synthetic-lane-v1",
+        "path": "catalog/receipts/synthetic-lane.json",
+        "sha256": "d2393523a16fdbac1f96aba0c3e072635fcd63566fa456088e2e16aac0fe6b30"
+      }
+    }
+  ]
+}

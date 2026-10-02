@@ -2,7 +2,7 @@
 """Build and evaluate the public Hutchfinity bin catalog.
 
 The calculations in this module are intentionally source-derived.  They are
-not physical-fit receipts and they never promote a mapping to ACCEPTED.
+not physical-fit receipts. Acceptance requires separately governed admission.
 """
 
 from __future__ import annotations
@@ -30,6 +30,10 @@ STL_DIR = Path("scad/gridfinity/stl")
 SCHEMA_DIR = ROOT / "catalog/schemas"
 AUTHORITATIVE_CATALOG = ROOT / "catalog/bin-skus.json"
 AUTHORITATIVE_CLASSES = ROOT / "catalog/item-classes.json"
+ADMISSION_PATHS = {
+    "real": "catalog/trust/production-admission.json",
+    "synthetic_test_only": "catalog/trust/synthetic-admission.json",
+}
 SKU_RE = re.compile(r"bin-(\d+)x(\d+)x(\d+)h(?:\.stl)?$")
 PITCH_XY_MM = 21.0
 PITCH_Z_MM = 3.5
@@ -84,7 +88,19 @@ def stable_hash(value: Any) -> str:
 
 
 def read_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
+    def closed_pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f"duplicate JSON field: {key}")
+            result[key] = value
+        return result
+
+    def reject_constant(value: str) -> None:
+        raise ValueError(f"non-finite JSON number: {value}")
+
+    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=closed_pairs,
+                      parse_constant=reject_constant)
 
 
 def write_json(path: Path, value: Any) -> None:
@@ -123,7 +139,7 @@ def validate_schema(value: Any, schema_name: str, label: str) -> None:
         format_checker=FORMAT_CHECKER,
         resolver=RefResolver.from_schema(schema, store=store),
     )
-    errors = sorted(validator.iter_errors(value), key=lambda error: list(error.absolute_path))
+    errors = sorted(validator.iter_errors(value), key=lambda error: tuple(str(part) for part in error.absolute_path))
     if errors:
         error = errors[0]
         location = ".".join(str(part) for part in error.absolute_path) or "<root>"
@@ -648,13 +664,197 @@ def validate_sample_claim(receipt: dict[str, Any], item: dict[str, Any]) -> None
         raise ValueError("physical sample claim tested fewer than minimum_quantity_per_bin")
 
 
+def admission_registry(evidence_scope: str) -> dict[str, Any]:
+    """Repository governance is the root; receipt callers cannot select a root.
+
+    Changing this file is a governance change, not evidence submission. The
+    production file deliberately enrolls nothing. Test enrollment is disjoint.
+    """
+    if evidence_scope not in ADMISSION_PATHS:
+        raise ValueError("unknown evidence scope")
+    registry = read_json(checked_repo_file(ADMISSION_PATHS[evidence_scope]))
+    validate_schema(registry, "evidence-admission.schema.json", "admission registry")
+    if registry["evidence_scope"] != evidence_scope:
+        raise ValueError("admission registry scope mismatch")
+    for collection, key in (("profiles", "profile_id"), ("lanes", "lane_id"), ("admissions", "admission_id")):
+        ids = [row[key] for row in registry[collection]]
+        if len(ids) != len(set(ids)):
+            raise ValueError(f"duplicate {collection} identity in admission registry")
+    physical_ids = [row["physical"]["receipt_id"] for row in registry["admissions"]]
+    if len(physical_ids) != len(set(physical_ids)):
+        raise ValueError("duplicate admitted physical receipt identity")
+    lane_bindings = {}
+    for row in registry["admissions"]:
+        reference = row["lane"]
+        binding = (reference["path"], reference["sha256"])
+        receipt_id = reference["receipt_id"]
+        if receipt_id in lane_bindings and lane_bindings[receipt_id] != binding:
+            raise ValueError("conflicting admitted lane receipt identity binding")
+        lane_bindings[receipt_id] = binding
+    if registry["configuration"] != "configured":
+        if any(registry[key] for key in ("profiles", "lanes", "admissions")):
+            raise ValueError("unconfigured registry must have no enrollment")
+        raise ValueError("independently trusted physical and lane evidence is not configured")
+    return registry
+
+
+def admitted_receipt(reference: dict[str, Any], schema: str) -> dict[str, Any]:
+    path = checked_repo_file(reference["path"])
+    if sha256(path) != reference["sha256"]:
+        raise ValueError("evidence does not match its admitted digest")
+    receipt = read_json(path)
+    validate_schema(receipt, schema, "admitted receipt")
+    if receipt["receipt_id"] != reference["receipt_id"]:
+        raise ValueError("evidence receipt identity does not match admission")
+    return receipt
+
+
+def consume_admission(admission_id: str, evidence_scope: str = "real") -> dict[str, Any]:
+    """One semantic decision path for independently admitted real/test evidence.
+
+    Admission of bytes is necessary but insufficient: every binding and physical
+    invariant is checked even for evidence explicitly enrolled by governance.
+    This consumer has no integrated-system acceptance or production authority.
+    """
+    registry = admission_registry(evidence_scope)
+    entry = next((row for row in registry["admissions"] if row["admission_id"] == admission_id), None)
+    if entry is None:
+        raise ValueError("requested admission ID is not in the fixed admission source")
+    if entry["state"] != "current":
+        raise ValueError("admission is revoked or stale")
+    profile = next((row for row in registry["profiles"] if row["profile_id"] == entry["profile"]["profile_id"]), None)
+    if profile is None or profile["state"] != "current":
+        raise ValueError("profile is missing, revoked or stale")
+    if {key: profile[key] for key in entry["profile"]} != entry["profile"]:
+        raise ValueError("profile revision or digest is stale")
+    governed_lane = next((row for row in registry["lanes"] if row["lane_id"] == entry["lane_id"]), None)
+    if governed_lane is None or governed_lane["state"] != "current":
+        raise ValueError("lane is unknown, revoked or stale")
+    if governed_lane["profile"] != entry["profile"]:
+        raise ValueError("lane profile binding mismatch")
+    physical = admitted_receipt(entry["physical"], "admitted-physical-fit-receipt.schema.json")
+    lane = admitted_receipt(entry["lane"], "lane-receipt.schema.json")
+    for receipt in (physical, lane):
+        if receipt["evidence_scope"] != evidence_scope:
+            raise ValueError("receipt evidence scope mismatch")
+        if receipt["profile"] != entry["profile"]:
+            raise ValueError("receipt profile identity, revision or digest mismatch")
+        if receipt["result"] != "pass" or any(value != "pass" for value in receipt["checks"].values()):
+            raise ValueError("evidence contains a non-passing gate or check")
+        if receipt["workarounds"]:
+            raise ValueError("acceptance cannot depend on a workaround")
+    if (physical["validation_lane"], physical["validation_receipt"]) != (entry["lane_id"], lane["receipt_id"]):
+        raise ValueError("physical and lane receipt identities are not exactly cross-bound")
+    if lane["lane_id"] != entry["lane_id"]:
+        raise ValueError("lane receipt identity mismatch")
+    classes = read_json(AUTHORITATIVE_CLASSES)
+    catalog = read_json(AUTHORITATIVE_CATALOG)
+    validate_item_class_set(classes)
+    validate_catalog_authority(catalog)
+    item = next((row for row in classes["items"] if row["item_class_id"] == entry["item_class_id"]), None)
+    sku = next((row for row in catalog["items"] if row["sku"] == entry["sku"]), None)
+    if item is None or sku is None or sku["catalog_state"] != "build_managed":
+        raise ValueError("admission must bind an authoritative class and current SKU")
+    if entry["item_class_hash"] != stable_hash(item) or physical["item_class_hash"] != stable_hash(item) or physical["item_class_id"] != item["item_class_id"]:
+        raise ValueError("physical evidence class identity or revision mismatch")
+    if physical["sku"] != sku["sku"] or physical["artifact_sha256"] != sku["output_hashes"][0]["sha256"]:
+        raise ValueError("physical evidence SKU or output digest mismatch")
+    for receipt in (physical, lane):
+        if receipt["source_commit"] != catalog["source_commit"]:
+            raise ValueError("evidence source revision is stale")
+    if physical["source_and_output_hashes"] != artifact_hash_refs(sku) or lane["source_files_and_hashes"] != source_hashes():
+        raise ValueError("evidence source/output content binding mismatch")
+    if lane["source_output_link_state"] != "reproduced":
+        raise ValueError("lane must attest reproduced source/output linkage")
+    outputs = lane["output_hashes"]
+    if len({row["path"] for row in outputs}) != len(outputs):
+        raise ValueError("duplicate lane output identity")
+    for reference in outputs:
+        verify_hash_reference(reference)
+    if not all(reference in outputs for reference in artifact_hash_refs(sku) if reference["path"].endswith(".stl")):
+        raise ValueError("selected output is absent from lane evidence")
+    representatives = lane["representative_artifacts"]
+    if sorted(row["role"] for row in representatives) != ["multi_cell", "smallest_thin_wall", "tallest"]:
+        raise ValueError("lane representative set is incomplete")
+    managed = [row for row in catalog["items"] if row["catalog_state"] == "build_managed"]
+    for representative in representatives:
+        tested = next((row for row in managed if row["sku"] == representative["sku"]), None)
+        if tested is None or not all(ref in outputs for ref in artifact_hash_refs(tested) if ref["path"].endswith(".stl")):
+            raise ValueError("representative artifact is not bound to lane outputs")
+        role = representative["role"]
+        if role == "smallest_thin_wall" and (tested["cells_x"] * tested["cells_y"], tested["wall_floor_lip_contract"]["wall_thickness_mm"]) != min((row["cells_x"] * row["cells_y"], row["wall_floor_lip_contract"]["wall_thickness_mm"]) for row in managed):
+            raise ValueError("representative does not cover smallest thin-wall part")
+        if role == "tallest" and tested["height_units"] != max(row["height_units"] for row in managed):
+            raise ValueError("representative does not cover tallest part")
+        if role == "multi_cell" and tested["cells_x"] * tested["cells_y"] <= 1:
+            raise ValueError("representative does not cover multi-cell part")
+    selected = select_item(item, catalog)
+    if selected["preferred_sku"] != sku["sku"] or physical["selected_orientation"] != selected["selected_orientation"]:
+        raise ValueError("physical evidence selected SKU/orientation mismatch")
+    evaluation = next(row for row in selected["candidate_evaluations"] if row["sku"] == sku["sku"])
+    if evaluation["outcome"] != "pass":
+        raise ValueError("source-derived selection remains failed or inconclusive")
+    validate_sample_claim(physical, item)
+    if selected["quantity_capacity"] is None or physical["tested_quantity"] > selected["quantity_capacity"]:
+        raise ValueError("tested quantity exceeds source-derived capacity")
+    if physical["sample_count"] < entry["minimum_sample_count"]:
+        raise ValueError("insufficient representative sample count")
+    for axis in ("x", "y", "z"):
+        if physical["sample_uncertainty_mm"][axis] > item["uncertainty_mm"][axis] or physical["sample_dimensions_mm"][axis] + physical["sample_uncertainty_mm"][axis] < item["bounding_box_mm"][axis] + item["uncertainty_mm"][axis] - 1e-9:
+            raise ValueError("sample uncertainty does not cover the required class envelope")
+    decision = {
+        "admission_scope": evidence_scope,
+        "admission_id": entry["admission_id"],
+        "authority_id": registry["authority_id"],
+        "authority_revision": registry["authority_revision"],
+        "physical_fit_receipt": physical["receipt_id"],
+        "lane_receipt": lane["receipt_id"],
+        "validation_lane": lane["lane_id"],
+        "profile": entry["profile"],
+        "item_class_id": item["item_class_id"],
+        "sku": sku["sku"],
+        "selection_status": "ACCEPTED" if evidence_scope == "real" else "SYNTHETIC_ACCEPTED",
+        "production_authorized": False,
+        "integrated_system_accepted": False,
+        "real_evidence_authority_configured": evidence_scope == "real",
+    }
+    validate_schema(decision, "admission-decision.schema.json", "admission decision")
+    return decision
+
+
+def consume_synthetic_admission(admission_id: str) -> dict[str, Any]:
+    """Compatibility command; uses the same consumer as real admission."""
+    return consume_admission(admission_id, "synthetic_test_only")
+
+
+def admitted_mapping(mapping: dict[str, Any], evidence_scope: str) -> dict[str, Any]:
+    registry = admission_registry(evidence_scope)
+    entry = next((row for row in registry["admissions"] if row["physical"]["receipt_id"] == mapping["physical_fit_receipt"]), None)
+    if entry is None:
+        raise ValueError("mapping receipt is not independently admitted")
+    decision = consume_admission(entry["admission_id"], evidence_scope)
+    if (decision["item_class_id"], decision["sku"], decision["validation_lane"], decision["lane_receipt"]) != (mapping["item_class_id"], mapping["preferred_sku"], mapping["validation_lane"], mapping["validation_receipt"]):
+        raise ValueError("mapping does not match admitted class/SKU/lane/receipt identities")
+    return decision
+
+
 def lint_acceptance_claim(
     mapping: dict[str, Any],
     item: dict[str, Any],
     sku: dict[str, Any],
     receipts_dir: Path,
+    evidence_scope: str = "real",
 ) -> None:
-    """Lint caller assertions, then refuse to turn them into acceptance."""
+    """Legacy claims get diagnostics; admitted v2 bytes are read from governance."""
+    if mapping["physical_fit_receipt"] is not None:
+        try:
+            registry = admission_registry(evidence_scope)
+        except ValueError as error:
+            if "is not configured" not in str(error):
+                raise
+        else:
+            admitted_mapping(mapping, evidence_scope)
+            return
     receipt_id = mapping["physical_fit_receipt"]
     receipt_path = receipts_dir / f"{receipt_id}.json"
     if not receipt_path.is_file():
@@ -688,6 +888,7 @@ def validate_map_set(
     classes: dict[str, Any],
     catalog: dict[str, Any],
     receipts_dir: Path,
+    evidence_scope: str = "real",
 ) -> None:
     validate_item_class_set(classes)
     validate_map_set_schema(map_set)
@@ -710,7 +911,7 @@ def validate_map_set(
             changed = sorted(field for field in immutable_fields if mapping[field] != expected[field])
             if changed:
                 raise ValueError(f"acceptance claim changes authoritative mapping fields: {', '.join(changed)}")
-            lint_acceptance_claim(mapping, items[item_class_id], skus[expected["preferred_sku"]], receipts_dir)
+            lint_acceptance_claim(mapping, items[item_class_id], skus[expected["preferred_sku"]], receipts_dir, evidence_scope)
         elif mapping != expected:
             raise ValueError(f"mapping does not match authoritative generated selection: {item_class_id}")
 
@@ -721,12 +922,13 @@ def build_demand(
     receipts_dir: Path,
     classes: dict[str, Any],
     catalog: dict[str, Any],
+    evidence_scope: str = "real",
 ) -> dict[str, Any]:
     validate_schema(requested, "demand-request.schema.json", "demand request")
     identifiers = [row["item_class_id"] for row in requested["artifact_demands"]]
     if len(identifiers) != len(set(identifiers)):
         raise ValueError("demand request contains duplicate item_class_id values")
-    validate_map_set(map_set, classes, catalog, receipts_dir)
+    validate_map_set(map_set, classes, catalog, receipts_dir, evidence_scope)
     mappings = {row["item_class_id"]: row for row in map_set["mappings"]}
     demands = []
     for request in requested["artifact_demands"]:
@@ -752,6 +954,9 @@ def build_demand(
         "manifest_id": requested["manifest_id"],
         "as_of": requested["as_of"],
         "production_authorized": False,
+        "evidence_scope": evidence_scope,
+        "integrated_system_accepted": False,
+        "admission_provenance": [admitted_mapping(mappings[row["item_class_id"]], evidence_scope) for row in requested["artifact_demands"]],
         "artifact_demands": demands,
         "private_quantity_source_ref": "external/private; no content copied",
     }
@@ -780,6 +985,13 @@ def main() -> int:
     demand_parser.add_argument("--request", type=Path, required=True)
     demand_parser.add_argument("--receipts-dir", type=Path, required=True)
     demand_parser.add_argument("--output", type=Path, required=True)
+    synthetic_parser = subparsers.add_parser("consume-synthetic-admission")
+    synthetic_parser.add_argument("--admission-id", default="synthetic-pair-v1")
+    consume_parser = subparsers.add_parser("consume-admission")
+    consume_parser.add_argument("--admission-id", required=True)
+    consume_parser.add_argument("--evidence-scope", choices=list(ADMISSION_PATHS), default="real")
+    for scoped_parser in (validate_parser, demand_parser):
+        scoped_parser.add_argument("--evidence-scope", choices=list(ADMISSION_PATHS), default="real")
     args = parser.parse_args()
 
     try:
@@ -801,16 +1013,20 @@ def main() -> int:
             require_authoritative_path(args.catalog, AUTHORITATIVE_CATALOG, "catalog")
             require_authoritative_path(args.classes, AUTHORITATIVE_CLASSES, "item-class set")
             validate_map_set(
-                read_json(args.maps), read_json(args.classes), read_json(args.catalog), args.receipts_dir,
+                read_json(args.maps), read_json(args.classes), read_json(args.catalog), args.receipts_dir, args.evidence_scope,
             )
         elif args.command == "build-demand":
             require_authoritative_path(args.catalog, AUTHORITATIVE_CATALOG, "catalog")
             require_authoritative_path(args.classes, AUTHORITATIVE_CLASSES, "item-class set")
             result = build_demand(
                 read_json(args.maps), read_json(args.request), args.receipts_dir,
-                read_json(args.classes), read_json(args.catalog),
+                read_json(args.classes), read_json(args.catalog), args.evidence_scope,
             )
             write_json(args.output, result)
+        elif args.command == "consume-admission":
+            print(json.dumps(consume_admission(args.admission_id, args.evidence_scope), sort_keys=True))
+        elif args.command == "consume-synthetic-admission":
+            print(json.dumps(consume_synthetic_admission(args.admission_id), sort_keys=True))
     except (KeyError, OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
