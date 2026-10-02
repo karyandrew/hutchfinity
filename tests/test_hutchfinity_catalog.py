@@ -618,6 +618,100 @@ class AdmissionBoundaryTests(unittest.TestCase):
         shutil.copy2(ROOT / "catalog/item-classes.json", self.fixture / "catalog/item-classes.json")
         self.install_test_enrollment()
 
+    def install_shared_lane_enrollment(self):
+        # Retain the square admission and enroll a distinct class-fit receipt
+        # for the roll. Both admissions pin the same frozen lane bytes.
+        registry = copy.deepcopy(self.original_registry)
+        physical = copy.deepcopy(self.original_physical)
+        lane = copy.deepcopy(self.original_lane)
+        classes = catalog_module.read_json(self.fixture / "catalog/item-classes.json")
+        item = next(row for row in classes["items"] if row["item_class_id"] == "short-roll-40x15")
+        mapping = catalog_module.select_item(item, self.catalog)
+        sku = next(row for row in self.catalog["items"] if row["sku"] == mapping["preferred_sku"])
+        physical.update(receipt_id="synthetic-roll-fit", item_class_id=item["item_class_id"], item_class_hash=catalog_module.stable_hash(item), sku=sku["sku"], artifact_sha256=sku["output_hashes"][0]["sha256"], source_and_output_hashes=catalog_module.artifact_hash_refs(sku), selected_orientation=mapping["selected_orientation"], sample_dimensions_mm=item["bounding_box_mm"], sample_uncertainty_mm=item["uncertainty_mm"], tested_quantity=2)
+        lane["output_hashes"].append({key: sku["output_hashes"][0][key] for key in ("path", "sha256")})
+        self.install_test_enrollment(registry, lane=lane)
+        registry = catalog_module.read_json(self.registry_path)
+        entry = copy.deepcopy(registry["admissions"][0])
+        entry.update(admission_id="synthetic-roll-pair", item_class_id=item["item_class_id"], item_class_hash=physical["item_class_hash"], sku=sku["sku"])
+        physical_path = self.fixture / "catalog/receipts/synthetic-roll-fit.json"
+        self.write_json(physical_path, physical)
+        entry["physical"] = {"receipt_id": physical["receipt_id"], "path": "catalog/receipts/synthetic-roll-fit.json", "sha256": catalog_module.sha256(physical_path)}
+        registry["admissions"].append(entry)
+        self.write_json(self.registry_path, registry)
+        self.addCleanup(self.install_test_enrollment)
+        return registry
+
+    def test_public_cli_joint_admissions_and_combined_demand_share_exact_lane(self):
+        registry = self.install_shared_lane_enrollment()
+        self.assertEqual(len(registry["admissions"]), 2)
+        self.assertEqual(registry["admissions"][0]["lane"], registry["admissions"][1]["lane"])
+        decisions = []
+        for entry in registry["admissions"]:
+            result = self.fixture_cli("consume-admission", "--evidence-scope", "synthetic_test_only", "--admission-id", entry["admission_id"])
+            self.assertEqual(result.returncode, 0, result.stderr)
+            decision = json.loads(result.stdout)
+            self.assertEqual(decision["item_class_id"], entry["item_class_id"])
+            self.assertEqual(decision["sku"], entry["sku"])
+            self.assertEqual(decision["physical_fit_receipt"], entry["physical"]["receipt_id"])
+            self.assertEqual(decision["selection_status"], "SYNTHETIC_ACCEPTED")
+            self.assertFalse(decision["production_authorized"])
+            self.assertFalse(decision["integrated_system_accepted"])
+            decisions.append(decision)
+
+        classes = catalog_module.read_json(self.fixture / "catalog/item-classes.json")
+        maps = catalog_module.select_all(classes, self.catalog)
+        for entry in registry["admissions"]:
+            mapping = next(row for row in maps["mappings"] if row["item_class_id"] == entry["item_class_id"])
+            mapping.update(selection_status="ACCEPTED", physical_fit_state="pass", physical_fit_receipt=entry["physical"]["receipt_id"], validation_lane=entry["lane_id"], validation_receipt=entry["lane"]["receipt_id"])
+        maps_path = self.fixture / "shared-lane-maps.json"
+        request_path = self.fixture / "shared-lane-request.json"
+        output = self.fixture / "shared-lane-demand.json"
+        request = catalog_module.read_json(ROOT / "catalog/receipts/synthetic-demand-request.json")
+        roll_request = copy.deepcopy(request["artifact_demands"][0])
+        roll_request.update(item_class_id="short-roll-40x15", required_quantity=2)
+        request["artifact_demands"].append(roll_request)
+        self.write_json(maps_path, maps)
+        self.write_json(request_path, request)
+        result = self.fixture_cli(
+            "build-demand", "--catalog", self.fixture / "catalog/bin-skus.json",
+            "--classes", self.fixture / "catalog/item-classes.json", "--maps", maps_path,
+            "--request", request_path, "--receipts-dir", self.fixture / "unused-caller-receipts",
+            "--output", output, "--evidence-scope", "synthetic_test_only",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        demand = catalog_module.read_json(output)
+        self.assertEqual(demand["admission_provenance"], decisions)
+        self.assertEqual([(row["item_class_id"], row["artifact_id_or_sku"], row["required_quantity"], row["physical_fit_receipt"], row["validation_receipt"]) for row in demand["artifact_demands"]], [
+            ("square-stack-49", "bin-3x3x10h", 1, "synthetic-fit-v1", "synthetic-lane-v1"),
+            ("short-roll-40x15", "bin-2x4x10h", 2, "synthetic-roll-fit", "synthetic-lane-v1"),
+        ])
+        self.assertEqual(demand["evidence_scope"], "synthetic_test_only")
+        self.assertFalse(demand["production_authorized"])
+        self.assertFalse(demand["integrated_system_accepted"])
+
+    def test_public_cli_joint_admissions_refuse_conflicts_and_physical_reuse(self):
+        registry = self.install_shared_lane_enrollment()
+        alternate_path = self.fixture / "catalog/receipts/synthetic-lane-copy.json"
+        shutil.copy2(self.lane_path, alternate_path)
+        self.assertEqual(catalog_module.sha256(alternate_path), registry["admissions"][0]["lane"]["sha256"])
+        for field, value in (("path", "catalog/receipts/synthetic-lane-copy.json"), ("sha256", "0" * 64)):
+            with self.subTest(conflicting_lane_binding=field):
+                changed = copy.deepcopy(registry)
+                changed["admissions"][1]["lane"][field] = value
+                self.write_json(self.registry_path, changed)
+                for entry in changed["admissions"]:
+                    result = self.fixture_cli("consume-admission", "--evidence-scope", "synthetic_test_only", "--admission-id", entry["admission_id"])
+                    self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                    self.assertIn("conflicting admitted lane receipt identity binding", result.stderr)
+        changed = copy.deepcopy(registry)
+        changed["admissions"][1]["physical"] = copy.deepcopy(changed["admissions"][0]["physical"])
+        self.write_json(self.registry_path, changed)
+        for entry in changed["admissions"]:
+            result = self.fixture_cli("consume-admission", "--evidence-scope", "synthetic_test_only", "--admission-id", entry["admission_id"])
+            self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+            self.assertIn("duplicate admitted physical receipt identity", result.stderr)
+
     def test_public_cli_malformed_roots_fail_closed(self):
         for payload, message in (("null", "schema validation"), ('{"configuration":"configured","configuration":"unconfigured"}', "duplicate JSON field"), ('{"value":NaN}', "non-finite JSON number")):
             self.registry_path.write_text(payload)

@@ -680,10 +680,17 @@ def admission_registry(evidence_scope: str) -> dict[str, Any]:
         ids = [row[key] for row in registry[collection]]
         if len(ids) != len(set(ids)):
             raise ValueError(f"duplicate {collection} identity in admission registry")
-    for kind in ("physical", "lane"):
-        ids = [row[kind]["receipt_id"] for row in registry["admissions"]]
-        if len(ids) != len(set(ids)):
-            raise ValueError(f"duplicate admitted {kind} receipt identity")
+    physical_ids = [row["physical"]["receipt_id"] for row in registry["admissions"]]
+    if len(physical_ids) != len(set(physical_ids)):
+        raise ValueError("duplicate admitted physical receipt identity")
+    lane_bindings = {}
+    for row in registry["admissions"]:
+        reference = row["lane"]
+        binding = (reference["path"], reference["sha256"])
+        receipt_id = reference["receipt_id"]
+        if receipt_id in lane_bindings and lane_bindings[receipt_id] != binding:
+            raise ValueError("conflicting admitted lane receipt identity binding")
+        lane_bindings[receipt_id] = binding
     if registry["configuration"] != "configured":
         if any(registry[key] for key in ("profiles", "lanes", "admissions")):
             raise ValueError("unconfigured registry must have no enrollment")
