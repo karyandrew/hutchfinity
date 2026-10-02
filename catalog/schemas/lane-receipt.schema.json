@@ -1,0 +1,282 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/hutchfinity/lane-receipt.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "receipt_id",
+    "evidence_scope",
+    "lane_id",
+    "profile",
+    "source_commit",
+    "source_files_and_hashes",
+    "output_hashes",
+    "source_output_link_state",
+    "representative_artifacts",
+    "functional_artifact",
+    "checks",
+    "workarounds",
+    "result",
+    "performed_at"
+  ],
+  "properties": {
+    "schema": {
+      "const": "hutchfinity-lane-receipt/v1"
+    },
+    "receipt_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_scope": {
+      "enum": [
+        "real",
+        "synthetic_test_only"
+      ]
+    },
+    "lane_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "revision",
+        "sha256"
+      ],
+      "properties": {
+        "profile_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "revision": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "source_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "source_files_and_hashes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "output_hashes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "path",
+          "sha256"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "source_output_link_state": {
+      "enum": [
+        "reproduced",
+        "unverified"
+      ]
+    },
+    "representative_artifacts": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "sku"
+        ],
+        "properties": {
+          "role": {
+            "enum": [
+              "smallest_thin_wall",
+              "multi_cell",
+              "tallest"
+            ]
+          },
+          "sku": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "functional_artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_sha256",
+        "output_sha256"
+      ],
+      "properties": {
+        "source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "output_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "articulation",
+        "dovetail_0_1mm",
+        "base_engagement_release",
+        "adjacent_mixed_fit",
+        "wall_floor_integrity",
+        "top_surface_solid_infill",
+        "interface_dimensions",
+        "material_profile_identity",
+        "unattended_completion"
+      ],
+      "properties": {
+        "articulation": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "dovetail_0_1mm": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "base_engagement_release": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "adjacent_mixed_fit": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "wall_floor_integrity": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "top_surface_solid_infill": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "interface_dimensions": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "material_profile_identity": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        },
+        "unattended_completion": {
+          "enum": [
+            "pass",
+            "fail",
+            "inconclusive",
+            "not_run",
+            "stale"
+          ]
+        }
+      }
+    },
+    "workarounds": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "result": {
+      "enum": [
+        "pass",
+        "fail",
+        "inconclusive",
+        "not_run",
+        "stale"
+      ]
+    },
+    "performed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

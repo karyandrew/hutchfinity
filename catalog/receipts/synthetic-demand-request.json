@@ -1,0 +1,15 @@
+{
+  "manifest_id": "synthetic-demand",
+  "as_of": "2026-09-25T00:00:00Z",
+  "artifact_demands": [
+    {
+      "item_class_id": "square-stack-49",
+      "required_quantity": 1,
+      "allowed_materials": [
+        "synthetic-material"
+      ],
+      "allowed_colors": [],
+      "priority_class": "test"
+    }
+  ]
+}
