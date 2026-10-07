@@ -1,7 +1,7 @@
 ---
 type: evergreen
 sensitivity: public
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Magnet press-fit — crush-rib recipe
@@ -10,12 +10,25 @@ Disc magnets in tub foot wells and casing arrays are retained by a crush-rib bor
 
 **Preference: shy over proud.** Magnets must not protrude above their surface — they would interfere with mating geometry. Err on the side of wells that are slightly too deep over wells that are too shallow.
 
-## Magnet sizes in use
+## Current product contract
 
-| Size | OD | H | Application |
+`scad/magnet_well.scad` is the source authority for the current product
+interface. Tub, Casing, Basket/Carrier, and the inspection coupon consume one
+named 6 x 1.5mm recipe: `6.10mm` bore, `5.60mm` rib-tip diameter from `0.25mm`
+radial protrusion, eight `0.80mm` ribs at 45-degree spacing, `0.30mm` lead-in
+chamfer, and `2.30mm` depth.
+
+The trial-01 hold result establishes the selected `0.25mm` crush geometry. The
+operator-selected `2.30mm` depth still requires physical confirmation of
+insertion, shy/flush seating, retention, and magnetic engagement. Issue #30
+owns that remaining gate.
+
+## Historical testbed sizes
+
+| Size | OD | H | Historical role |
 |---|---|---|---|
-| Small | 5mm | 1mm | Tub foot wells |
-| Standard | 6mm | 1.5mm | Casing arrays |
+| Small | 5mm | 1mm | Calibration candidate only; not the current Tub product recipe. |
+| Standard | 6mm | 1.5mm | Trial-01 source of the selected product crush geometry. |
 
 ## Crush-rib geometry
 
@@ -45,7 +58,11 @@ Printer: Sovol SV08 MAX. Process: 0.6mm nozzle, 0.59mm layer, 1.4mm line width, 
 
 **PHATTY is marginal for these features:** 0.59mm layer + 1.4mm width + 1.13 flow = ~2 layers total for a 1.1mm well, coarse bore geometry, reduced effective depth. Results characterize PHATTY settings specifically; standard settings (0.4mm nozzle / 0.2mm layer) are required for clean characterization.
 
-## Tentative recipe (pending standard-settings validation)
+## Historical trial-01 follow-up
+
+This table records the recommendation made immediately after the PHATTY
+testbed. It predates the canonical product contract above and does not
+authorize part-specific or current product geometry.
 
 | Magnet | Protrusion | WELL_R_ADD | WELL_D_ADD | Status |
 |---|---|---|---|---|
@@ -54,7 +71,7 @@ Printer: Sovol SV08 MAX. Process: 0.6mm nozzle, 0.59mm layer, 1.4mm line width, 
 
 **WELL_D_ADD must be ≥0.50mm** to ensure magnets sit shy at PHATTY settings. Iteration 1 used 0.10mm, which was insufficient.
 
-## Testbed
+## Historical testbed
 
 `scad/testbed/magnet_crush_rib_testbed.scad` v1.3.0 — 6×2 grid sweeping rib protrusion 0.05–0.30mm for both magnet sizes. Print at target process settings to characterize per-printer recipe.
 
@@ -62,4 +79,5 @@ Printer: Sovol SV08 MAX. Process: 0.6mm nozzle, 0.59mm layer, 1.4mm line width, 
 
 ## Open issues
 
-- hutchfinity#7 — iteration 2: deeper wells, standard settings, 5×1mm bore fix
+- hutchfinity#30 — physical confirmation of the canonical 6 x 1.5mm product recipe
+- hutchfinity#7 — older mixed-size calibration lane; it must not overwrite the canonical product recipe

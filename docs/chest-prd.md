@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Hutchfinity Chest PRD
@@ -39,7 +39,7 @@ A single drawer slot is one tub plus one casing, with an optional knob. Chests g
 | HR-8 | **Drawers are fully removable.** No pull-out stop in v1. | Clean removal is simpler, easier to print, and easier to inspect. |
 | HR-9 | **Pegs register and retain vertical casing stacks.** Side-by-side and multi-column linking are v2. | v1 solves vertical chest assembly first. Lateral assemblies add another fit problem and should not block the single-column chest. |
 | HR-10 | **Magnets provide closed retention and an extended-warning detent.** Magnet wells must not protrude into tub storage volume or interfere with mating surfaces. | Drawers should feel intentional in the closed position and warn before accidental over-extension. |
-| HR-11 | **Press-fit dimensions are provisional until physical validation lands.** Use the current crush-rib testbed and magnet wiki as the live recipe source. | Trial-01 was PHATTY-process evidence; standard-settings validation is still pending. |
+| HR-11 | **One named 6 x 1.5mm product recipe is shared across parts.** `scad/magnet_well.scad` is the live geometry source; calibration history stays in the testbed and wiki. | Trial evidence selected the `0.25mm` crush geometry. Physical insertion, shy/flush seating, retention, and magnetic engagement at `2.30mm` depth are still pending. |
 | HR-12 | **All XY dimensions derive from tub cell count and pitch.** | Parametric source stays the contract; manually tuned outer dimensions are drift magnets. |
 | HR-13 | **v1 is general-purpose.** No domain-specific assumptions, labels, colors, storage categories, or workflow content belong in the chest architecture. | This repo is public OSS and the chest is a general organizer system. |
 | HR-14 | **Back and side exterior faces stay flat.** No external stack pads, lugs, bosses, ribs, lands, or other protrusions on the casing sides or back. | Flat sides/back keep modules visually clean, easy to place against each other or other objects, and true to the simple shell architecture. Stack registration must be solved without changing the exterior side/back planes. |
@@ -125,12 +125,12 @@ Magnets are optional hardware, but the architecture reserves for them:
 | Casing closed-position array | Top of casing below | Retains the drawer closed. |
 | Casing extended-warning array | Top of casing below, about 75% extended | Gives tactile warning before full removal. |
 
-The current magnet sizes in use are:
+The current magnet-size contract is:
 
-| Size | Intended location | Status |
+| Size | Role | Status |
 |---|---|---|
-| 5x1mm disc | Tub foot wells | Pending standard-settings validation. |
-| 6x1.5mm disc | Casing arrays | Tentative PHATTY result exists; standard-settings validation still required. |
+| 6x1.5mm disc | Shared Tub, Casing, Basket/Carrier, and inspection-coupon product interface | The `0.25mm` crush geometry is selected from physical trial evidence; the `2.30mm` depth remains pending physical confirmation. |
+| 5x1mm disc | Historical mixed-size calibration candidate | Not the current Tub product recipe. |
 
 Current non-dimensional crush-rib constraints:
 
@@ -142,7 +142,13 @@ Current non-dimensional crush-rib constraints:
 | Chamfer | 0.3mm lead-in |
 | Well depth | Prefer shy over proud; deeper wells are safer than protruding magnets |
 
-Dimensional recipe authority lives in `wiki/magnet-press-fit.md` and the active crush-rib testbed. Do not use the older 3-rib recipe or the old `part OD + 0.1mm` / `part thickness + 0.1mm` dimensions as final chest requirements. Trial-01 showed that PHATTY settings distorted shallow wells and small bores enough to make that recipe unreliable.
+Dimensional product-recipe authority lives in `scad/magnet_well.scad`. Every
+part using the same 6 x 1.5mm magnet consumes that shared recipe; a different
+part does not justify different hole geometry. `wiki/magnet-press-fit.md` and
+the mixed-size crush-rib testbed preserve calibration history. Do not use the
+older 3-rib recipe or the old `part OD + 0.1mm` / `part thickness + 0.1mm`
+dimensions as final chest requirements. Trial-01 showed that PHATTY settings
+distorted shallow wells and small bores enough to make that recipe unreliable.
 
 ## Parameters
 
@@ -154,8 +160,8 @@ Dimensional recipe authority lives in `wiki/magnet-press-fit.md` and the active 
 | `pitch_xy`, `pitch_z`, `cells_x`, `cells_y`, `cells_z` | Tub/assembly grid sizing | Default 21mm XY and 3.5mm Z remain system conventions, but they are not casing-module arguments. |
 | Tub-to-slot clearance | Assembly clearance from tub exterior to casing slot | Assembly/tub-fit concern, not a casing-module argument. |
 | `peg_profile`, `peg_diameter`, `peg_clearance` | Peg press-fit recipe | TBD by testbed/prototype; include compliant male profiles, not just solid cylinders. |
-| `magnet_small`, `magnet_standard` | Disc magnet sizes | 5x1mm and 6x1.5mm currently available. |
-| `magnet_recipe` | Bore, depth, and rib geometry | Provisional until trial-02 standard-settings validation. |
+| `magnet_small`, `magnet_standard` | Disc magnet sizes | 5x1mm remains a calibration size; 6x1.5mm is the shared product size. |
+| `magnet_recipe` | Bore, depth, and rib geometry | Shared 6x1.5mm geometry is canonical; insertion, shy/flush seating, retention, and magnetic engagement at `2.30mm` depth remain pending physical validation. |
 | `detent_position` | Extended-warning magnet position | Assembly/interface value; tune by prototype. |
 
 ## Out of scope for v1
@@ -174,7 +180,7 @@ Dimensional recipe authority lives in `wiki/magnet-press-fit.md` and the active 
 
 | Dependency | Effect on this PRD |
 |---|---|
-| Magnet crush-rib trial-02 | Locks or revises the provisional magnet well and rib recipe. |
+| Canonical 6 x 1.5mm physical validation | Confirms or revises insertion, shy/flush seating, retention, and magnetic engagement for the shared `2.30mm`-deep recipe. |
 | Casing-side magnet well printability | Decides whether casing wells can be blind bed-side features, need post-processing/inserts, or require a casing orientation revision. |
 | Peg press-fit validation | Locks peg/socket dimensions and peg profile. Shape candidates should include compliant male geometry such as crush ribs, hollow/concave sections, and star-like polygons. |
 | Tub XY formula updates | May change casing and array placement if the tub formula changes. |

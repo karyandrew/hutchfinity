@@ -1,15 +1,15 @@
 ---
-version: 0.18.7
+version: 0.19.0
 sensitivity: public
 ---
 
 # Hutchfinity system spec
 
-This technical spec translates `docs/chest-prd.md` into module contracts for the authored Hutchfinity SCAD parts. The chest PRD remains the product authority; this page defines the first casing interface so `casing.scad` can exist without silently deciding the provisional magnet and peg recipes.
+This technical spec translates `docs/chest-prd.md` into module contracts for the authored Hutchfinity SCAD parts. The chest PRD remains the product authority; this page defines the casing interface, the shared product magnet recipe, and the still-provisional peg interface.
 
 ## Casing contract
 
-`scad/casing.scad` emits one drawer-slot casing in print orientation: the casing top is on the build plate and the side/back walls rise upward. The physical part has a top, left side, right side, and back; it has no front and no bottom. The current prototype cuts flat-wall stack sockets and provisional casing-side magnet wells by default.
+`scad/casing.scad` emits one drawer-slot casing in print orientation: the casing top is on the build plate and the side/back walls rise upward. The physical part has a top, left side, right side, and back; it has no front and no bottom. The current prototype cuts flat-wall stack sockets and canonical-recipe casing-side magnet wells by default.
 
 The casing module is tub-agnostic. It accepts direct slot dimensions rather than importing `tub.scad` or deriving from tub cell count, pitch, or wall thickness. Assembly-level files such as `scad/hutchfinity-assembly.scad` choose casing slot dimensions that match a tub or preview target.
 
@@ -19,8 +19,9 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 
 | File | Role |
 |---|---|
-| `scad/casing.scad` | Standalone casing shell with flat-wall stack peg sockets and provisional casing magnet wells. No tub import, no footer mode. |
-| `scad/tub.scad` | Mini/regular/mega tub wrappers that import the current tub STLs and cut provisional bottom magnet wells. |
+| `scad/magnet_well.scad` | Single source of truth for the canonical 6 x 1.5mm product magnet recipe and its bore-minus-notch cutter. |
+| `scad/casing.scad` | Standalone casing shell with flat-wall stack peg sockets and canonical product magnet wells. No tub import, no footer mode. |
+| `scad/tub.scad` | Mini/regular/mega tub wrappers that import the current tub STLs and cut canonical product magnet wells. |
 | `scad/peg.scad` | Prototype laid-down hex peg. |
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
@@ -30,10 +31,10 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | `scad/testbed/peg_stack_interface_testbed.scad` | Rejected stack-land coupon retained only as a failed design reference. |
 | `scad/testbed/casing_mouth_fit_gauge.scad` | Shallow front-mouth gauge for checking tub entry and top clearance before printing a full casing. |
 | `scad/testbed/full_magnetic_drawer_inspection_set.scad` | Installed-coordinate inspection exports for aligned casing/tub magnet-interface and slot-fit checks. |
-| `scad/testbed/magnet_well_shape_inspection.scad` | Real-CAD face coupons showing the current 5mm tub and 6mm casing magnet-well profiles. |
+| `scad/testbed/magnet_well_shape_inspection.scad` | Printable face coupon generated from the canonical 6 x 1.5mm product magnet recipe. |
 | `scad/testbed/mini_regular_mega_print_set.scad` | Selector source for the mini/regular/mega casing, magnetic tub, knob, and peg print packet. |
 | `scad/testbed/build-mini-regular-mega-print-set.sh` | Builds the mini/regular/mega print packet and copies the matching committed grid baseplates. |
-| `scad/testbed/casing-fit-trial-01.md` | Planned physical validation log for the #20 casing fit and peg/socket coupon print. |
+| `scad/testbed/casing-fit-trial-01.md` | Active physical-validation log; pre-canonical magnetic artifacts are marked superseded and must be regenerated before printing. |
 
 No shared `hutchfinity-dimensions.scad` file is part of this pass.
 
@@ -92,9 +93,8 @@ There is no `bottom_thickness` term. The casing has no floor/bottom plate.
 | `peg_socket_depth`, `peg_chamfer` | `10, 2.5` | Prototype top-slab through-sockets and wall-foot sockets with generous chamfers at both ends. |
 | `peg_socket_edge_land` | `4.0` | Minimum material land used when checking socket chamfer clearance. |
 | `enable_peg_holes` | `true` | Cuts prototype top-slab sockets and matching wall-foot receiver sockets into the flat side/back wall footprints. |
-| `enable_magnet_holes` | `true` | Cuts provisional casing magnet wells into the installed top surface. |
-| `casing_magnet_bore_diameter`, `casing_magnet_rib_tip_diameter` | `6.40, 6.10` | Current 6mm magnet press-fit candidate. |
-| `casing_magnet_well_depth`, `casing_magnet_chamfer` | `1.60, 0.30` | Current 6mm magnet pocket depth, `0.4mm` shallower than the 2.0mm recovery-sled pocket family. |
+| `enable_magnet_holes` | `true` | Cuts canonical 6 x 1.5mm product magnet wells into the installed top surface. |
+| `casing_magnet_recipe` | `hutchfinity_magnet_recipe_6x1_5()` | Shared recipe from `scad/magnet_well.scad`; callers may substitute a different named recipe, not independent geometry scalars. |
 | `casing_magnet_fore_aft_inset` | `8.0` | Magnet center inset from the front/back travel edges. |
 | `casing_magnet_paramedian_offset` | `21.0` | Lateral offset for the optional paramedian columns around the centerline. |
 | `extended_warning_travel_fraction` | `0.75` | Places the rear-pair warning detent wells at 75% drawer travel. |
@@ -104,11 +104,11 @@ Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-
 
 ## Provisional interfaces
 
-Magnet dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for magnet press-fit validation.
+`scad/magnet_well.scad` is the sole authority for the canonical 6 x 1.5mm product recipe. The recipe is a `6.10mm` bore with `0.25mm` radial rib protrusion, yielding a `5.60mm` rib-tip diameter; eight ribs at 45-degree spacing; `0.80mm` rib width; `0.30mm` lead-in chamfer; and `2.30mm` well depth. Regular Tub trial 1 physically established the `0.25mm` crush fit. The `2.30mm` depth is the selected trial-2 correction and remains pending physical confirmation, so geometry is canonical while the depth validation state remains provisional.
 
-The casing module now cuts nine provisional magnet wells into the installed top surface, which is print `Z=0`: six closed-position wells in two front/back rows and three lateral columns, plus three rear-magnet wells at 75% drawer travel as an extended-warning detent. The lateral columns are median and paramedian, centered on the drawer midline with `21mm` offsets. The current casing recipe is an 8-rib bore-minus-notch well: `6.40mm` bore, `6.10mm` rib-tip diameter, `1.60mm` deep, with a `0.30mm` chamfer.
+The casing module cuts nine wells into the installed top surface, which is print `Z=0`: six closed-position wells in two front/back rows and three lateral columns, plus three rear-magnet wells at 75% drawer travel as an extended-warning detent. The lateral columns are median and paramedian, centered on the drawer midline with `21mm` offsets. Casing keeps its own position array and depth-envelope assertion but consumes the shared recipe.
 
-`scad/tub.scad` wraps the current mini, regular, and mega tub STLs and cuts six bottom magnet wells in two front/back rows and three median/paramedian lateral columns. The current tub recipe is an 8-rib bore-minus-notch well: `5.40mm` bore, `5.25mm` rib-tip diameter, `1.10mm` deep, with a `0.30mm` chamfer. These wrappers do not make `casing.scad` depend on the tub model.
+`scad/tub.scad` wraps the current mini, regular, and mega tub STLs and cuts six bottom wells in two front/back rows and three median/paramedian lateral columns. Tub consumes the same shared recipe and asserts that its `2.30mm` well stays inside the `4.75mm` foot/cavity-floor envelope. These wrappers do not make `casing.scad` depend on the tub model. The Basket/Carrier probe and product inspection coupon also consume the same recipe; a different part is not a reason to redefine the same magnet hole.
 
 The casing module cuts prototype peg sockets by default. The stack is casing-to-casing: the bottom wall feet of an upper casing sit on the top slab of the casing below, and pegs register that pair. The open front span has no sockets because there is no front wall-foot receiver in the casing above.
 
@@ -137,12 +137,13 @@ openscad -o preview/casing-fit-trial-01/casing-fit-regular-23u.stl scad/casing-f
 openscad -o preview/casing-fit-trial-01/fit-pr19-20u-check.stl -D FIT_TUB_HEIGHT_U=20 scad/casing-fit-test.scad
 ```
 
-Peg/socket coupon check:
+Tub and coupon checks:
 
 ```bash
 openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
 openscad -o preview/casing-fit-trial-01/hex-peg-set-7.stl scad/testbed/hex_peg_set.scad
 openscad -o preview/casing-fit-trial-01/tub-regular-magnetic.stl scad/tub.scad
+openscad -o preview/casing-fit-trial-01/magnet-well-6x1.5-coupon.stl scad/testbed/magnet_well_shape_inspection.scad
 ```
 
 Do not render or print `scad/testbed/peg_stack_interface_testbed.scad` for the current validation pass. It is retained only as a failed reference for the rejected external stack-land approach.
@@ -186,4 +187,5 @@ For visual review, render a PNG from the same file when OpenSCAD is available. I
 - Same flat casing footprint casings cut a prototype two-ended peg/socket interface for vertical stacking.
 - Tub body geometry is not rewritten to create the slide path.
 - Optional knob geometry has a broad, thin glue base for tub attachment.
-- Magnet geometry is present in the casing and mini/regular/mega tub wrappers, and stays explicitly provisional until physical validation closes the dependency.
+- Casing, mini/regular/mega Tub, Basket/Carrier, and the inspection coupon consume one canonical 6 x 1.5mm magnet recipe.
+- The 0.25mm crush fit is physically established; the selected 2.30mm depth remains explicitly provisional until physical validation closes the dependency.

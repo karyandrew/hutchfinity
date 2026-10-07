@@ -3,7 +3,7 @@ sensitivity: public
 type: experiment
 date: 2026-07-25
 issue: hutchfinity#26
-status: CAD probe complete; physical Mini trial pending
+status: CAD probe complete; historical magnet-comparison metrics predate the canonical recipe; physical Mini trial pending
 ---
 
 # Mini Basket/Carrier CAD probe
@@ -15,6 +15,14 @@ Hutchfinity Basket/Carrier without replacing the current Tub implementation.
 It is a general parameterized testbed instantiated only at Mini size. It does
 not add a fifth production module, fan out Regular/Mega variants, change the
 Gridfinity system PRD, or claim physical validation.
+
+2026-08-15 magnet-recipe correction: the probe now consumes the same canonical
+6 x 1.5mm recipe as Tub and Casing from `scad/magnet_well.scad`: `6.10mm` bore,
+`5.60mm` rib-tip diameter from `0.25mm` radial crush, eight `0.80mm` ribs,
+`0.30mm` lead-in chamfer, and `2.30mm` depth. Magnet-volume measurements below
+are retained as pre-canonical provenance and must be regenerated before they
+are used for a current magnetic comparison. The envelope, floor, stack, and
+magnet-free findings remain separate from that superseded cutter geometry.
 
 The reproducible packet is built with:
 
@@ -99,13 +107,18 @@ contract is still needed, not a physical binding measurement.
 
 ## Magnet and casing datums
 
-Generator magnet holes are disabled. When requested, the probe cuts the same
-provisional Hutchfinity tub-side interface used by `tub.scad`:
+Generator magnet holes are disabled. When requested, the probe cuts the shared
+canonical Hutchfinity product interface from `scad/magnet_well.scad`:
 
 - six wells at X `-21 / 0 / +21mm` and Y `-162.2 / +162.2mm`;
-- `5.40mm` bore and `5.25mm` rib-tip diameter;
-- `1.10mm` depth and `0.30mm` chamfer;
-- shared `hutchfinity_magnet_well_cuts()` geometry.
+- `6.10mm` bore and `5.60mm` rib-tip diameter from `0.25mm` radial crush;
+- eight ribs at 45-degree spacing with `0.80mm` rib width;
+- `2.30mm` depth and `0.30mm` lead-in chamfer;
+- the same `hutchfinity_magnet_well_cuts()` recipe consumed by Tub and Casing.
+
+The default Basket/Carrier plain-floor envelope is `4.70mm`, so the canonical
+`2.30mm` well retains `2.40mm` of modeled material below the cut. That is a CAD
+envelope check, not physical depth validation.
 
 The candidate's exact `130.4 x 340.4 x 84.24mm` envelope fits the existing
 Mini CAD slot datum of `132.4 x 340.9 x 85.24mm`. The overflow witness contains
@@ -113,26 +126,29 @@ only its isolated `1mm³` reference cube, so there is no candidate material
 outside that slot after the comparison's `0.01mm` Boolean epsilon. This is a
 CAD containment check, not drawer-slide validation.
 
-## Mesh comparison
+## Historical pre-canonical mesh comparison
 
 All figures below come from OpenSCAD `2026.04.26` and the generated
-`metrics.tsv`.
+`metrics.tsv`. Magnet-free rows remain useful. Rows involving magnet cuts used
+the former Tub-side cutter and must be regenerated before current magnetic
+volume or overlap conclusions are drawn.
 
 | Configuration | Current volume | Candidate volume | Shared | Current-only | Candidate-only | Union | IoU |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | Both magnet-free | `362496.793898` | `360318.767490` | `358712.075338` | `3784.718559` | `1606.692152` | `364103.486050` | `98.519%` |
 | Current magnetic, candidate plain | `362351.516706` | `360318.767490` | `358566.798146` | `3784.718559` | `1751.969344` | `364103.486050` | `98.479%` |
-| Both use shared magnet wells | `362351.516706` | `360162.816282` | `358556.123146` | `3795.393560` | `1606.693136` | `363958.209842` | `98.516%` |
+| Both use the former shared magnet wells | `362351.516706` | `360162.816282` | `358556.123146` | `3795.393560` | `1606.693136` | `363958.209842` | `98.516%` |
 
 The middle row reproduces the issue's original comparison configuration.
 The candidate-only volume matches the recorded value within `0.001mm³`; the
 shared and current-only figures differ by about `0.4mm³`, within the mesh
 Boolean/export variation observed during reproduction.
 
-The shared cutter removes `145.277192mm³` from the current Tub and
-`155.951208mm³` from the candidate. The positions and cutter parameters match;
-the approximately `10.67mm³` difference comes from the different lower
-floor/stacking profiles intersected by those cuts.
+Under the former cutter, the shared cut removed `145.277192mm³` from the
+current Tub and `155.951208mm³` from the candidate. The positions and cutter
+parameters matched at that time; the approximately `10.67mm³` difference came
+from the different lower floor/stacking profiles intersected by those cuts.
+These values are historical and are not measurements of the canonical recipe.
 
 ## Stack check
 
@@ -153,11 +169,13 @@ Keep the Basket/Carrier as a parallel experimental candidate for the next
 physical gate; do not subsume Tub yet.
 
 The probe is too close to reject: it reproduces the target envelope, reaches
-about `98.5%` volumetric IoU, uses authored parametric source, maps the shared
-magnet interface, and self-stacks without CAD overlap. It is also too early to
-replace Tub: the floor/rim residuals are material, the removable-grid contract
-has unresolved zero-clearance boundaries, and no physical Mini trial has
-checked casing slide, stack feel, or print behavior.
+about `98.5%` volumetric IoU in the historical comparison, uses authored
+parametric source, maps the shared canonical magnet interface, and self-stacks
+without CAD overlap. It is also too early to replace Tub: the floor/rim
+residuals are material, the removable-grid contract has unresolved
+zero-clearance boundaries, the canonical magnetic comparison has not been
+regenerated, and no physical Mini trial has checked casing slide, stack feel,
+or print behavior.
 
 The final disposition remains gated:
 
