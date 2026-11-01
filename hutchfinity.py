@@ -30,7 +30,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 ROOT = Path(__file__).resolve().parent
 ENTRY = ROOT / "scad" / "hutchfinity.scad"
 CUP = ROOT / "scad" / "gridfinity" / "vendor" / "extended" / "gridfinity_basic_cup.scad"
@@ -42,41 +42,44 @@ DEFAULT_OUT = Path.home() / "Downloads" / "hutchfinity"
 PORT = 8421
 IDLE_EXIT_SECONDS = 30 * 60
 
-# name, OpenSCAD variable, default, help. Every dimension the model exposes.
+# name, OpenSCAD variable, default, help, lowest, highest.
 DESIGN_OPTIONS = [
-    ("pull_guide", "pull_guide", True, "raised guide on the tub front for gluing the pull"),
-    ("wall", "WALL", 2.2, "tub wall, mm"),
-    ("rim_wall", "MIN_WALL", 0.4, "tub wall at the rim, mm"),
-    ("integral_floor", "INTEGRAL_FLOOR", 1.3, "integral-grid floor, mm"),
-    ("plain_floor", "PLAIN_FLOOR", 1.2, "plain floor, mm"),
-    ("grid_height", "GRID_Z", 5.0, "grid height, mm"),
-    ("stack_gap", "STACK_GAP", 0.5, "air gap above the tallest bin when stacked, mm"),
-    ("bin_lip", "BIN_LIP", 3.74, "bin lip height, mm"),
-    ("insert_clearance", "INSERT_CLEARANCE", 1.0, "grid insert clearance per side, mm"),
-    ("side_wall", "side_wall", 18.0, "casing side wall, mm"),
-    ("back_wall", "back_wall", 18.0, "casing back wall, mm"),
-    ("riding_slab", "riding_slab", 1.3, "casing slab the tub above rides on, mm"),
-    ("side_clearance", "side_clearance", 1.0, "tub to casing, each side, mm"),
-    ("back_clearance", "back_clearance", 0.5, "tub to casing, back, mm"),
-    ("top_clearance", "top_clearance", 1.0, "tub to casing, top, mm"),
-    ("peg_spacing", "peg_spacing", 190.0, "target peg spacing, mm"),
-    ("peg_bore", "peg_bore", 8.45, "peg socket bore and peg width, mm"),
-    ("peg_depth", "peg_depth_max", 10.0, "peg socket depth, mm"),
-    ("peg_chamfer", "peg_chamfer", 0.5, "socket opening chamfer, mm"),
-    ("peg_end_chamfer", "peg_end_chamfer", 2.5, "peg end chamfer, mm"),
-    ("pull_width", "PULL_FLANGE_X", 90.0, "full-size pull flange width, mm"),
-    ("pull_height", "PULL_FLANGE_Z", 32.9, "full-size pull flange height, mm"),
-    ("corner_steps", "CORNER_STEPS", 8, "mesh: facets per tub corner"),
-    ("cell_corner_steps", "CELL_CORNER_STEPS", 6, "mesh: facets per grid-pocket corner"),
-    ("casing_fn", "casing_fn", 32, "mesh: facets per peg socket"),
+    ("pull_guide", "pull_guide", True, "raised guide on the tub front for gluing the pull", None, None),
+    ("wall", "WALL", 2.2, "tub wall, mm", 1.2, 4.0),
+    ("rim_wall", "MIN_WALL", 0.4, "tub wall at the rim, mm", 0.3, 1.0),
+    ("integral_floor", "INTEGRAL_FLOOR", 1.3, "integral-grid floor, mm", 0.8, 3.0),
+    ("plain_floor", "PLAIN_FLOOR", 1.2, "plain floor, mm", 0.8, 3.0),
+    ("stack_gap", "STACK_GAP", 0.5, "air gap above the tallest bin when stacked, mm", 0.0, 5.0),
+    ("bin_lip", "BIN_LIP", 3.74, "bin lip height, mm", 3.0, 5.0),
+    ("insert_clearance", "INSERT_CLEARANCE", 1.0, "grid insert clearance per side, mm", 0.2, 2.0),
+    ("side_wall", "side_wall", 18.0, "casing side wall, mm", 18.0, 40.0),
+    ("back_wall", "back_wall", 18.0, "casing back wall, mm", 18.0, 40.0),
+    ("riding_slab", "riding_slab", 1.3, "casing slab the tub above rides on, mm", 1.0, 10.0),
+    ("side_clearance", "side_clearance", 1.0, "tub to casing, each side, mm", 0.2, 3.0),
+    ("back_clearance", "back_clearance", 0.5, "tub to casing, back, mm", 0.2, 3.0),
+    ("top_clearance", "top_clearance", 1.0, "tub to casing, top, mm", 0.2, 5.0),
+    ("peg_spacing", "peg_spacing", 190.0, "target peg spacing, mm", 100.0, 400.0),
+    ("peg_bore", "peg_bore", 8.45, "peg socket bore and peg width, mm", 6.0, 9.0),
+    ("peg_depth", "peg_depth_max", 10.0, "peg socket depth, mm", 5.0, 15.0),
+    ("peg_chamfer", "peg_chamfer", 0.5, "socket opening chamfer, mm", 0.0, 0.75),
+    ("peg_end_chamfer", "peg_end_chamfer", 2.5, "peg end chamfer, mm", 0.0, 4.0),
+    ("pull_width", "PULL_FLANGE_X", 90.0, "full-size pull flange width, mm", 60.0, 120.0),
+    ("pull_height", "PULL_FLANGE_Z", 32.9, "full-size pull flange height, mm", 31.0, 40.0),
+    ("corner_steps", "CORNER_STEPS", 8, "mesh: facets per tub corner", 4, 32),
+    ("cell_corner_steps", "CELL_CORNER_STEPS", 6, "mesh: facets per grid-pocket corner", 3, 16),
+    ("casing_fn", "casing_fn", 32, "mesh: facets per peg socket", 16, 96),
 ]
+# name, default, help, lowest, highest. Every tub gets exactly one pull.
 COUNT_OPTIONS = [
-    ("tubs", 1, "tubs in the module"),
-    ("casings", 1, "casings in the module"),
-    ("pulls", 2, "pulls (one is used, one is a spare)"),
-    ("spare_pegs", 0, "pegs beyond what one casing needs"),
-    ("insert", 0, "grid inserts (for a plain floor)"),
+    ("tubs", 1, "tubs in the module", 1, 20),
+    ("casings", 1, "casings in the module", 0, 20),
+    ("spare_pegs", 0, "pegs beyond what the casings need", 0, 50),
+    ("insert", 0, "grid inserts (for a plain floor)", 0, 20),
 ]
+CELLS_RANGE = (1, 40)
+TUB_HEIGHT_RANGE = (5, 40)  # A tub must hold at least a 5h bin.
+BIN_HEIGHT_RANGE = (1, 40)
+BED_RANGE = (100.0, 1000.0)
 
 
 class BuildError(Exception):
@@ -97,10 +100,16 @@ def find_openscad() -> list[str]:
     return [candidate]
 
 
-def check_size(x: int, y: int, h: int) -> None:
-    for value in (x, y, h):
-        if not 1 <= value <= 40:
-            raise BuildError("sizes must be whole numbers from 1 to 40")
+def check_range(label: str, value, low, high) -> None:
+    if not low <= value <= high:
+        raise BuildError(f"{label} must be from {low} to {high}; got {value}")
+
+
+def check_size(part: str, x: int, y: int, h: int) -> None:
+    check_range("cells wide", x, *CELLS_RANGE)
+    check_range("cells deep", y, *CELLS_RANGE)
+    check_range("tallest bin" if part != "bin" else "bin height", h,
+                *(BIN_HEIGHT_RANGE if part in ("bin", "baseplate") else TUB_HEIGHT_RANGE))
 
 
 def scad_value(value) -> str:
@@ -112,19 +121,21 @@ def scad_value(value) -> str:
 
 
 def design_overrides(design: dict) -> list[str]:
-    known = {name: (var, default) for name, var, default, _ in DESIGN_OPTIONS}
+    known = {option[0]: option for option in DESIGN_OPTIONS}
     overrides = []
     for name, value in design.items():
         if name not in known:
             raise BuildError(f"unknown option: {name}")
-        var, default = known[name]
+        _, var, default, _, low, high = known[name]
+        if low is not None:
+            check_range(name.replace("_", " "), value, low, high)
         if value != default:
             overrides.append(f"{var}={scad_value(value)}")
     return overrides
 
 
 def scad_source(part: str, x: int, y: int, h: int, floor: str, design: dict) -> tuple[Path, list[str]]:
-    check_size(x, y, h)
+    check_size(part, x, y, h)
     if floor not in FLOORS:
         raise BuildError(f"unknown floor: {floor}")
     if part == "bin":
@@ -273,9 +284,15 @@ def file_record(path: Path, **extra) -> dict:
 def build_module(x, y, h, floor, out: Path, design=None, counts=None, bed=500.0) -> dict:
     """Build the print set for one module: one 3MF per print job, plus a manifest."""
     design = design or {}
-    counts = {**{name: default for name, default, _ in COUNT_OPTIONS}, **(counts or {})}
+    counts = {**{option[0]: option[1] for option in COUNT_OPTIONS}, **(counts or {})}
+    for name, _, _, low, high in COUNT_OPTIONS:
+        check_range(name.replace("_", " "), counts[name], low, high)
     render_part = lambda part: render(part, x, y, h, floor, design)
     tub, casing, peg, pull = (render_part(p) for p in ("tub", "casing", "peg", "pull"))
+    check_range("bed", bed, *BED_RANGE)
+    for label, mesh in (("tub", tub), ("casing", casing)):
+        if max(mesh["size_mm"][:2]) > bed or mesh["size_mm"][2] > bed:
+            raise BuildError(f"the {label} is {' x '.join(map(str, mesh['size_mm']))} mm, too big for a {bed:g} mm bed")
     pegs_needed = int(re.search(r"(\d+) pegs", casing["notes"][0]).group(1))
     peg_total = pegs_needed * counts["casings"] + counts["spare_pegs"]
 
@@ -286,7 +303,7 @@ def build_module(x, y, h, floor, out: Path, design=None, counts=None, bed=500.0)
     jobs = [
         ("1-tub.3mf", [("Tub", tub, counts["tubs"])]),
         ("2-casing.3mf", [("Casing", casing, counts["casings"])]),
-        ("3-pegs-and-pulls.3mf", [("Peg", peg, peg_total), ("Pull", pull, counts["pulls"])]),
+        ("3-pegs-and-pulls.3mf", [("Peg", peg, peg_total), ("Pull", pull, counts["tubs"])]),
     ]
     if counts["insert"]:
         jobs.append(("4-grid-insert.3mf", [("Grid insert", render_part("grid-insert"), counts["insert"])]))
@@ -313,7 +330,7 @@ def build_module(x, y, h, floor, out: Path, design=None, counts=None, bed=500.0)
         "path": str(folder),
         "files": records,
         "notes": manifest["notes"],
-        "summary": f"{peg_total} pegs, {counts['pulls']} pulls, "
+        "summary": f"{peg_total} pegs, {counts['tubs']} pull(s), "
         f"{sum(r['bytes'] for r in records) / 1e6:.1f} MB total",
     }
 
@@ -342,18 +359,19 @@ def build(target, x, y, h, floor, out, design=None, counts=None, bed=500.0) -> d
     return build_part(target, x, y, h, floor, out, design, bed)
 
 
-def field(label: str, name: str, default) -> str:
+def field(label: str, name: str, default, low=None, high=None) -> str:
     if isinstance(default, bool):
         checked = " checked" if default else ""
         return f"<label>{html.escape(label)}<input type=checkbox name={name}{checked}></label>"
     step = "1" if isinstance(default, int) else "any"
-    return f"<label>{html.escape(label)}<input name={name} type=number min=0 step={step} value={default}></label>"
+    text = html.escape(f"{label} ({low} to {high})")
+    return f"<label>{text}<input name={name} type=number min={low} max={high} step={step} value={default}></label>"
 
 
 def page() -> str:
     targets = "".join(f"<option>{t}" for t in TARGETS)
-    counts = "".join(field(label, name, default) for name, default, label in COUNT_OPTIONS)
-    design = "".join(field(label, name, default) for name, _, default, label in DESIGN_OPTIONS)
+    counts = "".join(field(label, name, default, low, high) for name, default, label, low, high in COUNT_OPTIONS)
+    design = "".join(field(label, name, default, low, high) for name, _, default, label, low, high in DESIGN_OPTIONS)
     return f"""<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
 <title>Hutchfinity</title><style>
 :root{{color-scheme:light dark}}body{{font:16px system-ui;max-width:30rem;margin:2rem auto;padding:0 1rem}}
@@ -366,7 +384,7 @@ summary{{margin-top:.8rem;cursor:pointer}}pre{{white-space:pre-wrap}}</style>
 <option value="12,16,20">Regular<option value="18,16,20">Mega<option value="10,10,10" selected>10 x 10 x 10h</select></label>
 <label>Cells wide<input name=x type=number min=1 max=40 value=10></label>
 <label>Cells deep<input name=y type=number min=1 max=40 value=10></label>
-<label>Tallest bin (3.5 mm units)<input name=h type=number min=1 max=40 value=10></label>
+<label>Tallest bin, 3.5 mm units (5 to 40)<input name=h type=number min=5 max=40 value=10></label>
 <label>Floor<select name=floor><option>integral-grid<option>plain</select></label>
 <details><summary>Quantities</summary>{counts}</details>
 <details><summary>Dimensions and mesh</summary>{design}</details>
@@ -374,6 +392,7 @@ summary{{margin-top:.8rem;cursor:pointer}}pre{{white-space:pre-wrap}}</style>
 const f=document.getElementById('f'),o=document.getElementById('out');
 document.getElementById('preset').onchange=e=>{{if(!e.target.value)return;
  const v=e.target.value.split(',');f.x.value=v[0];f.y.value=v[1];f.h.value=v[2]}};
+f.target.onchange=()=>{{f.h.min=['bin','baseplate'].includes(f.target.value)?1:5}};
 f.onsubmit=async e=>{{e.preventDefault();o.textContent='Building...';
  const q=new URLSearchParams(new FormData(f));f.querySelectorAll('input[type=checkbox]').forEach(c=>q.set(c.name,c.checked?'1':'0'));
  const r=await fetch('/build?'+q,{{headers:{{'X-Hutchfinity':'1'}}}});const j=await r.json();
@@ -384,13 +403,13 @@ f.onsubmit=async e=>{{e.preventDefault();o.textContent='Building...';
 def parse_form(q: dict) -> tuple:
     size = [int(q.get(k, "")) for k in ("x", "y", "h")]
     design = {}
-    for name, _, default, _ in DESIGN_OPTIONS:
+    for name, _, default, *_ in DESIGN_OPTIONS:
         if name in q:
             kind = type(default)
             value = q[name] == "1" if kind is bool else kind(q[name])
             if value != default:
                 design[name] = value
-    counts = {name: int(q[name]) for name, _, _ in COUNT_OPTIONS if name in q}
+    counts = {option[0]: int(q[option[0]]) for option in COUNT_OPTIONS if option[0] in q}
     return q.get("target", "module"), size, q.get("floor", FLOORS[0]), design, counts
 
 
@@ -489,14 +508,15 @@ def main() -> int:
     parser.add_argument("--floor", choices=FLOORS, default=FLOORS[0])
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--bed", type=float, default=500.0, help="bed width used to lay out rows, mm")
-    for name, default, label in COUNT_OPTIONS:
-        parser.add_argument(f"--{name.replace('_', '-')}", type=int, default=default, help=label)
-    for name, _, default, label in DESIGN_OPTIONS:
+    for name, default, label, low, high in COUNT_OPTIONS:
+        parser.add_argument(f"--{name.replace('_', '-')}", type=int, default=default,
+                            help=f"{label} ({low} to {high}, default {default})")
+    for name, _, default, label, low, high in DESIGN_OPTIONS:
         flag = f"--{name.replace('_', '-')}"
         if isinstance(default, bool):
             parser.add_argument(flag, action=argparse.BooleanOptionalAction, default=default, help=label)
         else:
-            parser.add_argument(flag, type=type(default), default=default, help=f"{label} (default {default})")
+            parser.add_argument(flag, type=type(default), default=default, help=f"{label} ({low} to {high}, default {default})")
     parser.add_argument("--port", type=int, default=PORT)
     parser.add_argument("--no-browser", action="store_true")
     parser.add_argument("--no-update", action="store_true", help="skip the git update at app start")
@@ -514,9 +534,9 @@ def main() -> int:
         if len(args.size) != 3:
             parser.error("give three sizes: cells wide, cells deep, tallest bin")
         design = {
-            name: getattr(args, name) for name, _, default, _ in DESIGN_OPTIONS if getattr(args, name) != default
+            option[0]: getattr(args, option[0]) for option in DESIGN_OPTIONS if getattr(args, option[0]) != option[2]
         }
-        counts = {name: getattr(args, name) for name, _, _ in COUNT_OPTIONS}
+        counts = {option[0]: getattr(args, option[0]) for option in COUNT_OPTIONS}
         print(json.dumps(build(args.target, *args.size, args.floor, args.out, design, counts, args.bed), indent=2))
     except BuildError as error:
         print(f"Could not build: {error}", file=sys.stderr)
