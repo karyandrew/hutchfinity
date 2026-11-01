@@ -1,5 +1,5 @@
 ---
-version: 0.18.7
+version: 0.19.0
 sensitivity: public
 ---
 
@@ -15,12 +15,27 @@ The casing module is tub-agnostic. It accepts direct slot dimensions rather than
 
 The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm tall. The current representative casing uses width for left/right across the drawer opening and depth for front/back drawer travel. For the regular tub, casing width spans the tub width, while casing depth uses the shared 16-cell front-to-back tub dimension. Stacked casings use the same flat casing footprint and prototype peg/socket geometry.
 
+## Current tub contract
+
+`scad/tub.scad` authors the tub directly. It replaces the old 23h STL wrappers and is the source of truth over any older tub figure below or in the PRDs.
+
+- Size is `cells_x x cells_y x bin_h`, where `bin_h` is the tallest bin the tub must hold, in 3.5 mm units.
+- Height: `floor + bin_h x 3.5 + 3.74 bin lip + 0.50 air gap + 4.30 stack overlap`. A 10h integral-grid tub is 44.84 mm; a 20h one is 79.84 mm.
+- The 0.50 mm is the real gap above the tallest bin's lip when tubs stack. It replaces 2.01 mm of leftover rounding from the old whole-unit tub height.
+- Floor modes: `integral-grid` (1.30 mm floor, 5 mm built-in grid) and `plain` (1.20 mm floor, takes bins or the removable `grid-insert`). Walls are 2.2 mm. There are no magnet wells.
+- A pull guide sits centered on the wall band above the grid, and shrinks when the band is too short for the 90 x 34 mm pull.
+- `scad/hutchfinity.scad` derives the matching casing, pegs, and pull from the same size. `hutchfinity.py` is the small app over it.
+
+Status: checked in CAD only. Stacking, bin seating, casing slide, and pull size have not been physically tested at this height. `scad/reference/thin-floor-rev05/` keeps the original CadQuery model the port was compared against.
+
 ## Files
 
 | File | Role |
 |---|---|
 | `scad/casing.scad` | Standalone casing shell with flat-wall stack peg sockets and provisional casing magnet wells. No tub import, no footer mode. |
-| `scad/tub.scad` | Mini/regular/mega tub wrappers that import the current tub STLs and cut provisional bottom magnet wells. |
+| `scad/tub.scad` | Parametric tub and removable grid insert, plus mini/regular/mega wrappers. |
+| `scad/hutchfinity.scad` | Customizer entry point that sizes tub, insert, casing, pegs, and pull together. |
+| `hutchfinity.py` | Small local app and command line that build checked STLs, including bins and baseplates. |
 | `scad/peg.scad` | Prototype laid-down hex peg. |
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
@@ -29,10 +44,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 | `scad/testbed/hex_peg_set.scad` | Seven loose hex pegs for one representative casing stack interface. |
 | `scad/testbed/peg_stack_interface_testbed.scad` | Rejected stack-land coupon retained only as a failed design reference. |
 | `scad/testbed/casing_mouth_fit_gauge.scad` | Shallow front-mouth gauge for checking tub entry and top clearance before printing a full casing. |
-| `scad/testbed/full_magnetic_drawer_inspection_set.scad` | Installed-coordinate inspection exports for aligned casing/tub magnet-interface and slot-fit checks. |
 | `scad/testbed/magnet_well_shape_inspection.scad` | Real-CAD face coupons showing the current 5mm tub and 6mm casing magnet-well profiles. |
-| `scad/testbed/mini_regular_mega_print_set.scad` | Selector source for the mini/regular/mega casing, magnetic tub, knob, and peg print packet. |
-| `scad/testbed/build-mini-regular-mega-print-set.sh` | Builds the mini/regular/mega print packet and copies the matching committed grid baseplates. |
 | `scad/testbed/casing-fit-trial-01.md` | Planned physical validation log for the #20 casing fit and peg/socket coupon print. |
 
 No shared `hutchfinity-dimensions.scad` file is part of this pass.
@@ -108,7 +120,7 @@ Magnet dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchf
 
 The casing module now cuts nine provisional magnet wells into the installed top surface, which is print `Z=0`: six closed-position wells in two front/back rows and three lateral columns, plus three rear-magnet wells at 75% drawer travel as an extended-warning detent. The lateral columns are median and paramedian, centered on the drawer midline with `21mm` offsets. The current casing recipe is an 8-rib bore-minus-notch well: `6.40mm` bore, `6.10mm` rib-tip diameter, `1.60mm` deep, with a `0.30mm` chamfer.
 
-`scad/tub.scad` wraps the current mini, regular, and mega tub STLs and cuts six bottom magnet wells in two front/back rows and three median/paramedian lateral columns. The current tub recipe is an 8-rib bore-minus-notch well: `5.40mm` bore, `5.25mm` rib-tip diameter, `1.10mm` deep, with a `0.30mm` chamfer. These wrappers do not make `casing.scad` depend on the tub model.
+The current `scad/tub.scad` has no magnet wells; #30 owns any return of them. The earlier tub wrappers cut six bottom magnet wells in two front/back rows and three median/paramedian lateral columns. The current tub recipe is an 8-rib bore-minus-notch well: `5.40mm` bore, `5.25mm` rib-tip diameter, `1.10mm` deep, with a `0.30mm` chamfer. These wrappers do not make `casing.scad` depend on the tub model.
 
 The casing module cuts prototype peg sockets by default. The stack is casing-to-casing: the bottom wall feet of an upper casing sit on the top slab of the casing below, and pegs register that pair. The open front span has no sockets because there is no front wall-foot receiver in the casing above.
 
@@ -142,7 +154,7 @@ Peg/socket coupon check:
 ```bash
 openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
 openscad -o preview/casing-fit-trial-01/hex-peg-set-7.stl scad/testbed/hex_peg_set.scad
-openscad -o preview/casing-fit-trial-01/tub-regular-magnetic.stl scad/tub.scad
+python3 hutchfinity.py tub 12 16 20 --out preview/casing-fit-trial-01
 ```
 
 Do not render or print `scad/testbed/peg_stack_interface_testbed.scad` for the current validation pass. It is retained only as a failed reference for the rejected external stack-land approach.
@@ -160,19 +172,14 @@ Physical validation packet:
 ```bash
 openscad -o preview/casing-fit-trial-01/casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad
 openscad -o preview/casing-fit-trial-01/casing-fit-regular-23u.stl scad/casing-fit-test.scad
-openscad -o preview/casing-fit-trial-01/tub-regular-magnetic.stl scad/tub.scad
+python3 hutchfinity.py tub 12 16 20 --out preview/casing-fit-trial-01
 openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
 openscad -o preview/casing-fit-trial-01/hex-peg-set-7.stl scad/testbed/hex_peg_set.scad
-scad/testbed/build-mini-regular-mega-print-set.sh
 ```
 
 Aligned inspection packet:
 
 ```bash
-openscad -o preview/casing-fit-trial-01/aligned-inspection/casing-installed.stl -D INSPECTION_PART=1 scad/testbed/full_magnetic_drawer_inspection_set.scad
-openscad -o preview/casing-fit-trial-01/aligned-inspection/tub-on-casing-top-closed.stl -D INSPECTION_PART=2 scad/testbed/full_magnetic_drawer_inspection_set.scad
-openscad -o preview/casing-fit-trial-01/aligned-inspection/tub-in-slot-closed.stl -D INSPECTION_PART=4 scad/testbed/full_magnetic_drawer_inspection_set.scad
-openscad -o preview/casing-fit-trial-01/aligned-inspection/pegs-installed.stl -D INSPECTION_PART=6 scad/testbed/full_magnetic_drawer_inspection_set.scad
 ```
 
 Record the physical result in `scad/testbed/casing-fit-trial-01.md`. Casing and mouth-gauge artifacts print inverted; flip them into installed orientation for fit testing, with the slab above the tub and the walls down. The mouth gauge is a cheaper entry/ceiling check only; it does not replace full-depth casing slide validation. The current regular trial uses `1.0mm` side clearance per side, `0.5mm` at the closed back, and `1.0mm` above the tub.

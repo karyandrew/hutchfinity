@@ -13,6 +13,12 @@
 use <../magnet_well.scad>;
 use <../tub.scad>;
 
+// Provisional six-well layout, kept here since the current tub has no magnet wells.
+function tub_magnet_positions(tub_x, tub_y, fore_aft_inset, paramedian_offset) =
+    [for (y = [-tub_y / 2 + fore_aft_inset, tub_y / 2 - fore_aft_inset])
+        for (x = paramedian_offset == 0 ? [0] : [-paramedian_offset, 0, paramedian_offset])
+            [x, y]];
+
 PROBE_PART = "candidate";
 PROBE_FLOOR_MODE = "plain";
 PROBE_MAGNETS = true;

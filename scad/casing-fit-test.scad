@@ -1,5 +1,6 @@
 // casing-fit-test.scad
 // version: 0.4.2
+// History: sized for the retired 23h STL tub. Current tubs and casings: hutchfinity.scad.
 // Representative casing/tub fit target. This file maps current tub-source
 // dimensions to casing slot dimensions while keeping casing.scad tub-agnostic.
 

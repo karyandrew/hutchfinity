@@ -8,6 +8,8 @@ status: CAD probe complete; physical Mini trial pending
 
 # Mini Basket/Carrier CAD probe
 
+> **History:** this trial used the retired 84.24 mm STL-based tub. Removed parts and commands below are available in git history.
+
 ## Scope
 
 This probe tests whether the pinned Gridfinity Basket source can support a
