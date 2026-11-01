@@ -30,7 +30,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "1.2.0"
+VERSION = "1.2.1"
 ROOT = Path(__file__).resolve().parent
 ENTRY = ROOT / "scad" / "hutchfinity.scad"
 CUP = ROOT / "scad" / "gridfinity" / "vendor" / "extended" / "gridfinity_basic_cup.scad"
@@ -49,6 +49,7 @@ DESIGN_OPTIONS = [
     ("rim_wall", "MIN_WALL", 0.4, "tub wall at the rim, mm", 0.3, 1.0),
     ("integral_floor", "INTEGRAL_FLOOR", 1.3, "integral-grid floor, mm", 0.8, 3.0),
     ("plain_floor", "PLAIN_FLOOR", 1.2, "plain floor, mm", 0.8, 3.0),
+    ("grid_height", "GRID_Z", 5.0, "grid height, mm", 5.0, 8.0),
     ("stack_gap", "STACK_GAP", 0.5, "air gap above the tallest bin when stacked, mm", 0.0, 5.0),
     ("bin_lip", "BIN_LIP", 3.74, "bin lip height, mm", 3.0, 5.0),
     ("insert_clearance", "INSERT_CLEARANCE", 1.0, "grid insert clearance per side, mm", 0.2, 2.0),
