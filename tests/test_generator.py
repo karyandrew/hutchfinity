@@ -83,6 +83,15 @@ class LiveBuild(unittest.TestCase):
                         if part == "tub":
                             self.mesh(part, 4, 4, 5, **design)
 
+    def test_every_catalog_bin_builds_at_its_catalog_size(self):
+        catalog = json.loads((ROOT / "catalog/bin-skus.json").read_text())
+        for row in catalog["items"]:
+            with self.subTest(sku=row["sku"]):
+                size = self.mesh("bin", row["cells_x"], row["cells_y"], row["height_units"])["size_mm"]
+                outer = row["external_bounds_mm"]
+                for got, want in zip(size, (outer["x"], outer["y"], outer["z"])):
+                    self.assertAlmostEqual(got, want, delta=0.05)
+
     def test_module_must_fit_the_bed(self):
         with self.assertRaisesRegex(hutchfinity.BuildError, "too big"):
             hutchfinity.build("module", 12, 16, 20, "integral-grid", self.out, bed=200.0)

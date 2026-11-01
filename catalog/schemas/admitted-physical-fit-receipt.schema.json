@@ -10,7 +10,6 @@
     "item_class_id",
     "item_class_hash",
     "sku",
-    "artifact_sha256",
     "validation_lane",
     "validation_receipt",
     "sample_kind",
@@ -24,7 +23,7 @@
     "evidence_scope",
     "profile",
     "source_commit",
-    "source_and_output_hashes",
+    "source_files_and_hashes",
     "sample_count",
     "selected_orientation"
   ],
@@ -47,10 +46,6 @@
     "sku": {
       "type": "string",
       "pattern": "^bin-[0-9]+x[0-9]+x[0-9]+h$"
-    },
-    "artifact_sha256": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
     },
     "validation_lane": {
       "type": "string",
@@ -205,7 +200,7 @@
       "type": "string",
       "pattern": "^[0-9a-f]{40}$"
     },
-    "source_and_output_hashes": {
+    "source_files_and_hashes": {
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,

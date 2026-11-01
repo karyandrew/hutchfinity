@@ -20,13 +20,16 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import hutchfinity  # noqa: E402
+
 from jsonschema import Draft202012Validator, FormatChecker, RefResolver
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BUILD_SOURCE = Path("scad/gridfinity/dental/build-stl.sh")
 CUP_SOURCE = Path("scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad")
-STL_DIR = Path("scad/gridfinity/stl")
+# Bin sizes in the catalog: cells wide, cells deep, height units. hutchfinity.py builds any of them.
+BIN_SIZES = [(1, 1, 5), (1, 1, 10), (1, 1, 20), (2, 1, 5), (2, 1, 10), (2, 1, 20), (2, 2, 5), (2, 2, 10), (2, 2, 20), (2, 3, 10), (2, 4, 10), (2, 5, 10), (2, 9, 10), (2, 10, 10), (3, 3, 5), (3, 3, 10), (3, 5, 10), (4, 6, 10), (5, 9, 5), (6, 2, 5), (6, 2, 10), (8, 2, 10)]
 SCHEMA_DIR = ROOT / "catalog/schemas"
 AUTHORITATIVE_CATALOG = ROOT / "catalog/bin-skus.json"
 AUTHORITATIVE_CLASSES = ROOT / "catalog/item-classes.json"
@@ -120,7 +123,7 @@ def source_commit() -> str:
     if history != "false":
         raise ValueError("full Git history is required for source revision binding")
     return subprocess.run(
-        ["git", "log", "-1", "--format=%H", "HEAD", "--", str(BUILD_SOURCE), str(CUP_SOURCE), str(STL_DIR / "bin-*.stl")], cwd=ROOT, check=True, text=True,
+        ["git", "log", "-1", "--format=%H", "HEAD", "--", str(CUP_SOURCE)], cwd=ROOT, check=True, text=True,
         stdout=subprocess.PIPE, env=environment,
     ).stdout.strip()
 
@@ -236,162 +239,67 @@ def source_dimensions(cells_x: int, cells_y: int, height_units: int) -> dict[str
     }
 
 
-def mesh_metrics(path: Path) -> dict[str, Any]:
-    minimum = [math.inf, math.inf, math.inf]
-    maximum = [-math.inf, -math.inf, -math.inf]
-    triangles: list[tuple[Any, Any, Any]] = []
-    size = path.stat().st_size
-    with path.open("rb") as stream:
-        header = stream.read(84)
-        triangle_count = struct.unpack("<I", header[80:84])[0] if len(header) == 84 else 0
-        is_binary = 84 + triangle_count * 50 == size
-        if is_binary:
-            for _ in range(triangle_count):
-                triangle = stream.read(50)
-                values = struct.unpack("<12fH", triangle)
-                vertices = tuple(tuple(values[offset:offset + 3]) for offset in (3, 6, 9))
-                triangles.append(vertices)
-                for vertex in vertices:
-                    minimum = [min(old, value) for old, value in zip(minimum, vertex)]
-                    maximum = [max(old, value) for old, value in zip(maximum, vertex)]
-        else:
-            stream.seek(0)
-            vertices = []
-            for raw_line in stream:
-                fields = raw_line.decode("ascii").split()
-                if len(fields) == 4 and fields[0] == "vertex":
-                    vertex = tuple(float(value) for value in fields[1:])
-                    vertices.append(vertex)
-                    minimum = [min(old, value) for old, value in zip(minimum, vertex)]
-                    maximum = [max(old, value) for old, value in zip(maximum, vertex)]
-                    if len(vertices) == 3:
-                        triangles.append(tuple(vertices))
-                        vertices = []
-    if not triangles:
-        raise ValueError(f"no STL triangles found in {path}")
-    signed_volume = 0.0
-    for first, second, third in triangles:
-        cross = (
-            second[1] * third[2] - second[2] * third[1],
-            second[2] * third[0] - second[0] * third[2],
-            second[0] * third[1] - second[1] * third[0],
-        )
-        signed_volume += sum(value * other for value, other in zip(first, cross)) / 6.0
-    return {
-        "mesh_aabb_mm": {
-            "x": round(maximum[0] - minimum[0], 6),
-            "y": round(maximum[1] - minimum[1], 6),
-            "z": round(maximum[2] - minimum[2], 6),
-        },
-        "mesh_volume_mm3": round(abs(signed_volume), 3),
-        "triangle_count": len(triangles),
-    }
-
-
-def build_managed_names() -> set[str]:
-    text = (ROOT / BUILD_SOURCE).read_text(encoding="utf-8")
-    return {match.group(0) for match in re.finditer(r"bin-\d+x\d+x\d+h\.stl", text)}
+def generator_defines(cells_x: int, cells_y: int, height_units: int) -> list[str]:
+    return hutchfinity.scad_source("bin", cells_x, cells_y, height_units, "plain", {})[1]
 
 
 def source_hashes() -> list[dict[str, str]]:
     return [
         {"path": str(path), "sha256": sha256(ROOT / path)}
-        for path in (BUILD_SOURCE, CUP_SOURCE)
+        for path in (CUP_SOURCE,)
     ]
 
 
 def build_catalog() -> dict[str, Any]:
-    managed = build_managed_names()
     commit = source_commit()
     sources = source_hashes()
     records = []
-    for path in sorted((ROOT / STL_DIR).glob("bin-*x*x*h.stl")):
-        match = SKU_RE.fullmatch(path.name)
-        if not match:
-            continue
-        cells_x, cells_y, height_units = map(int, match.groups())
-        current = path.name in managed
-        dimensions = source_dimensions(cells_x, cells_y, height_units) if current else {
-            "external_bounds_mm": None,
-            "verified_internal_bounds_mm": None,
-            "wall_floor_lip_contract": None,
-        }
-        handling = {
-            "compartment_count": 1,
-            "visibility_supported": ["open", "labelled"],
-            "retrieval_modes_supported": ["finger_grab", "pinch", "pour", "lift_bundle"],
-        } if current else None
-        relative = path.relative_to(ROOT)
-        metrics = mesh_metrics(path)
+    for cells_x, cells_y, height_units in sorted(BIN_SIZES, key=lambda size: f"bin-{size[0]}x{size[1]}x{size[2]}h"):
         records.append({
             "schema": "hutchfinity-bin-sku/v1",
-            "sku": path.stem,
+            "sku": f"bin-{cells_x}x{cells_y}x{height_units}h",
             "cells_x": cells_x,
             "cells_y": cells_y,
             "height_units": height_units,
             "nominal_pitch_mm": PITCH_XY_MM,
-            **dimensions,
-            "handling_contract": handling,
+            **source_dimensions(cells_x, cells_y, height_units),
+            "handling_contract": {
+                "compartment_count": 1,
+                "visibility_supported": ["open", "labelled"],
+                "retrieval_modes_supported": ["finger_grab", "pinch", "pour", "lift_bundle"],
+            },
             "base_interface": "gridfinity-half-pitch-21mm",
-            "catalog_state": "build_managed" if current else "tracked_unmanaged",
-            "source_output_link_state": "unverified",
+            "generator_defines": generator_defines(cells_x, cells_y, height_units),
             "source_commit": commit,
             "source_files_and_hashes": sources,
-            "output_hashes": [{
-                "path": str(relative),
-                "sha256": sha256(path),
-                "bytes": path.stat().st_size,
-                **metrics,
-            }],
-            "validation_state": "rendered" if current else "stale",
+            "validation_state": "source_only",
             "validated_printer_lanes": [],
         })
     return {
         "schema": "hutchfinity-bin-catalog/v1",
         "source_commit": commit,
         "source_files_and_hashes": sources,
-        "inventory_summary": {
-            "tracked_bin_outputs": len(records),
-            "build_managed_outputs": sum(item["catalog_state"] == "build_managed" for item in records),
-            "tracked_unmanaged_outputs": sum(item["catalog_state"] == "tracked_unmanaged" for item in records),
-            "source_output_links_reproduced": 0,
-        },
         "items": records,
     }
 
 
-def verify_hash_reference(reference: dict[str, Any], *, require_size: bool = False) -> None:
+def verify_hash_reference(reference: dict[str, Any]) -> None:
     path = checked_repo_file(reference["path"])
     if sha256(path) != reference["sha256"]:
         raise ValueError(f"referenced file hash does not match actual bytes: {reference['path']}")
-    if require_size and path.stat().st_size != reference["bytes"]:
-        raise ValueError(f"referenced file size does not match actual bytes: {reference['path']}")
 
 
 def validate_catalog_authority(catalog: dict[str, Any], required_skus: set[str] | None = None) -> None:
-    """Bind catalog claims to current source and selected local artifact bytes."""
+    """Bind catalog claims to current source and the generator recipe."""
     validate_catalog_schema(catalog)
     actual_sources = source_hashes()
     if catalog["source_commit"] != source_commit():
-        raise ValueError("bin catalog source_commit does not match the current source/artifact revision")
+        raise ValueError("bin catalog source_commit does not match the current source revision")
     if catalog["source_files_and_hashes"] != actual_sources:
         raise ValueError("bin catalog source hashes do not match authoritative source bytes")
 
-    managed_names = build_managed_names()
-    expected_counts = {
-        "tracked_bin_outputs": len(catalog["items"]),
-        "build_managed_outputs": sum(item["catalog_state"] == "build_managed" for item in catalog["items"]),
-        "tracked_unmanaged_outputs": sum(item["catalog_state"] == "tracked_unmanaged" for item in catalog["items"]),
-        "source_output_links_reproduced": sum(item["source_output_link_state"] == "reproduced" for item in catalog["items"]),
-    }
-    if catalog["inventory_summary"] != expected_counts:
-        raise ValueError("bin catalog inventory summary does not match its records")
-
     by_sku = {item["sku"]: item for item in catalog["items"]}
-    required = (
-        {item["sku"] for item in catalog["items"] if item["catalog_state"] == "build_managed"}
-        if required_skus is None else required_skus
-    )
+    required = set(by_sku) if required_skus is None else required_skus
     missing = required - set(by_sku)
     if missing:
         raise ValueError(f"map references SKU values absent from the authoritative catalog: {sorted(missing)}")
@@ -403,26 +311,16 @@ def validate_catalog_authority(catalog: dict[str, Any], required_skus: set[str] 
         cells_x, cells_y, height_units = map(int, match.groups())
         if (item["cells_x"], item["cells_y"], item["height_units"]) != (cells_x, cells_y, height_units):
             raise ValueError(f"catalog cell dimensions do not match SKU: {sku}")
-        expected_managed = f"{sku}.stl" in managed_names
-        expected_state = "build_managed" if expected_managed else "tracked_unmanaged"
-        if item["catalog_state"] != expected_state:
-            raise ValueError(f"catalog state does not match the current build recipe: {sku}")
+        if (cells_x, cells_y, height_units) not in BIN_SIZES:
+            raise ValueError(f"catalog SKU is not a listed bin size: {sku}")
+        if item["generator_defines"] != generator_defines(cells_x, cells_y, height_units):
+            raise ValueError(f"catalog recipe does not match the generator: {sku}")
         if item["source_commit"] != catalog["source_commit"] or item["source_files_and_hashes"] != actual_sources:
             raise ValueError(f"catalog SKU source binding does not match authoritative source: {sku}")
-        expected_dimensions = source_dimensions(cells_x, cells_y, height_units) if expected_managed else {
-            "external_bounds_mm": None,
-            "verified_internal_bounds_mm": None,
-            "wall_floor_lip_contract": None,
-        }
+        expected_dimensions = source_dimensions(cells_x, cells_y, height_units)
         for field, expected in expected_dimensions.items():
             if item[field] != expected:
                 raise ValueError(f"catalog source-derived geometry does not match current formulas: {sku}.{field}")
-
-        if sku in required:
-            expected_output_path = str(STL_DIR / f"{sku}.stl")
-            if len(item["output_hashes"]) != 1 or item["output_hashes"][0]["path"] != expected_output_path:
-                raise ValueError(f"catalog output path is not authoritative for SKU: {sku}")
-            verify_hash_reference(item["output_hashes"][0], require_size=True)
 
     for reference in actual_sources:
         verify_hash_reference(reference)
@@ -552,7 +450,8 @@ def sku_rank(sku: dict[str, Any], evaluation: dict[str, Any]) -> tuple[Any, ...]
     required = evaluation["required_envelope_mm"]
     required_volume = math.prod(value for value in required.values() if value is not None)
     wasted = bounds["x"] * bounds["y"] * bounds["z"] - required_volume
-    material_proxy = sku["output_hashes"][0]["mesh_volume_mm3"]
+    outer = sku["external_bounds_mm"]
+    material_proxy = round(outer["x"] * outer["y"] * outer["z"] - bounds["x"] * bounds["y"] * bounds["z"], 3)
     return (sku["cells_x"] * sku["cells_y"], sku["height_units"], material_proxy, round(wasted, 3), sku["sku"])
 
 
@@ -565,14 +464,8 @@ def best_evaluation(item: dict[str, Any], sku: dict[str, Any]) -> dict[str, Any]
     ) * -1, row["orientation"]))
 
 
-def artifact_hash_refs(sku: dict[str, Any]) -> list[dict[str, str]]:
-    refs = list(sku["source_files_and_hashes"])
-    refs.extend({"path": row["path"], "sha256": row["sha256"]} for row in sku["output_hashes"])
-    return refs
-
-
 def select_item(item: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]:
-    active = [sku for sku in catalog["items"] if sku["catalog_state"] == "build_managed"]
+    active = catalog["items"]
     evaluated = [(sku, best_evaluation(item, sku)) for sku in active]
     passing = sorted((pair for pair in evaluated if pair[1]["outcome"] == "pass"), key=lambda pair: sku_rank(*pair))
     targets = item.get("initial_evaluation_target_skus", [])
@@ -593,7 +486,7 @@ def select_item(item: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]
     else:
         selected_sku, preferred = preferred_pair
         preferred_sku = selected_sku["sku"]
-        hashes = artifact_hash_refs(selected_sku)
+        hashes = list(selected_sku["source_files_and_hashes"])
 
     fallback_skus = [sku["sku"] for sku, _ in fallback_pairs]
     candidate_rows = []
@@ -624,7 +517,7 @@ def select_item(item: dict[str, Any], catalog: dict[str, Any]) -> dict[str, Any]
         "flat_floor_margins_mm": None if preferred is None else preferred["flat_floor_margins_mm"],
         "quantity_capacity": None if preferred is None else preferred["quantity_capacity"],
         "retrieval_clearance_mm": item["grab_clearance_mm"],
-        "source_and_output_hashes": hashes,
+        "source_files_and_hashes": hashes,
         "validation_lane": None,
         "validation_receipt": None,
         "physical_fit_state": "not_run",
@@ -753,34 +646,30 @@ def consume_admission(admission_id: str, evidence_scope: str = "real") -> dict[s
     validate_catalog_authority(catalog)
     item = next((row for row in classes["items"] if row["item_class_id"] == entry["item_class_id"]), None)
     sku = next((row for row in catalog["items"] if row["sku"] == entry["sku"]), None)
-    if item is None or sku is None or sku["catalog_state"] != "build_managed":
+    if item is None or sku is None:
         raise ValueError("admission must bind an authoritative class and current SKU")
     if entry["item_class_hash"] != stable_hash(item) or physical["item_class_hash"] != stable_hash(item) or physical["item_class_id"] != item["item_class_id"]:
         raise ValueError("physical evidence class identity or revision mismatch")
-    if physical["sku"] != sku["sku"] or physical["artifact_sha256"] != sku["output_hashes"][0]["sha256"]:
-        raise ValueError("physical evidence SKU or output digest mismatch")
+    if physical["sku"] != sku["sku"]:
+        raise ValueError("physical evidence SKU mismatch")
     for receipt in (physical, lane):
         if receipt["source_commit"] != catalog["source_commit"]:
             raise ValueError("evidence source revision is stale")
-    if physical["source_and_output_hashes"] != artifact_hash_refs(sku) or lane["source_files_and_hashes"] != source_hashes():
-        raise ValueError("evidence source/output content binding mismatch")
-    if lane["source_output_link_state"] != "reproduced":
-        raise ValueError("lane must attest reproduced source/output linkage")
-    outputs = lane["output_hashes"]
-    if len({row["path"] for row in outputs}) != len(outputs):
-        raise ValueError("duplicate lane output identity")
-    for reference in outputs:
-        verify_hash_reference(reference)
-    if not all(reference in outputs for reference in artifact_hash_refs(sku) if reference["path"].endswith(".stl")):
-        raise ValueError("selected output is absent from lane evidence")
+    if physical["source_files_and_hashes"] != sku["source_files_and_hashes"] or lane["source_files_and_hashes"] != source_hashes():
+        raise ValueError("evidence source content binding mismatch")
+    tested_skus = lane["tested_skus"]
+    if len(set(tested_skus)) != len(tested_skus):
+        raise ValueError("duplicate lane SKU identity")
+    if sku["sku"] not in tested_skus:
+        raise ValueError("selected SKU is absent from lane evidence")
     representatives = lane["representative_artifacts"]
     if sorted(row["role"] for row in representatives) != ["multi_cell", "smallest_thin_wall", "tallest"]:
         raise ValueError("lane representative set is incomplete")
-    managed = [row for row in catalog["items"] if row["catalog_state"] == "build_managed"]
+    managed = catalog["items"]
     for representative in representatives:
         tested = next((row for row in managed if row["sku"] == representative["sku"]), None)
-        if tested is None or not all(ref in outputs for ref in artifact_hash_refs(tested) if ref["path"].endswith(".stl")):
-            raise ValueError("representative artifact is not bound to lane outputs")
+        if tested is None or tested["sku"] not in tested_skus:
+            raise ValueError("representative artifact is not among the lane's tested SKUs")
         role = representative["role"]
         if role == "smallest_thin_wall" and (tested["cells_x"] * tested["cells_y"], tested["wall_floor_lip_contract"]["wall_thickness_mm"]) != min((row["cells_x"] * row["cells_y"], row["wall_floor_lip_contract"]["wall_thickness_mm"]) for row in managed):
             raise ValueError("representative does not cover smallest thin-wall part")
@@ -869,9 +758,6 @@ def lint_acceptance_claim(
         raise ValueError("physical-fit receipt is not a passing claim for the authoritative selected SKU")
     if receipt["validation_lane"] != mapping["validation_lane"] or receipt["validation_receipt"] != mapping["validation_receipt"]:
         raise ValueError("physical-fit receipt is not consistent with the claimed validation lane receipt")
-    artifact_hash = sku["output_hashes"][0]["sha256"]
-    if receipt["artifact_sha256"] != artifact_hash:
-        raise ValueError("physical-fit receipt is not bound to the authoritative artifact hash")
     if any(value != "pass" for value in receipt["checks"].values()):
         raise ValueError("physical-fit receipt must contain all passing physical checks")
     if receipt["workarounds"]:
@@ -946,7 +832,7 @@ def build_demand(
             "validation_lane": mapping["validation_lane"],
             "validation_receipt": mapping["validation_receipt"],
             "physical_fit_receipt": mapping["physical_fit_receipt"],
-            "source_and_output_hashes": mapping["source_and_output_hashes"],
+            "source_files_and_hashes": mapping["source_files_and_hashes"],
             "priority_class": request["priority_class"],
         })
     manifest = {

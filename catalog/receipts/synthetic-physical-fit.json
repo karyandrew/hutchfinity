@@ -4,7 +4,6 @@
   "item_class_id": "square-stack-49",
   "item_class_hash": "33150dfcc7c3772840d135af1d8b4914cd2e3de05161e75e13e06f7a41e5e181",
   "sku": "bin-3x3x10h",
-  "artifact_sha256": "7f1532ed7c25f168929273b1094602a2f15a07262623fa8358e49a0fae199845",
   "validation_lane": "synthetic-lane",
   "validation_receipt": "synthetic-lane-v1",
   "sample_kind": "dimensional_surrogate",
@@ -36,21 +35,13 @@
     "revision": "test-v1",
     "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
   },
-  "source_commit": "d98e2f6bb1f43739946213bb03e7cf69c7f304d4",
-  "source_and_output_hashes": [
-    {
-      "path": "scad/gridfinity/dental/build-stl.sh",
-      "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
-    },
+  "source_commit": "8fc3c67c67bb5e9afaa8e9b3abf0400140ad9d52",
+  "sample_count": 2,
+  "selected_orientation": "flat",
+  "source_files_and_hashes": [
     {
       "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
       "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
-    },
-    {
-      "path": "scad/gridfinity/stl/bin-3x3x10h.stl",
-      "sha256": "7f1532ed7c25f168929273b1094602a2f15a07262623fa8358e49a0fae199845"
     }
-  ],
-  "sample_count": 2,
-  "selected_orientation": "flat"
+  ]
 }

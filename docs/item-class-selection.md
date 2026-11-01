@@ -1,29 +1,24 @@
 ---
 sensitivity: public
-version: 1.1.0
+version: 2.0.0
 ---
 
 # Neutral item-class selection
 
-The selection contract maps generic geometry and handling needs to the existing half-pitch bin catalog. It deliberately separates three evidence levels:
+The selection contract maps generic geometry and handling needs to the existing half-pitch bin catalog. It deliberately separates two evidence levels:
 
 1. Current-source geometry gives wall span, floor shape, and open-top height.
-2. A rendered STL supplies an exact artifact hash and mesh bounding box.
-3. Independently trusted physical and lane evidence supplies actual load, retrieval, base-engagement, and handling evidence.
+2. Independently trusted physical and lane evidence supplies actual load, retrieval, base-engagement, and handling evidence.
 
-Only the third level can support `ACCEPTED`. The first two remain `PROVISIONAL` even when every calculated margin is positive.
+Only the second level can support `ACCEPTED`. The first remains `PROVISIONAL` even when every calculated margin is positive.
 
 ## Current catalog inventory
 
-The generated inventory contains 126 tracked bin STLs:
+The catalog lists 22 bin sizes. No generated mesh is stored in the repository.
 
-- 22 are named by the current build script and are eligible for selection;
-- 104 are tracked but unmanaged by the current build script, are marked `stale`, and are excluded; and
-- 0 currently have a reproduced current-source-to-output byte link.
+A bin is defined by its generator recipe: the size, the OpenSCAD definitions `hutchfinity.py` uses for it, the last commit touching the vendored cup source, and that source's SHA-256 hash. Physical-fit evidence applies to what the recipe generates, not to one stored file. A test builds all 22 bins with the generator and checks each against its catalog dimensions. A different OpenSCAD version can change a mesh without changing the recipe, so record the version with any physical test. Ranking uses a calculated material figure: outer volume minus wall-span volume.
 
-Each record includes the last commit touching the bound source/artifact paths (so committing this catalog or unrelated documentation does not invalidate it), SHA-256 hashes for the build recipe and vendored cup source, the exact STL SHA-256 and byte count, and parsed mesh AABB, volume, and triangle count. The mesh metrics are inventory and ranking evidence only.
-
-The current official OpenSCAD snapshot can parse and render the unchanged source, so the historical OpenSCAD 2021 parser failure is obsolete. The selected current-source renders are geometrically consistent with the tracked artifacts by bounding box and rounded volume but are not byte-identical. No tracked STL is replaced here, and every source/output link remains `unverified`.
+The current official OpenSCAD snapshot parses and renders the unchanged source, so the historical OpenSCAD 2021 parser failure is obsolete.
 
 For current 21 mm-pitch, minimum-lip bins, the source-derived dimensions are:
 
@@ -68,9 +63,9 @@ All four rows remain `PROVISIONAL`: no exact artifact/item-class physical fit wa
 
 ## Software checks, physical evidence, and downstream demand
 
-The CLI now schema-checks closed dataset wrappers, records, demand requests, and generated output with date-time format enforcement. It resolves mappings against the repository's authoritative class set and catalog, recomputes class hashes and selections, and verifies current source and selected artifact bytes. A local physical-receipt claim is checked against the authoritative class envelope, minimum quantity, exact STL hash, lane fields, six physical checks, and workaround prohibition.
+The CLI now schema-checks closed dataset wrappers, records, demand requests, and generated output with date-time format enforcement. It resolves mappings against the repository's authoritative class set and catalog, recomputes class hashes and selections, and verifies the current source bytes and generator recipes. A local physical-receipt claim is checked against the authoritative class envelope, minimum quantity, SKU, lane fields, six physical checks, and workaround prohibition.
 
-Those checks prove software structure, byte binding, and internal consistency only. Local caller-controlled JSON cannot prove that a sample was measured, an artifact was printed, a lane receipt came from an independent authority, or any physical check occurred. With no independently trusted physical/lane evidence configured, the CLI refuses every `ACCEPTED` claim and therefore refuses accepted-demand promotion. It does not create a signer or trust anchor from its own output.
+Those checks prove software structure, source binding, and internal consistency only. Local caller-controlled JSON cannot prove that a sample was measured, an artifact was printed, a lane receipt came from an independent authority, or any physical check occurred. With no independently trusted physical/lane evidence configured, the CLI refuses every `ACCEPTED` claim and therefore refuses accepted-demand promotion. It does not create a signer or trust anchor from its own output.
 
 The useful software residue is the closed neutral contract, authoritative binding, deterministic fit calculations, strict quantity/date handling, and fail-closed non-authorizing demand boundary. The remaining acceptance work is physical: preserve independently trusted lane evidence, print the exact artifact, bind a representative sample or surrogate, perform all fit and handling checks, and resolve the long-rod unknown axes and flat-object floor conflict. All four current mappings remain `PROVISIONAL/not_run`, and production authorization remains outside this interface.
 

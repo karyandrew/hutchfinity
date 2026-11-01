@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 1.3.0
+version: 1.3.1
 ---
 
 # hutchfinity
@@ -32,7 +32,7 @@ Gridfinity's standard pitch (42mm XY, 7mm Z) is too coarse for many small-parts 
 
 ## Status
 
-Pre-1.0. Architecture spec converged; SCAD and STL deliverables are being authored.
+Pre-1.0. Architecture spec converged; SCAD source and the generator are being authored. Meshes are generated, never versioned.
 
 - **License**: GNU GPL v3.0 only; see `LICENSE` and `THIRD_PARTY_NOTICES.md`
 - **Source**: OpenSCAD, built on top of [Gridfinity Extended OpenSCAD](https://github.com/ostat/gridfinity_extended_openscad)

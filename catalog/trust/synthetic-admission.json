@@ -42,12 +42,12 @@
       "physical": {
         "receipt_id": "synthetic-fit-v1",
         "path": "catalog/receipts/synthetic-physical-fit.json",
-        "sha256": "9f2f431f97f409539c04463fc1627e455f5234cc97a957bcf08de51d17782a56"
+        "sha256": "f441dbc3d7b3f18015e0bcdeb2857a5dedb37725f02b3418d624f5919598be7c"
       },
       "lane": {
         "receipt_id": "synthetic-lane-v1",
         "path": "catalog/receipts/synthetic-lane.json",
-        "sha256": "969e3cfb00f50e9c144fd06855e463261fa18360c93c380ebc4694fafaba480f"
+        "sha256": "fccef453c05a0a4bb41df34cd4610b1e4e73e3d47df2ab57b7b825f326f3ee81"
       }
     }
   ]

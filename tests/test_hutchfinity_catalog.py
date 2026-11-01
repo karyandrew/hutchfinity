@@ -101,14 +101,12 @@ class CatalogTests(unittest.TestCase):
 
     @staticmethod
     def passing_receipt(mapping: dict) -> dict:
-        artifact_hash = next(row["sha256"] for row in mapping["source_and_output_hashes"] if row["path"].endswith(".stl"))
         return {
             "schema": "hutchfinity-physical-fit-receipt/v1",
             "receipt_id": mapping["physical_fit_receipt"],
             "item_class_id": mapping["item_class_id"],
             "item_class_hash": mapping["item_class_hash"],
             "sku": mapping["preferred_sku"],
-            "artifact_sha256": artifact_hash,
             "validation_lane": mapping["validation_lane"],
             "validation_receipt": mapping["validation_receipt"],
             "sample_kind": "dimensional_surrogate",
@@ -183,16 +181,18 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(catalog_module.build_catalog(), self.catalog)
         self.assertEqual(catalog_module.select_all(self.classes, self.catalog), self.maps)
 
-    def test_inventory_separates_managed_from_unmanaged_outputs(self) -> None:
-        self.assertEqual(
-            self.catalog["inventory_summary"],
-            {
-                "tracked_bin_outputs": 126,
-                "build_managed_outputs": 22,
-                "tracked_unmanaged_outputs": 104,
-                "source_output_links_reproduced": 0,
-            },
-        )
+    def test_every_bin_is_a_generator_recipe(self) -> None:
+        self.assertEqual(len(self.catalog["items"]), 22)
+        self.assertEqual(subprocess.check_output(["git", "ls-files", "*.stl"], cwd=ROOT, env=self.subprocess_environment(), text=True), "")
+        for row in self.catalog["items"]:
+            self.assertIn(f"width=[{row['cells_x']},0]", row["generator_defines"])
+            self.assertIn(f"height=[{row['height_units']},0]", row["generator_defines"])
+
+    def test_catalog_refuses_a_recipe_the_generator_would_not_build(self) -> None:
+        forged = copy.deepcopy(self.catalog)
+        forged["items"][0]["generator_defines"].append("wall=9")
+        with self.assertRaisesRegex(ValueError, "recipe does not match"):
+            catalog_module.validate_catalog_authority(forged)
 
     def test_source_dimensions_are_not_nominal_cell_math(self) -> None:
         sku = next(row for row in self.catalog["items"] if row["sku"] == "bin-2x9x10h")
@@ -362,20 +362,12 @@ class CatalogTests(unittest.TestCase):
             self.assertEqual(result.returncode, 2, result.stderr)
             self.assertIn("item_class_hash", result.stderr)
 
-            for field_change in ("source_hash", "nonexistent_output"):
-                forged = copy.deepcopy(accepted)
-                if field_change == "source_hash":
-                    forged["mappings"][1]["source_and_output_hashes"][0]["sha256"] = "0" * 64
-                else:
-                    output = next(
-                        row for row in forged["mappings"][1]["source_and_output_hashes"]
-                        if row["path"].endswith(".stl")
-                    )
-                    output.update({"path": "scad/gridfinity/stl/nonexistent.stl", "sha256": "0" * 64})
-                self.write_json(maps_path, forged)
-                result = self.run_cli(*base_arguments)
-                self.assertEqual(result.returncode, 2, result.stderr)
-                self.assertIn("source_and_output_hashes", result.stderr)
+            forged = copy.deepcopy(accepted)
+            forged["mappings"][1]["source_files_and_hashes"][0]["sha256"] = "0" * 64
+            self.write_json(maps_path, forged)
+            result = self.run_cli(*base_arguments)
+            self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertIn("source_files_and_hashes", result.stderr)
 
     def test_cli_rejects_invalid_quantities_and_refuses_demand_promotion(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -463,8 +455,8 @@ class AdmissionBoundaryTests(unittest.TestCase):
         git_dir = subprocess.check_output(["git", "rev-parse", "--absolute-git-dir"], cwd=ROOT, env=CatalogTests.subprocess_environment(), text=True).strip()
         (cls.fixture / ".git").write_text("gitdir: " + git_dir + "\n")
         sources = cls.catalog["source_files_and_hashes"]
-        outputs = [row["output_hashes"][0] for row in cls.catalog["items"] if row["catalog_state"] == "build_managed"]
-        for ref in sources + outputs:
+        shutil.copy2(ROOT / "hutchfinity.py", cls.fixture / "hutchfinity.py")
+        for ref in sources:
             target = cls.fixture / ref["path"]
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(ROOT / ref["path"], target)
@@ -536,7 +528,7 @@ class AdmissionBoundaryTests(unittest.TestCase):
         for field, value, message in [
             ("validation_lane", "other-lane", "cross-bound"), ("validation_receipt", "other-receipt", "cross-bound"),
             ("item_class_id", "short-roll-40x15", "class identity"), ("item_class_hash", "0" * 64, "class identity"),
-            ("sku", "bin-2x4x10h", "SKU or output"), ("artifact_sha256", "0" * 64, "SKU or output"),
+            ("sku", "bin-2x4x10h", "SKU mismatch"),
             ("sample_count", 1, "sample count"), ("tested_quantity", 0, "tested_quantity"),
             ("selected_orientation", "upright", "SKU/orientation")]:
             case("physical-"+field, "physical", lambda r, f=field, v=value: r.update({f:v}), message)
@@ -546,14 +538,10 @@ class AdmissionBoundaryTests(unittest.TestCase):
         case("sample-too-small", "physical", lambda r: r["sample_dimensions_mm"].update(x=48.5), "class envelope")
         case("sample-excess-uncertainty", "physical", lambda r: r["sample_uncertainty_mm"].update(x=2), "class envelope")
         case("sample-undercoverage", "physical", lambda r: r["sample_uncertainty_mm"].update(x=0.1), "required class envelope")
-        case("physical-source-digest", "physical", lambda r: r["source_and_output_hashes"][0].update(sha256="0"*64), "content binding")
-        case("physical-output-path", "physical", lambda r: r["source_and_output_hashes"][-1].update(path="other.stl"), "content binding")
+        case("physical-source-digest", "physical", lambda r: r["source_files_and_hashes"][0].update(sha256="0"*64), "content binding")
         case("lane-source-digest", "lane", lambda r: r["source_files_and_hashes"][0].update(sha256="0"*64), "content binding")
-        case("lane-output-digest", "lane", lambda r: r["output_hashes"][0].update(sha256="0"*64), "hash does not match")
-        case("lane-output-path", "lane", lambda r: r["output_hashes"][0].update(path="nonexistent.stl"), "does not exist")
-        case("lane-output-escape", "lane", lambda r: r["output_hashes"][0].update(path="../outside.stl"), "escapes")
+        case("lane-sku-absent", "lane", lambda r: r["tested_skus"].remove("bin-3x3x10h"), "absent from lane")
         case("lane-wrong-id", "lane", lambda r: r.update(lane_id="other-lane"), "lane receipt identity")
-        case("lane-unverified-link", "lane", lambda r: r.update(source_output_link_state="unverified"), "reproduced")
         case("lane-incomplete-representatives", "lane", lambda r: r["representative_artifacts"].pop(), "too short")
         case("lane-wrong-tallest", "lane", lambda r: r["representative_artifacts"][2].update(sku="bin-3x3x10h"), "tallest")
         case("lane-duplicate-role", "lane", lambda r: r["representative_artifacts"][2].update(role="multi_cell"), "representative set")
@@ -601,8 +589,8 @@ class AdmissionBoundaryTests(unittest.TestCase):
         self.write_json(self.fixture / "catalog/item-classes.json", classes)
         mapping = catalog_module.select_item(item, self.catalog)
         sku = next(row for row in self.catalog["items"] if row["sku"] == mapping["preferred_sku"])
-        physical.update(receipt_id="synthetic-roll-fit", item_class_id=item["item_class_id"], item_class_hash=catalog_module.stable_hash(item), sku=sku["sku"], artifact_sha256=sku["output_hashes"][0]["sha256"], source_and_output_hashes=catalog_module.artifact_hash_refs(sku), selected_orientation=mapping["selected_orientation"], sample_dimensions_mm=item["bounding_box_mm"], tested_quantity=2)
-        lane["output_hashes"].append({key:sku["output_hashes"][0][key] for key in ("path","sha256")})
+        physical.update(receipt_id="synthetic-roll-fit", item_class_id=item["item_class_id"], item_class_hash=catalog_module.stable_hash(item), sku=sku["sku"], source_files_and_hashes=sku["source_files_and_hashes"], selected_orientation=mapping["selected_orientation"], sample_dimensions_mm=item["bounding_box_mm"], tested_quantity=2)
+        lane["tested_skus"].append(sku["sku"])
         entry = registry["admissions"][0]
         entry.update(admission_id="synthetic-roll-pair", item_class_id=item["item_class_id"], item_class_hash=physical["item_class_hash"], sku=sku["sku"])
         entry["physical"]["receipt_id"] = physical["receipt_id"]
@@ -628,8 +616,8 @@ class AdmissionBoundaryTests(unittest.TestCase):
         item = next(row for row in classes["items"] if row["item_class_id"] == "short-roll-40x15")
         mapping = catalog_module.select_item(item, self.catalog)
         sku = next(row for row in self.catalog["items"] if row["sku"] == mapping["preferred_sku"])
-        physical.update(receipt_id="synthetic-roll-fit", item_class_id=item["item_class_id"], item_class_hash=catalog_module.stable_hash(item), sku=sku["sku"], artifact_sha256=sku["output_hashes"][0]["sha256"], source_and_output_hashes=catalog_module.artifact_hash_refs(sku), selected_orientation=mapping["selected_orientation"], sample_dimensions_mm=item["bounding_box_mm"], sample_uncertainty_mm=item["uncertainty_mm"], tested_quantity=2)
-        lane["output_hashes"].append({key: sku["output_hashes"][0][key] for key in ("path", "sha256")})
+        physical.update(receipt_id="synthetic-roll-fit", item_class_id=item["item_class_id"], item_class_hash=catalog_module.stable_hash(item), sku=sku["sku"], source_files_and_hashes=sku["source_files_and_hashes"], selected_orientation=mapping["selected_orientation"], sample_dimensions_mm=item["bounding_box_mm"], sample_uncertainty_mm=item["uncertainty_mm"], tested_quantity=2)
+        lane["tested_skus"].append(sku["sku"])
         self.install_test_enrollment(registry, lane=lane)
         registry = catalog_module.read_json(self.registry_path)
         entry = copy.deepcopy(registry["admissions"][0])
