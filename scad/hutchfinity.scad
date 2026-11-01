@@ -1,5 +1,5 @@
 // hutchfinity.scad
-// version: 1.1.0
+// version: 1.2.0
 // One file for every sized Hutchfinity part. Open it in OpenSCAD and use the
 // Customizer panel, or run ../hutchfinity.py for the app and Orca-ready output.
 // Casing, pegs, and pull are derived from the same tub size so they stay matched.
@@ -17,13 +17,13 @@ part = "tub"; // [tub, grid-insert, casing, peg, pegs, pull]
 cells_x = 12; // [1:1:30]
 cells_y = 16; // [1:1:30]
 // Tallest bin the tub must hold, in 3.5 mm units.
-bin_h = 20; // [1:1:40]
+bin_h = 20; // [5:1:40]
 floor_mode = "integral-grid"; // [integral-grid, plain]
 pull_guide = true;
 
 /* [Casing] */
-side_wall = 18; // [12:1:30]
-back_wall = 18; // [12:1:30]
+side_wall = 18; // [18:1:40]
+back_wall = 18; // [18:1:40]
 riding_slab = 1.3; // [1.3:0.1:10]
 side_clearance = 1.0;
 back_clearance = 0.5;
@@ -81,7 +81,7 @@ module sized_pull() {
     k = pull_scale_factor(cells_x, bin_h, floor_mode);
     assert(k > 0, "this tub has no wall band for a pull");
     echo(str("pull flange: ", k * PULL_FLANGE_X, " x ", k * PULL_FLANGE_Z, " mm"));
-    scale(k) hutchfinity_knob(base_depth = PULL_FLANGE_Z, end_bulge_depth = 30);
+    scale(k) hutchfinity_knob(base_width = PULL_FLANGE_X, base_depth = PULL_FLANGE_Z, end_bulge_depth = 30);
 }
 
 if (part == "tub") hutchfinity_tub(cells_x, cells_y, bin_h, floor_mode, pull_guide);
@@ -91,3 +91,4 @@ else if (part == "peg") one_peg();
 else if (part == "pegs") sized_pegs();
 else if (part == "pull") sized_pull();
 else assert(false, "unknown part");
+assert(bin_h >= 5, "a tub must hold at least a 5h bin");

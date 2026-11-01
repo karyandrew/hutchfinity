@@ -1,5 +1,5 @@
 ---
-version: 0.20.0
+version: 0.21.0
 sensitivity: public
 ---
 
@@ -19,7 +19,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 
 `scad/tub.scad` authors the tub directly. It replaces the old 23h STL wrappers and is the source of truth over any older tub figure below or in the PRDs.
 
-- Size is `cells_x x cells_y x bin_h`, where `bin_h` is the tallest bin the tub must hold, in 3.5 mm units.
+- Size is `cells_x x cells_y x bin_h`, where `bin_h` is the tallest bin the tub must hold, in 3.5 mm units, from 5 to 40.
 - Height: `floor + bin_h x 3.5 + 3.74 bin lip + 0.50 air gap + 4.30 stack overlap`. A 10h integral-grid tub is 44.84 mm; a 20h one is 79.84 mm.
 - The 0.50 mm is the real gap above the tallest bin's lip when tubs stack. It replaces 2.01 mm of leftover rounding from the old whole-unit tub height.
 - Floor modes: `integral-grid` (1.30 mm floor, 5 mm built-in grid) and `plain` (1.20 mm floor, takes bins or the removable `grid-insert`). Walls are 2.2 mm. There are no magnet wells.

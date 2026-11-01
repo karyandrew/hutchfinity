@@ -46,8 +46,8 @@ class LiveBuild(unittest.TestCase):
     def test_one_pull_scales_down_on_small_tubs(self):
         for size in ((10, 10, 10), (12, 16, 20)):
             self.assertEqual(self.mesh("pull", *size)["size_mm"][:2], [90.0, 32.9])
-        tiny = self.mesh("pull", 1, 1, 1)["size_mm"]
-        self.assertLess(tiny[0], 10)
+        tiny = self.mesh("pull", 2, 2, 5)["size_mm"]
+        self.assertLess(tiny[0], 40)
         self.assertAlmostEqual(tiny[0] / tiny[1], 90 / 32.9, delta=0.2)
 
     def test_regular_tub_mesh_stays_light(self):
@@ -65,13 +65,27 @@ class LiveBuild(unittest.TestCase):
         with zipfile.ZipFile(folder / "3-pegs-and-pulls.3mf") as archive:
             model = archive.read("3D/3dmodel.model").decode()
         self.assertEqual(model.count("<object "), 2)
-        self.assertEqual(model.count("<item "), 9)
+        self.assertEqual(model.count("<item "), 8)  # seven pegs and one pull
 
     def test_smallest_module_builds(self):
-        hutchfinity.build("module", 1, 1, 1, "plain", self.out)
-        hutchfinity.build("module", 2, 2, 1, "plain", self.out, counts={"insert": 1})
+        hutchfinity.build("module", 1, 1, 5, "plain", self.out)
+        hutchfinity.build("module", 2, 2, 5, "plain", self.out, counts={"insert": 1})
         with self.assertRaisesRegex(hutchfinity.BuildError, "at least 2 x 2"):
-            hutchfinity.build("module", 1, 1, 1, "plain", self.out, counts={"insert": 1})
+            hutchfinity.build("module", 1, 1, 5, "plain", self.out, counts={"insert": 1})
+
+    def test_every_option_builds_at_both_ends_of_its_range(self):
+        for name, _, _, _, low, high in hutchfinity.DESIGN_OPTIONS:
+            for value in () if low is None else (low, high):
+                with self.subTest(option=name, value=value):
+                    design = {name: value}
+                    for part in ("tub", "grid-insert", "casing", "peg", "pull"):
+                        self.mesh(part, 4, 4, 5, "plain", **design)
+                        if part == "tub":
+                            self.mesh(part, 4, 4, 5, **design)
+
+    def test_module_must_fit_the_bed(self):
+        with self.assertRaisesRegex(hutchfinity.BuildError, "too big"):
+            hutchfinity.build("module", 12, 16, 20, "integral-grid", self.out, bed=200.0)
 
     def test_bin_and_baseplate_build(self):
         self.assertEqual(self.mesh("bin", 1, 1, 5)["pieces"], 1)
@@ -81,10 +95,14 @@ class LiveBuild(unittest.TestCase):
 class Validation(unittest.TestCase):
     def test_rejects_bad_requests(self):
         for args in (
-            ("nope", 1, 1, 1, "plain", {}),
-            ("tub", 0, 1, 1, "plain", {}),
-            ("tub", 1, 1, 1, 'x";system("', {}),
-            ("tub", 1, 1, 1, "plain", {"not_an_option": 1}),
+            ("nope", 5, 5, 5, "plain", {}),
+            ("tub", 0, 5, 5, "plain", {}),
+            ("tub", 5, 5, 4, "plain", {}),
+            ("tub", 5, 5, 41, "plain", {}),
+            ("tub", 5, 5, 5, "plain", {"wall": 0.1}),
+            ("casing", 5, 5, 5, "plain", {"side_wall": 12.0}),
+            ("tub", 5, 5, 5, 'x";system("', {}),
+            ("tub", 5, 5, 5, "plain", {"not_an_option": 1}),
         ):
             with self.assertRaises(hutchfinity.BuildError):
                 hutchfinity.scad_source(*args)
