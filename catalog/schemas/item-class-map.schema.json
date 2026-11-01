@@ -4,7 +4,7 @@
   "title": "Hutchfinity item-class mapping v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "item_class_id", "item_class_hash", "preferred_sku", "fallback_skus", "selected_orientation", "fit_margins_mm", "flat_floor_margins_mm", "quantity_capacity", "retrieval_clearance_mm", "source_and_output_hashes", "validation_lane", "validation_receipt", "physical_fit_state", "physical_fit_receipt", "selection_status", "rationale", "private_mapping_owner", "candidate_evaluations"],
+  "required": ["schema", "item_class_id", "item_class_hash", "preferred_sku", "fallback_skus", "selected_orientation", "fit_margins_mm", "flat_floor_margins_mm", "quantity_capacity", "retrieval_clearance_mm", "source_files_and_hashes", "validation_lane", "validation_receipt", "physical_fit_state", "physical_fit_receipt", "selection_status", "rationale", "private_mapping_owner", "candidate_evaluations"],
   "properties": {
     "schema": {"const": "hutchfinity-item-class-map/v1"},
     "item_class_id": {"type": "string", "minLength": 1},
@@ -16,7 +16,7 @@
     "flat_floor_margins_mm": {"oneOf": [{"$ref": "#/$defs/nullableXY"}, {"type": "null"}]},
     "quantity_capacity": {"type": ["integer", "null"], "minimum": 0},
     "retrieval_clearance_mm": {"$ref": "#/$defs/nullableAxes"},
-    "source_and_output_hashes": {"type": "array", "items": {"$ref": "#/$defs/hash"}},
+    "source_files_and_hashes": {"type": "array", "items": {"$ref": "#/$defs/hash"}},
     "validation_lane": {"type": ["string", "null"]},
     "validation_receipt": {"type": ["string", "null"]},
     "physical_fit_state": {"enum": ["not_run", "pass", "fail", "inconclusive", "stale"]},
@@ -36,7 +36,7 @@
           "validation_lane": {"type": "string", "minLength": 1},
           "validation_receipt": {"type": "string", "minLength": 1},
           "preferred_sku": {"type": "string"},
-          "source_and_output_hashes": {"type": "array", "minItems": 1}
+          "source_files_and_hashes": {"type": "array", "minItems": 1}
         }
       }
     }

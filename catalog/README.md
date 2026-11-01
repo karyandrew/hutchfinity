@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 1.2.0
+version: 2.0.0
 ---
 
 # Neutral item-class catalog
@@ -9,7 +9,7 @@ This directory is the public, item-neutral boundary between Hutchfinity bin geom
 
 ## Artifacts
 
-- `bin-skus.json` inventories every tracked bin STL. `build_managed` means the current build script names the output; `tracked_unmanaged` means the STL exists but the current script does not reproduce it. The latter is `stale` and is excluded from selection.
+- `bin-skus.json` lists the bin sizes as generator recipes. `hutchfinity.py` builds any of them; no mesh is stored.
 - `item-classes.json` contains the four initial public geometry/handling classes. Null dimensions are unknown, not zero.
 - `item-class-map.json` is deterministic generated output. Every current mapping is `PROVISIONAL` and has `physical_fit_state: not_run`.
 - `schemas/` contains closed JSON Schemas for item classes, bin SKUs, mappings, physical-fit receipts, demand requests, non-authorizing demand manifests, and each serialized dataset wrapper.
@@ -30,7 +30,7 @@ python3 scripts/hutchfinity_catalog.py validate-maps \
 python3 -m unittest discover -s tests -v
 ```
 
-Every CLI input and generated output is validated with Draft 2020-12 schemas and format checking. The CLI requires the repository's authoritative class set and catalog, recomputes class bindings, resolves selected SKUs, and hashes the referenced source and artifact files. The source/output hashes are exact SHA-256 values. `source_output_link_state: unverified` is deliberate: an existing STL proves that a render exists, but not that its bytes came from the current source revision. A source-only calculation and an STL bounding box are not physical-fit evidence.
+Every CLI input and generated output is validated with Draft 2020-12 schemas and format checking. The CLI requires the repository's authoritative class set and catalog, recomputes class bindings, resolves selected SKUs, checks each recipe against the generator, and hashes the referenced source files. A source-only calculation is not physical-fit evidence.
 
 ## Acceptance and demand boundary
 
@@ -38,7 +38,7 @@ The same `consume-admission` decision path validates independently admitted lane
 
 The trust grant comes from repository governance of the admission registry, **not** the receipt directory, a receipt PASS field, a signer label, or a matching hash. Deployments must protect the installed code and registry from evidence submitters and review registry changes independently of receipt submission. This is a bounded admission contract, not a signature service or a claim that a writable checkout authenticates its own evidence. Configuring production admission requires an independently governed enrollment decision and observed physical evidence; this change performs neither. No CLI argument or environment variable selects an alternative trust root.
 
-Each admission pins receipt identities, paths, digests, exact neutral class revision, SKU, lane, profile identity/revision/content digest, and minimum representative sample count (at least two). Current governed profiles and lanes must exist and match exactly; revoked, stale, unknown, malformed, duplicate, or unconfigured states refuse. Admitted bytes still undergo semantic validation. Both receipts must bind the current source revision and content, selected output bytes, and the same lane/profile tuple. The lane must attest reproduced source/output linkage, both functional checks, all bin/cup representative checks, and output-bound smallest thin-wall, multi-cell, and tallest artifacts. This contract is scoped to bin/cup selection; it does not accept a large-part lane in its place.
+Each admission pins receipt identities, paths, digests, exact neutral class revision, SKU, lane, profile identity/revision/content digest, and minimum representative sample count (at least two). Current governed profiles and lanes must exist and match exactly; revoked, stale, unknown, malformed, duplicate, or unconfigured states refuse. Admitted bytes still undergo semantic validation. Both receipts must bind the current source revision and content, the selected SKU, and the same lane/profile tuple. Physical evidence applies to the model generated from that recipe. The lane must attest both functional checks, all bin/cup representative checks, and tested smallest thin-wall, multi-cell, and tallest artifacts. This contract is scoped to bin/cup selection; it does not accept a large-part lane in its place.
 
 Separate class/SKU admissions may share a lane receipt identity only when its path and digest are both identical. Conflicting path or digest bindings for that identity refuse the registry. Physical receipt identities remain unique across admissions, and every admission retains its exact class, SKU, source/output, lane, and profile checks.
 

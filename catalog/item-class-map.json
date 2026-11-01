@@ -1,6 +1,6 @@
 {
   "schema": "hutchfinity-item-class-map-set/v1",
-  "catalog_source_commit": "d98e2f6bb1f43739946213bb03e7cf69c7f304d4",
+  "catalog_source_commit": "8fc3c67c67bb5e9afaa8e9b3abf0400140ad9d52",
   "mappings": [
     {
       "schema": "hutchfinity-item-class-map/v1",
@@ -26,18 +26,10 @@
         "y": null,
         "z": null
       },
-      "source_and_output_hashes": [
-        {
-          "path": "scad/gridfinity/dental/build-stl.sh",
-          "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
-        },
+      "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
           "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
-        },
-        {
-          "path": "scad/gridfinity/stl/bin-2x9x10h.stl",
-          "sha256": "22e765dbbd682c3ee506cbaf44b8249d56fdc331c3d8bbce3742acd31ef1113d"
         }
       ],
       "validation_lane": null,
@@ -128,18 +120,10 @@
         "y": 5.0,
         "z": 2.0
       },
-      "source_and_output_hashes": [
-        {
-          "path": "scad/gridfinity/dental/build-stl.sh",
-          "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
-        },
+      "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
           "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
-        },
-        {
-          "path": "scad/gridfinity/stl/bin-3x3x10h.stl",
-          "sha256": "7f1532ed7c25f168929273b1094602a2f15a07262623fa8358e49a0fae199845"
         }
       ],
       "validation_lane": null,
@@ -220,18 +204,10 @@
         "y": 3.0,
         "z": 2.0
       },
-      "source_and_output_hashes": [
-        {
-          "path": "scad/gridfinity/dental/build-stl.sh",
-          "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
-        },
+      "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
           "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
-        },
-        {
-          "path": "scad/gridfinity/stl/bin-2x4x10h.stl",
-          "sha256": "8d2867f65bb6aabeab844b10b2c0fd031da7607b10d0f264e8214eb2c343719f"
         }
       ],
       "validation_lane": null,
@@ -310,18 +286,10 @@
         "y": 5.0,
         "z": 1.0
       },
-      "source_and_output_hashes": [
-        {
-          "path": "scad/gridfinity/dental/build-stl.sh",
-          "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
-        },
+      "source_files_and_hashes": [
         {
           "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
           "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
-        },
-        {
-          "path": "scad/gridfinity/stl/bin-5x9x5h.stl",
-          "sha256": "15537396837f3e4ed896b54f616719b07e596bae8acf7efeeefaf4f0079bdbee"
         }
       ],
       "validation_lane": null,

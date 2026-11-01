@@ -1,5 +1,5 @@
 // basket_carrier_comparison.scad
-// version: 0.1.0
+// version: 0.1.1
 // Reproducible Mini-size geometry comparisons for issue #26.
 
 use <../tub.scad>;
@@ -10,7 +10,7 @@ CURRENT_MAGNETS = false;
 CANDIDATE_MAGNETS = false;
 COMPARE_FLOOR_MODE = "plain";
 
-MINI_BASEPLATE_STL = "../gridfinity/stl/baseplate-mini.stl";
+MINI_BASEPLATE_STL = ""; // Set by build-basket-carrier-mini-probe.sh, which renders it first.
 OVERLAP_WITNESS_OFFSET = [0, 0, -2];
 MATCHED_WALL_THICKNESS = 2.2;
 MATCHED_STANDOFF = 1.75;

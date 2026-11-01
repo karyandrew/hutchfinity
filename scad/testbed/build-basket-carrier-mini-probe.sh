@@ -11,6 +11,9 @@ SOURCE="scad/testbed/basket_carrier_comparison.scad"
 OPENSCAD_BIN="${OPENSCAD_BIN:-openscad}"
 
 mkdir -p "$OUT"
+BASEPLATE="$PWD/$OUT/baseplate-mini.stl"
+"$OPENSCAD_BIN" -D 'pitch=[21,21,3.5]' -D 'Width=[6,0]' -D 'Depth=[16,0]' \
+  -o "$BASEPLATE" scad/gridfinity/vendor/extended/gridfinity_baseplate.scad
 rendered_files=()
 
 render_comparison() {
@@ -21,6 +24,7 @@ render_comparison() {
   local output_file="$5"
 
   "$OPENSCAD_BIN" \
+    -D "MINI_BASEPLATE_STL=\"$BASEPLATE\"" \
     -D "COMPARISON_PART=\"$part\"" \
     -D "CURRENT_MAGNETS=$current_magnets" \
     -D "CANDIDATE_MAGNETS=$candidate_magnets" \

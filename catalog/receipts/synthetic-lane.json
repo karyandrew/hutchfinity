@@ -8,32 +8,13 @@
     "revision": "test-v1",
     "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
   },
-  "source_commit": "d98e2f6bb1f43739946213bb03e7cf69c7f304d4",
+  "source_commit": "8fc3c67c67bb5e9afaa8e9b3abf0400140ad9d52",
   "source_files_and_hashes": [
-    {
-      "path": "scad/gridfinity/dental/build-stl.sh",
-      "sha256": "b081030822c869457d6239b13059f6f949b830f35cc3fcebd4d8db2a7e0fdb39"
-    },
     {
       "path": "scad/gridfinity/vendor/extended/gridfinity_basic_cup.scad",
       "sha256": "d73b7c55b3cc9a5e0aeb5271484ce34a66bd7747db038c80b2bcec5ce5fac932"
     }
   ],
-  "output_hashes": [
-    {
-      "path": "scad/gridfinity/stl/bin-1x1x5h.stl",
-      "sha256": "6007d83c8d3b6d295636100c70fcbfe5f063cebd910d06cfacd626bc4c6c0a7a"
-    },
-    {
-      "path": "scad/gridfinity/stl/bin-3x3x10h.stl",
-      "sha256": "7f1532ed7c25f168929273b1094602a2f15a07262623fa8358e49a0fae199845"
-    },
-    {
-      "path": "scad/gridfinity/stl/bin-1x1x20h.stl",
-      "sha256": "c876f6268a2ac6bbd0dcad2f2ba6f11bf8ea363fc08b6b563cc32339c2a3c826"
-    }
-  ],
-  "source_output_link_state": "reproduced",
   "representative_artifacts": [
     {
       "role": "smallest_thin_wall",
@@ -65,5 +46,10 @@
   },
   "workarounds": [],
   "result": "pass",
-  "performed_at": "2026-09-25T00:00:00Z"
+  "performed_at": "2026-09-25T00:00:00Z",
+  "tested_skus": [
+    "bin-1x1x5h",
+    "bin-3x3x10h",
+    "bin-1x1x20h"
+  ]
 }
