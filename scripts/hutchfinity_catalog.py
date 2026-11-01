@@ -120,7 +120,7 @@ def source_commit() -> str:
     if history != "false":
         raise ValueError("full Git history is required for source revision binding")
     return subprocess.run(
-        ["git", "log", "-1", "--format=%H", "HEAD", "--", str(BUILD_SOURCE), str(CUP_SOURCE), str(STL_DIR)], cwd=ROOT, check=True, text=True,
+        ["git", "log", "-1", "--format=%H", "HEAD", "--", str(BUILD_SOURCE), str(CUP_SOURCE), str(STL_DIR / "bin-*.stl")], cwd=ROOT, check=True, text=True,
         stdout=subprocess.PIPE, env=environment,
     ).stdout.strip()
 

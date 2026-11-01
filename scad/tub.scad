@@ -1,5 +1,5 @@
 // tub.scad
-// version: 1.0.0
+// version: 1.1.0
 // Parametric Hutchfinity drawer tub: thin floor, integral or removable grid.
 //
 // Heights are derived from the tallest bin the tub must hold, not from a fixed
@@ -44,17 +44,18 @@ CELL_PROFILE = [
 ];
 
 PULL_FLANGE_X = 90.0;
-PULL_FLANGE_Z = 34.0;
+PULL_FLANGE_Z = 32.9; // Largest that fits a 10h tub's wall band, so one pull serves 10h and up.
 PULL_FLANGE_RADIUS = 5.0;
-PULL_FLANGE_MIN_Z = 12.0;
 GUIDE_CLEARANCE = 0.5;
 GUIDE_RING = 1.4;
 GUIDE_PROJECTION = 0.6;
 GUIDE_OVERLAP = 0.08;
 
 EPS = 0.01;
-CORNER_STEPS = 16;
-CELL_CORNER_STEPS = 10;
+// Facets per 90-degree corner. These keep chord error under about 0.04 mm,
+// well below what a 0.4 mm nozzle resolves; more only inflates the file.
+CORNER_STEPS = 8;
+CELL_CORNER_STEPS = 6;
 
 function tub_outer_x(cells_x) = cells_x * PITCH + 2 * WALL;
 function tub_outer_y(cells_y) = cells_y * PITCH + 2 * WALL;
@@ -68,14 +69,17 @@ function tub_wall_band_bottom(floor_mode) = tub_floor(floor_mode) + GRID_Z;
 function tub_wall_band(bin_h, floor_mode) =
     tub_total_z(bin_h, floor_mode) - TOP_SLOPE - tub_wall_band_bottom(floor_mode);
 
-// The pull flange shrinks to fit; [0, 0] means the tub has no room for one.
+// One pull design, scaled uniformly: full size wherever it fits, smaller on smaller tubs.
+function pull_scale_factor(cells_x, bin_h, floor_mode) =
+    let (margin = 2 * (GUIDE_CLEARANCE + GUIDE_RING))
+    max(0, min(
+        1,
+        (tub_wall_band(bin_h, floor_mode) - margin) / PULL_FLANGE_Z,
+        (cells_x * PITCH - 2 * INNER_RADIUS - margin) / PULL_FLANGE_X
+    ));
 function pull_flange(cells_x, bin_h, floor_mode) =
-    let (
-        margin = 2 * (GUIDE_CLEARANCE + GUIDE_RING),
-        z = min(PULL_FLANGE_Z, tub_wall_band(bin_h, floor_mode) - margin),
-        x = min(PULL_FLANGE_X, cells_x * PITCH - 2 * INNER_RADIUS - margin)
-    )
-    z >= PULL_FLANGE_MIN_Z && x >= PULL_FLANGE_MIN_Z ? [x, z] : [0, 0];
+    let (k = pull_scale_factor(cells_x, bin_h, floor_mode))
+    [k * PULL_FLANGE_X, k * PULL_FLANGE_Z];
 
 function _corner(cx, cy, r, a0, n) =
     [for (i = [0:n]) let (a = a0 + 90 * i / n) [cx + r * cos(a), cy + r * sin(a)]];
@@ -171,7 +175,7 @@ module _cell_cutters(cells_x, cells_y, z0) {
 module _pull_guide(cells_y, flange, band_bottom, total_z) {
     ix = flange[0] + 2 * GUIDE_CLEARANCE;
     iz = flange[1] + 2 * GUIDE_CLEARANCE;
-    inner_r = PULL_FLANGE_RADIUS + GUIDE_CLEARANCE;
+    inner_r = PULL_FLANGE_RADIUS * flange[0] / PULL_FLANGE_X + GUIDE_CLEARANCE;
     center_z = (band_bottom + total_z - TOP_SLOPE) / 2;
     translate([0, -tub_outer_y(cells_y) / 2 + GUIDE_OVERLAP, center_z])
         rotate([90, 0, 0])
@@ -253,6 +257,7 @@ module _edge_channel(axis, side, tangent, cells_x, cells_y, ox, oy) {
 // Open-bottom grid that drops into a "plain" tub. Pockets open through to the tub
 // floor; edge pockets open sideways so the perimeter has no unsupported span.
 module hutchfinity_grid_insert(cells_x, cells_y) {
+    assert(cells_x >= 2 && cells_y >= 2, "a grid insert needs at least 2 x 2 cells");
     ox = tub_outer_x(cells_x);
     oy = tub_outer_y(cells_y);
     events = [0, FOOT_VERTICAL_Z - PLAIN_FLOOR, FOOT_TOP_Z - PLAIN_FLOOR, GRID_Z];

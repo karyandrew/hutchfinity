@@ -1,16 +1,17 @@
 // hutchfinity.scad
-// version: 1.0.0
+// version: 1.1.0
 // One file for every sized Hutchfinity part. Open it in OpenSCAD and use the
-// Customizer panel, or run ../hutchfinity.py for the small local app.
+// Customizer panel, or run ../hutchfinity.py for the app and Orca-ready output.
 // Casing, pegs, and pull are derived from the same tub size so they stay matched.
+// tub.scad is included, not used, so that -D can override its dimensions too.
 
-use <tub.scad>;
+include <tub.scad>;
 use <casing.scad>;
 use <peg.scad>;
 use <knob.scad>;
 
 /* [Part] */
-part = "tub"; // [tub, grid-insert, casing, pegs, pull]
+part = "tub"; // [tub, grid-insert, casing, peg, pegs, pull]
 
 /* [Tub size] */
 cells_x = 12; // [1:1:30]
@@ -28,15 +29,14 @@ side_clearance = 1.0;
 back_clearance = 0.5;
 top_clearance = 1.0;
 peg_spacing = 190;
+casing_fn = 32;
 
-/* [Hidden] */
-$fn = 64;
-PEG_BORE = 8.45;
-PEG_DEPTH = 10;
-PEG_CHAMFER = 0.5;
-PEG_EDGE_LAND = 1.2;
-PEG_LENGTH = 19.6;
-PEG_END_CHAMFER = 2.5;
+/* [Pegs] */
+peg_bore = 8.45;
+peg_depth_max = 10;
+peg_chamfer = 0.5;
+peg_edge_land = 1.2;
+peg_end_chamfer = 2.5;
 
 tub_x = tub_outer_x(cells_x);
 tub_y = tub_outer_y(cells_y);
@@ -47,40 +47,47 @@ slot_z = tub_z + top_clearance;
 casing_x = slot_x + 2 * side_wall;
 casing_y = slot_y + back_wall;
 casing_z = slot_z + riding_slab;
+// Short casings get shallower sockets and shorter pegs.
+peg_depth = min(peg_depth_max, (casing_z - 2) / 2);
+peg_length = 2 * peg_depth - 0.4;
 peg_positions = peg_reference_positions(
     casing_x, casing_y, side_wall, back_wall, peg_spacing,
-    peg_socket_end_inset(side_wall, back_wall, 8, 0.45, PEG_CHAMFER, PEG_EDGE_LAND));
+    peg_socket_end_inset(side_wall, back_wall, 8, 0.45, peg_chamfer, peg_edge_land));
 
 // Printed slab-down, then inverted for installation.
 module sized_casing() {
-    assert(2 * PEG_DEPTH < casing_z, "casing is too short for opposed peg sockets");
-    assert((min(side_wall, back_wall) - PEG_BORE - 2 * PEG_CHAMFER) / 2 >= 4, "walls too thin for peg sockets");
+    assert((min(side_wall, back_wall) - peg_bore - 2 * peg_chamfer) / 2 >= 4, "walls too thin for peg sockets");
     echo(str("casing: ", casing_x, " x ", casing_y, " x ", casing_z, " mm; ", len(peg_positions), " pegs"));
     difference() {
         casing_shell(casing_x, casing_y, casing_z, side_wall, back_wall, riding_slab);
-        chamfered_peg_socket_cuts(peg_positions, PEG_BORE, PEG_DEPTH, PEG_CHAMFER);
-        chamfered_peg_foot_socket_cuts(peg_positions, PEG_BORE, PEG_DEPTH, PEG_CHAMFER, casing_z);
+        chamfered_peg_socket_cuts(peg_positions, peg_bore, peg_depth, peg_chamfer, $fn = casing_fn);
+        chamfered_peg_foot_socket_cuts(peg_positions, peg_bore, peg_depth, peg_chamfer, casing_z, $fn = casing_fn);
     }
 }
 
-module sized_pegs() {
-    echo(str("pegs: ", len(peg_positions)));
-    for (i = [0:len(peg_positions) - 1])
-        translate([(i % 4) * 26, PEG_BORE / 2 + floor(i / 4) * 14, 0])
-            hutchfinity_peg_print_layout(diameter = PEG_BORE, length = PEG_LENGTH, end_chamfer = PEG_END_CHAMFER);
+module one_peg() {
+    hutchfinity_peg_print_layout(
+        diameter = peg_bore, length = peg_length,
+        end_chamfer = min(peg_end_chamfer, peg_length / 4));
 }
 
-// The standard pull is 90 x 34 mm; a smaller tub gets it scaled to its guide.
+module sized_pegs() {
+    for (i = [0:len(peg_positions) - 1])
+        translate([(i % 4) * (peg_length + 6), peg_bore / 2 + floor(i / 4) * 14, 0]) one_peg();
+}
+
+// The same pull everywhere, scaled uniformly when the tub is too small for it.
 module sized_pull() {
-    flange = pull_flange(cells_x, bin_h, floor_mode);
-    assert(flange[0] > 0, "this tub is too small for a pull");
-    echo(str("pull flange: ", flange[0], " x ", flange[1], " mm"));
-    scale([flange[0] / 90, flange[1] / 34, 1]) hutchfinity_knob();
+    k = pull_scale_factor(cells_x, bin_h, floor_mode);
+    assert(k > 0, "this tub has no wall band for a pull");
+    echo(str("pull flange: ", k * PULL_FLANGE_X, " x ", k * PULL_FLANGE_Z, " mm"));
+    scale(k) hutchfinity_knob(base_depth = PULL_FLANGE_Z, end_bulge_depth = 30);
 }
 
 if (part == "tub") hutchfinity_tub(cells_x, cells_y, bin_h, floor_mode, pull_guide);
 else if (part == "grid-insert") hutchfinity_grid_insert(cells_x, cells_y);
 else if (part == "casing") sized_casing();
+else if (part == "peg") one_peg();
 else if (part == "pegs") sized_pegs();
 else if (part == "pull") sized_pull();
 else assert(false, "unknown part");
