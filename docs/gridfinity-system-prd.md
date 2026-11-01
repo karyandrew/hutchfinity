@@ -1,9 +1,11 @@
 ---
 sensitivity: public
-version: 5.1.3
+version: 5.1.4
 ---
 
 # Gridfinity System PRD — Dental Practice Organization
+
+> **Superseded for tubs:** the current tub height, floor, and magnet contract is in [`hutchfinity-spec.md`](hutchfinity-spec.md) under "Current tub contract". Older tub figures here (23h body, 84.24 mm, 4.75 mm cavity floor, 2.01 mm clearance, tub magnets) are history.
 
 **Audience:** agents drafting and testing SCAD models for the dental gridfinity system. Read this before designing or modifying any tub / baseplate / bin config. It's the owner's north star — your work points at it.
 

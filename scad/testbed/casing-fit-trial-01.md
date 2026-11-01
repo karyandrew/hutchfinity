@@ -8,6 +8,8 @@ status: magnetic print set regenerated with 2.2mm tub walls, 1.0mm side clearanc
 
 # Casing fit trial 01 — magnetic print set pending physical validation
 
+> **History:** this trial used the retired 84.24 mm STL-based tub. Removed parts and commands below are available in git history.
+
 ## Purpose
 
 Validate the representative regular-tub casing interface from hutchfinity#20 without conflating tub-process compensation, casing slot clearance, or peg/socket press-fit.

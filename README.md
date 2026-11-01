@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 1.0.0
+version: 1.1.0
 ---
 
 # hutchfinity
@@ -16,6 +16,16 @@ A parametric, modular drawer chest system built around gridfinity-extended tubs 
 - **Magnets** = optional press-fit retention + extended-warning detent
 
 Tubs slide drawer-style on the top of the casing below (or on a footer / tabletop for the bottom-most). Casings stack into chests of arbitrary height. Same flat casing footprint = stackable; varying heights are fine. Multi-column chest assembly is a v2 goal.
+
+## Make parts
+
+With Python and [OpenSCAD](https://openscad.org) installed, run:
+
+```
+python3 hutchfinity.py
+```
+
+Pick a part and size in the page that opens, and it saves a checked STL to `~/Downloads/hutchfinity`. From a terminal, `python3 hutchfinity.py tub 10 10 10` does the same. You can also open `scad/hutchfinity.scad` in OpenSCAD and use the Customizer panel.
 
 ## Why half-pitch
 

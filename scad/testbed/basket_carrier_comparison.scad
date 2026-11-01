@@ -27,7 +27,7 @@ REMOVABLE_GRID_CONTACT_LIFT = 0.01;
 CENTER_FLOOR_PROBE_XY = 1.0;
 
 module current_mini() {
-    hutchfinity_mini_tub(enable_magnet_holes = CURRENT_MAGNETS);
+    hutchfinity_mini_tub();
 }
 
 module candidate_mini(

@@ -1,7 +1,7 @@
 // hutchfinity-assembly.scad
-// version: 0.6.2
+// version: 0.7.0
 // Assembly caller for fit previews. Casing stays tub-agnostic; tub geometry
-// belongs here once an authored tub module exists.
+// comes from tub.scad.
 
 use <casing.scad>;
 use <tub.scad>;
@@ -10,11 +10,8 @@ use <knob.scad>;
 
 REGULAR_TUB_EXTERIOR_X = 256.4;
 REGULAR_TUB_EXTERIOR_Y = 340.4;
-REGULAR_TUB_SOURCE_HEIGHT_U = 23;
 REGULAR_TUB_MAX_BIN_HEIGHT_U = 20;
-PITCH_Z = 3.5;
-MINIMUM_LIP_Z = 3.74;
-REGULAR_TUB_EXTERIOR_Z = REGULAR_TUB_SOURCE_HEIGHT_U * PITCH_Z + MINIMUM_LIP_Z;
+REGULAR_TUB_EXTERIOR_Z = tub_total_z(REGULAR_TUB_MAX_BIN_HEIGHT_U, "integral-grid");
 SIDE_CLEARANCE = 1.0;
 BACK_CLEARANCE = 0.5;
 TOP_CLEARANCE = 1.0;

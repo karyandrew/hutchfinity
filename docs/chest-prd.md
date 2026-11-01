@@ -1,9 +1,11 @@
 ---
 sensitivity: public
-version: 1.4.0
+version: 1.4.1
 ---
 
 # Hutchfinity Chest PRD
+
+> **Superseded for tubs:** the current tub height, floor, and magnet contract is in [`hutchfinity-spec.md`](hutchfinity-spec.md) under "Current tub contract". Older tub figures here (23h body, 84.24 mm, 4.75 mm cavity floor, 2.01 mm clearance, tub magnets) are history.
 
 **Audience:** agents and contributors drafting the Hutchfinity chest SCAD modules. Read this before designing or modifying `tub.scad`, `casing.scad`, `knob.scad`, or `peg.scad`.
 
