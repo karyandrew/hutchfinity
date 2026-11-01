@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 1.1.0
+version: 1.2.0
 ---
 
 # hutchfinity
@@ -19,13 +19,12 @@ Tubs slide drawer-style on the top of the casing below (or on a footer / tableto
 
 ## Make parts
 
-With Python and [OpenSCAD](https://openscad.org) installed, run:
+With Python and [OpenSCAD](https://openscad.org) installed, run `python3 hutchfinity.py`. Pick a size in the page that opens, and it saves one folder per module to `~/Downloads/hutchfinity`: `1-tub.3mf`, `2-casing.3mf`, `3-pegs-and-pulls.3mf`, and a `manifest.json`. Each 3MF is one print job, already oriented, that opens directly in OrcaSlicer with your active profile.
 
-```
-python3 hutchfinity.py
-```
-
-Pick a part and size in the page that opens, and it saves a checked STL to `~/Downloads/hutchfinity`. From a terminal, `python3 hutchfinity.py tub 10 10 10` does the same. You can also open `scad/hutchfinity.scad` in OpenSCAD and use the Customizer panel.
+- `python3 hutchfinity.py module 10 10 10 --stack-gap 0.8 --pulls 1` does the same from a terminal. `--help` lists every option.
+- `python3 hutchfinity.py --install-shortcut` adds a clickable `Hutchfinity.app` to a Mac's Desktop. It updates itself from `main` when opened.
+- Single parts work too: `python3 hutchfinity.py bin 2 2 10`.
+- The generator's version is `VERSION` in `hutchfinity.py`, and each output's `manifest.json` records that version and the source commit.
 
 ## Why half-pitch
 

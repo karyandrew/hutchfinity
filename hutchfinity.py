@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""Tiny Hutchfinity generator: pick a part and size, get a checked STL.
+"""Hutchfinity generator: build a full drawer module as Orca-ready 3MF files.
 
-    python3 hutchfinity.py                 opens the app in a browser
-    python3 hutchfinity.py tub 10 10 10    writes one STL from the command line
+    python3 hutchfinity.py                     opens the app in a browser
+    python3 hutchfinity.py module 10 10 10     builds one module folder
+    python3 hutchfinity.py bin 2 2 10          builds one part
+    python3 hutchfinity.py --install-shortcut  adds a clickable app to the Desktop
 
+Sizes are cells wide, cells deep, and tallest bin. --help lists every option.
 Needs only Python and OpenSCAD. Set OPENSCAD_BIN if OpenSCAD is not on PATH.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
+import html
 import json
 import os
 import platform
@@ -18,18 +23,60 @@ import struct
 import subprocess
 import sys
 import tempfile
+import time
 import webbrowser
+import zipfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+VERSION = "1.1.0"
 ROOT = Path(__file__).resolve().parent
 ENTRY = ROOT / "scad" / "hutchfinity.scad"
 CUP = ROOT / "scad" / "gridfinity" / "vendor" / "extended" / "gridfinity_basic_cup.scad"
 BASEPLATE = ROOT / "scad" / "gridfinity" / "vendor" / "extended" / "gridfinity_baseplate.scad"
-PARTS = ("tub", "grid-insert", "casing", "pegs", "pull", "bin", "baseplate")
+TARGETS = ("module", "tub", "grid-insert", "casing", "pegs", "pull", "bin", "baseplate")
 FLOORS = ("integral-grid", "plain")
 MAC_APP = "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"
+DEFAULT_OUT = Path.home() / "Downloads" / "hutchfinity"
+PORT = 8421
+IDLE_EXIT_SECONDS = 30 * 60
+
+# name, OpenSCAD variable, default, help. Every dimension the model exposes.
+DESIGN_OPTIONS = [
+    ("pull_guide", "pull_guide", True, "raised guide on the tub front for gluing the pull"),
+    ("wall", "WALL", 2.2, "tub wall, mm"),
+    ("rim_wall", "MIN_WALL", 0.4, "tub wall at the rim, mm"),
+    ("integral_floor", "INTEGRAL_FLOOR", 1.3, "integral-grid floor, mm"),
+    ("plain_floor", "PLAIN_FLOOR", 1.2, "plain floor, mm"),
+    ("grid_height", "GRID_Z", 5.0, "grid height, mm"),
+    ("stack_gap", "STACK_GAP", 0.5, "air gap above the tallest bin when stacked, mm"),
+    ("bin_lip", "BIN_LIP", 3.74, "bin lip height, mm"),
+    ("insert_clearance", "INSERT_CLEARANCE", 1.0, "grid insert clearance per side, mm"),
+    ("side_wall", "side_wall", 18.0, "casing side wall, mm"),
+    ("back_wall", "back_wall", 18.0, "casing back wall, mm"),
+    ("riding_slab", "riding_slab", 1.3, "casing slab the tub above rides on, mm"),
+    ("side_clearance", "side_clearance", 1.0, "tub to casing, each side, mm"),
+    ("back_clearance", "back_clearance", 0.5, "tub to casing, back, mm"),
+    ("top_clearance", "top_clearance", 1.0, "tub to casing, top, mm"),
+    ("peg_spacing", "peg_spacing", 190.0, "target peg spacing, mm"),
+    ("peg_bore", "peg_bore", 8.45, "peg socket bore and peg width, mm"),
+    ("peg_depth", "peg_depth_max", 10.0, "peg socket depth, mm"),
+    ("peg_chamfer", "peg_chamfer", 0.5, "socket opening chamfer, mm"),
+    ("peg_end_chamfer", "peg_end_chamfer", 2.5, "peg end chamfer, mm"),
+    ("pull_width", "PULL_FLANGE_X", 90.0, "full-size pull flange width, mm"),
+    ("pull_height", "PULL_FLANGE_Z", 32.9, "full-size pull flange height, mm"),
+    ("corner_steps", "CORNER_STEPS", 8, "mesh: facets per tub corner"),
+    ("cell_corner_steps", "CELL_CORNER_STEPS", 6, "mesh: facets per grid-pocket corner"),
+    ("casing_fn", "casing_fn", 32, "mesh: facets per peg socket"),
+]
+COUNT_OPTIONS = [
+    ("tubs", 1, "tubs in the module"),
+    ("casings", 1, "casings in the module"),
+    ("pulls", 2, "pulls (one is used, one is a spare)"),
+    ("spare_pegs", 0, "pegs beyond what one casing needs"),
+    ("insert", 0, "grid inserts (for a plain floor)"),
+]
 
 
 class BuildError(Exception):
@@ -50,38 +97,61 @@ def find_openscad() -> list[str]:
     return [candidate]
 
 
-def scad_args(part: str, x: int, y: int, h: int, floor: str) -> tuple[Path, list[str], str]:
-    """Return the source file, its overrides, and the output name for one part."""
-    if part not in PARTS:
-        raise BuildError(f"unknown part: {part}")
-    if floor not in FLOORS:
-        raise BuildError(f"unknown floor: {floor}")
+def check_size(x: int, y: int, h: int) -> None:
     for value in (x, y, h):
         if not 1 <= value <= 40:
             raise BuildError("sizes must be whole numbers from 1 to 40")
+
+
+def scad_value(value) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    raise BuildError(f"bad value: {value!r}")
+
+
+def design_overrides(design: dict) -> list[str]:
+    known = {name: (var, default) for name, var, default, _ in DESIGN_OPTIONS}
+    overrides = []
+    for name, value in design.items():
+        if name not in known:
+            raise BuildError(f"unknown option: {name}")
+        var, default = known[name]
+        if value != default:
+            overrides.append(f"{var}={scad_value(value)}")
+    return overrides
+
+
+def scad_source(part: str, x: int, y: int, h: int, floor: str, design: dict) -> tuple[Path, list[str]]:
+    check_size(x, y, h)
+    if floor not in FLOORS:
+        raise BuildError(f"unknown floor: {floor}")
     if part == "bin":
         return CUP, [
-            f"pitch=[21,21,3.5]", f"width=[{x},0]", f"depth=[{y},0]", f"height=[{h},0]",
+            "pitch=[21,21,3.5]", f"width=[{x},0]", f"depth=[{y},0]", f"height=[{h},0]",
             'lip_style="minimum"', "enable_magnets=false", "enable_screws=false",
             'label_style="disabled"', 'fingerslide="none"',
             "vertical_chambers=1", "horizontal_chambers=1",
-        ], f"bin-{x}x{y}x{h}h.stl"
+        ]
     if part == "baseplate":
-        return BASEPLATE, ["pitch=[21,21,3.5]", f"Width=[{x},0]", f"Depth=[{y},0]"], f"baseplate-{x}x{y}.stl"
-    suffix = f"-{floor}" if part in ("tub", "casing", "pegs", "pull") else ""
-    size = f"{x}x{y}" if part == "grid-insert" else f"{x}x{y}x{h}h"
+        return BASEPLATE, ["pitch=[21,21,3.5]", f"Width=[{x},0]", f"Depth=[{y},0]"]
+    if part not in ("tub", "grid-insert", "casing", "peg", "pegs", "pull"):
+        raise BuildError(f"unknown part: {part}")
     return ENTRY, [
         f'part="{part}"', f"cells_x={x}", f"cells_y={y}", f"bin_h={h}", f'floor_mode="{floor}"',
-    ], f"{part}-{size}{suffix}.stl"
+        *design_overrides(design),
+    ]
 
 
-def stl_check(path: Path) -> dict:
-    """Read a binary STL: size, facet count, closed surface, and separate pieces."""
+def read_stl(path: Path) -> dict:
+    """Read a binary STL into shared vertices and triangles, and check it is closed."""
     data = path.read_bytes()
     count = struct.unpack_from("<I", data, 80)[0]
     if len(data) != 84 + 50 * count:
         raise BuildError("OpenSCAD did not write a valid binary STL")
     ids: dict[tuple, int] = {}
+    triangles: list[tuple[int, int, int]] = []
     edges: dict[tuple[int, int], int] = {}
     parent: list[int] = []
 
@@ -93,75 +163,240 @@ def stl_check(path: Path) -> dict:
 
     for facet in range(count):
         offset = 84 + 50 * facet + 12
-        triangle = []
+        corners = []
         for corner in range(3):
             vertex = struct.unpack_from("<3f", data, offset + 12 * corner)
             if vertex not in ids:
                 ids[vertex] = len(ids)
                 parent.append(ids[vertex])
-            triangle.append(ids[vertex])
-        for a, b in zip(triangle, triangle[1:] + triangle[:1]):
+            corners.append(ids[vertex])
+        triangles.append(tuple(corners))
+        for a, b in zip(corners, corners[1:] + corners[:1]):
             edges[(a, b)] = edges.get((a, b), 0) + 1
             parent[find(a)] = find(b)
-    closed = all(edges.get((b, a)) == n for (a, b), n in edges.items())
     points = list(ids)
+    low = [min(p[i] for p in points) for i in range(3)]
+    high = [max(p[i] for p in points) for i in range(3)]
     return {
-        "size_mm": [round(max(p[i] for p in points) - min(p[i] for p in points), 2) for i in range(3)],
+        "points": points,
+        "triangles": triangles,
+        "low": low,
+        "size_mm": [round(high[i] - low[i], 2) for i in range(3)],
         "facets": count,
-        "closed": closed,
+        "closed": all(edges.get((b, a)) == n for (a, b), n in edges.items()),
         "pieces": len({find(i) for i in range(len(parent))}),
     }
 
 
-def build(part: str, x: int, y: int, h: int, floor: str, out_dir: Path) -> dict:
-    source, overrides, name = scad_args(part, x, y, h, floor)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    target = out_dir / name
+def render(part: str, x: int, y: int, h: int, floor: str, design: dict) -> dict:
+    source, overrides = scad_source(part, x, y, h, floor, design)
     with tempfile.TemporaryDirectory() as work:
-        stl = Path(work) / name
+        stl = Path(work) / "part.stl"
         command = find_openscad() + ["--backend=Manifold", "--export-format=binstl", "-o", str(stl)]
         for override in overrides:
             command += ["-D", override]
         run = subprocess.run(command + [str(source)], capture_output=True, text=True)
         log = run.stdout + run.stderr
         if run.returncode or not stl.exists():
-            errors = [l for l in log.splitlines() if re.search(r"ERROR|Assertion", l)]
-            raise BuildError("; ".join(errors) or log.strip()[-400:])
-        check = stl_check(stl)
-        if not check["closed"]:
-            raise BuildError(f"{name} is not a closed solid; not saved")
-        shutil.move(str(stl), target)
-    notes = re.findall(r'ECHO: "(.*)"', log) if source == ENTRY else []
-    return {"path": str(target), "name": name, "notes": notes, **check}
+            errors = [line for line in log.splitlines() if re.search(r"ERROR|Assertion", line)]
+            raise BuildError(f"{part}: " + ("; ".join(errors) or log.strip()[-400:]))
+        mesh = read_stl(stl)
+    if not mesh["closed"]:
+        raise BuildError(f"{part} is not a closed solid; nothing was saved")
+    mesh["notes"] = re.findall(r'ECHO: "(.*)"', log) if source == ENTRY else []
+    return mesh
 
 
-PAGE = """<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
+def write_3mf(path: Path, objects: list[tuple[str, dict, int]], bed: float = 500.0) -> None:
+    """Write named objects, each with a copy count, laid out in rows from the bed corner.
+
+    Copies share one mesh. This is plain 3MF with no slicer settings, so it picks
+    up whatever printer and filament profile is active in Orca.
+    """
+    gap = 8.0
+    resources, items = [], []
+    cursor_x, cursor_y, row = gap, gap, 0.0
+    for index, (name, mesh, copies) in enumerate(objects, start=1):
+        low = mesh["low"]
+        vertices = "".join(
+            f'<vertex x="{p[0] - low[0]:.4f}" y="{p[1] - low[1]:.4f}" z="{p[2] - low[2]:.4f}"/>'
+            for p in mesh["points"]
+        )
+        triangles = "".join(f'<triangle v1="{a}" v2="{b}" v3="{c}"/>' for a, b, c in mesh["triangles"])
+        resources.append(
+            f'<object id="{index}" name="{html.escape(name)}" type="model"><mesh>'
+            f"<vertices>{vertices}</vertices><triangles>{triangles}</triangles></mesh></object>"
+        )
+        width, depth, _ = mesh["size_mm"]
+        for _copy in range(copies):
+            if cursor_x > gap and cursor_x + width > bed - gap:
+                cursor_x, cursor_y, row = gap, cursor_y + row + gap, 0.0
+            items.append(f'<item objectid="{index}" transform="1 0 0 0 1 0 0 0 1 {cursor_x:.3f} {cursor_y:.3f} 0"/>')
+            cursor_x += width + gap
+            row = max(row, depth)
+    model = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">'
+        f'<metadata name="Application">hutchfinity {VERSION}</metadata>'
+        f"<resources>{''.join(resources)}</resources><build>{''.join(items)}</build></model>"
+    )
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        archive.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>',
+        )
+        archive.writestr(
+            "_rels/.rels",
+            '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Target="/3D/3dmodel.model" Id="rel0" '
+            'Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>',
+        )
+        archive.writestr("3D/3dmodel.model", model)
+
+
+def source_commit() -> str:
+    run = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True)
+    return run.stdout.strip() if run.returncode == 0 else "unknown"
+
+
+def file_record(path: Path, **extra) -> dict:
+    return {
+        "file": path.name,
+        "bytes": path.stat().st_size,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        **extra,
+    }
+
+
+def build_module(x, y, h, floor, out: Path, design=None, counts=None, bed=500.0) -> dict:
+    """Build the print set for one module: one 3MF per print job, plus a manifest."""
+    design = design or {}
+    counts = {**{name: default for name, default, _ in COUNT_OPTIONS}, **(counts or {})}
+    render_part = lambda part: render(part, x, y, h, floor, design)
+    tub, casing, peg, pull = (render_part(p) for p in ("tub", "casing", "peg", "pull"))
+    pegs_needed = int(re.search(r"(\d+) pegs", casing["notes"][0]).group(1))
+    peg_total = pegs_needed * counts["casings"] + counts["spare_pegs"]
+
+    folder = out / f"hutchfinity-{x}x{y}x{h}h-{floor}"
+    folder.mkdir(parents=True, exist_ok=True)
+    for old in folder.glob("*.3mf"):
+        old.unlink()
+    jobs = [
+        ("1-tub.3mf", [("Tub", tub, counts["tubs"])]),
+        ("2-casing.3mf", [("Casing", casing, counts["casings"])]),
+        ("3-pegs-and-pulls.3mf", [("Peg", peg, peg_total), ("Pull", pull, counts["pulls"])]),
+    ]
+    if counts["insert"]:
+        jobs.append(("4-grid-insert.3mf", [("Grid insert", render_part("grid-insert"), counts["insert"])]))
+    records = []
+    for name, objects in jobs:
+        objects = [o for o in objects if o[2] > 0]
+        if objects:
+            write_3mf(folder / name, objects, bed)
+            records.append(file_record(folder / name, parts={o[0]: o[2] for o in objects}))
+    manifest = {
+        "generator_version": VERSION,
+        "source_commit": source_commit(),
+        "size": {"cells_x": x, "cells_y": y, "bin_h": h, "floor": floor},
+        "design_overrides": design,
+        "counts": counts,
+        "peg_total": peg_total,
+        "sizes_mm": {"tub": tub["size_mm"], "casing": casing["size_mm"], "pull": pull["size_mm"], "peg": peg["size_mm"]},
+        "facets": {"tub": tub["facets"], "casing": casing["facets"], "pull": pull["facets"], "peg": peg["facets"]},
+        "notes": tub["notes"] + casing["notes"] + pull["notes"],
+        "files": records,
+    }
+    (folder / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+    return {
+        "path": str(folder),
+        "files": records,
+        "notes": manifest["notes"],
+        "summary": f"{peg_total} pegs, {counts['pulls']} pulls, "
+        f"{sum(r['bytes'] for r in records) / 1e6:.1f} MB total",
+    }
+
+
+def build_part(part, x, y, h, floor, out: Path, design=None, bed=500.0) -> dict:
+    mesh = render("pegs" if part == "pegs" else part, x, y, h, floor, design or {})
+    size = f"{x}x{y}" if part in ("grid-insert", "baseplate") else f"{x}x{y}x{h}h"
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / f"{part}-{size}.3mf"
+    write_3mf(path, [(part, mesh, 1)], bed)
+    return {
+        "path": str(path),
+        "files": [file_record(path)],
+        "notes": mesh["notes"],
+        "summary": f"{' x '.join(map(str, mesh['size_mm']))} mm, {mesh['facets']} facets, {mesh['pieces']} piece(s)",
+        "size_mm": mesh["size_mm"],
+        "pieces": mesh["pieces"],
+    }
+
+
+def build(target, x, y, h, floor, out, design=None, counts=None, bed=500.0) -> dict:
+    if target not in TARGETS:
+        raise BuildError(f"unknown part: {target}")
+    if target == "module":
+        return build_module(x, y, h, floor, out, design, counts, bed)
+    return build_part(target, x, y, h, floor, out, design, bed)
+
+
+def field(label: str, name: str, default) -> str:
+    if isinstance(default, bool):
+        checked = " checked" if default else ""
+        return f"<label>{html.escape(label)}<input type=checkbox name={name}{checked}></label>"
+    step = "1" if isinstance(default, int) else "any"
+    return f"<label>{html.escape(label)}<input name={name} type=number min=0 step={step} value={default}></label>"
+
+
+def page() -> str:
+    targets = "".join(f"<option>{t}" for t in TARGETS)
+    counts = "".join(field(label, name, default) for name, default, label in COUNT_OPTIONS)
+    design = "".join(field(label, name, default) for name, _, default, label in DESIGN_OPTIONS)
+    return f"""<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
 <title>Hutchfinity</title><style>
-:root{color-scheme:light dark}body{font:16px system-ui;max-width:26rem;margin:2rem auto;padding:0 1rem}
-label{display:flex;justify-content:space-between;align-items:center;margin:.6rem 0}
-input,select{font:inherit;width:9rem;padding:.25rem}button{font:inherit;padding:.5rem 1rem;margin-top:.6rem}
-pre{white-space:pre-wrap}</style>
-<h1>Hutchfinity</h1><form id=f>
-<label>Part<select name=part>%s</select></label>
+:root{{color-scheme:light dark}}body{{font:16px system-ui;max-width:30rem;margin:2rem auto;padding:0 1rem}}
+label{{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:.5rem 0}}
+input[type=number],select{{font:inherit;width:7rem;padding:.25rem}}button{{font:inherit;padding:.5rem 1rem;margin-top:.6rem}}
+summary{{margin-top:.8rem;cursor:pointer}}pre{{white-space:pre-wrap}}</style>
+<h1>Hutchfinity <small>{VERSION}</small></h1><form id=f>
+<label>Build<select name=target>{targets}</select></label>
 <label>Preset<select id=preset><option value="">custom<option value="6,16,20">Mini
-<option value="12,16,20" selected>Regular<option value="18,16,20">Mega</select></label>
-<label>Cells wide<input name=x type=number min=1 max=40 value=12></label>
-<label>Cells deep<input name=y type=number min=1 max=40 value=16></label>
-<label>Tallest bin (3.5 mm units)<input name=h type=number min=1 max=40 value=20></label>
+<option value="12,16,20">Regular<option value="18,16,20">Mega<option value="10,10,10" selected>10 x 10 x 10h</select></label>
+<label>Cells wide<input name=x type=number min=1 max=40 value=10></label>
+<label>Cells deep<input name=y type=number min=1 max=40 value=10></label>
+<label>Tallest bin (3.5 mm units)<input name=h type=number min=1 max=40 value=10></label>
 <label>Floor<select name=floor><option>integral-grid<option>plain</select></label>
-<button>Build STL</button></form><pre id=out></pre><script>
+<details><summary>Quantities</summary>{counts}</details>
+<details><summary>Dimensions and mesh</summary>{design}</details>
+<button>Build</button></form><pre id=out></pre><script>
 const f=document.getElementById('f'),o=document.getElementById('out');
-document.getElementById('preset').onchange=e=>{if(!e.target.value)return;
- const v=e.target.value.split(',');f.x.value=v[0];f.y.value=v[1];f.h.value=v[2]};
-f.onsubmit=async e=>{e.preventDefault();o.textContent='Building...';
- const r=await fetch('/build?'+new URLSearchParams(new FormData(f)));const j=await r.json();
- if(!r.ok){o.textContent='Could not build: '+j.error;return}
- o.textContent=`Saved ${j.path}\\n${j.size_mm.join(' x ')} mm, ${j.facets} facets, ${j.pieces} piece(s), closed solid\\n${j.notes.join('\\n')}`};
-</script>""" % "".join(f"<option>{p}" for p in PARTS)
+document.getElementById('preset').onchange=e=>{{if(!e.target.value)return;
+ const v=e.target.value.split(',');f.x.value=v[0];f.y.value=v[1];f.h.value=v[2]}};
+f.onsubmit=async e=>{{e.preventDefault();o.textContent='Building...';
+ const q=new URLSearchParams(new FormData(f));f.querySelectorAll('input[type=checkbox]').forEach(c=>q.set(c.name,c.checked?'1':'0'));
+ const r=await fetch('/build?'+q,{{headers:{{'X-Hutchfinity':'1'}}}});const j=await r.json();
+ o.textContent=r.ok?`Saved to ${{j.path}}\\n${{j.summary}}\\n${{j.files.map(x=>x.file).join('\\n')}}\\n${{j.notes.join('\\n')}}`:'Could not build: '+j.error}};
+</script>"""
+
+
+def parse_form(q: dict) -> tuple:
+    size = [int(q.get(k, "")) for k in ("x", "y", "h")]
+    design = {}
+    for name, _, default, _ in DESIGN_OPTIONS:
+        if name in q:
+            kind = type(default)
+            value = q[name] == "1" if kind is bool else kind(q[name])
+            if value != default:
+                design[name] = value
+    counts = {name: int(q[name]) for name, _, _ in COUNT_OPTIONS if name in q}
+    return q.get("target", "module"), size, q.get("floor", FLOORS[0]), design, counts
 
 
 class App(BaseHTTPRequestHandler):
-    out_dir = Path.home() / "Downloads" / "hutchfinity"
+    out_dir = DEFAULT_OUT
+    last_used = time.time()
 
     def reply(self, status: int, body: bytes, kind: str) -> None:
         self.send_response(status)
@@ -171,51 +406,121 @@ class App(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self) -> None:
+        App.last_used = time.time()
         url = urlparse(self.path)
         if url.path == "/":
-            return self.reply(200, PAGE.encode(), "text/html; charset=utf-8")
+            return self.reply(200, page().encode(), "text/html; charset=utf-8")
         if url.path != "/build":
             return self.reply(404, b"not found", "text/plain")
+        # A custom header keeps other web pages from triggering builds here.
+        if self.headers.get("X-Hutchfinity") != "1":
+            return self.reply(403, b"forbidden", "text/plain")
         q = {k: v[0] for k, v in parse_qs(url.query).items()}
         try:
-            size = [int(q.get(k, "")) for k in ("x", "y", "h")]
-            result, status = build(q.get("part", ""), *size, q.get("floor", FLOORS[0]), self.out_dir), 200
+            target, size, floor, design, counts = parse_form(q)
+            result, status = build(target, *size, floor, self.out_dir, design, counts), 200
+            if platform.system() == "Darwin":
+                subprocess.run(["open", "-R", result["path"]], check=False)
         except (BuildError, ValueError) as error:
             result, status = {"error": str(error)}, 400
+        App.last_used = time.time()
         self.reply(status, json.dumps(result).encode(), "application/json")
 
     def log_message(self, *args) -> None:
         pass
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("part", nargs="?", choices=PARTS)
-    parser.add_argument("size", nargs="*", type=int, help="cells wide, cells deep, tallest bin")
-    parser.add_argument("--floor", choices=FLOORS, default=FLOORS[0])
-    parser.add_argument("--out", type=Path, default=App.out_dir)
-    parser.add_argument("--port", type=int, default=8421)
-    parser.add_argument("--no-browser", action="store_true")
-    args = parser.parse_args()
-    if args.part:
-        if len(args.size) != 3:
-            parser.error("give three sizes: cells wide, cells deep, tallest bin")
-        try:
-            print(json.dumps(build(args.part, *args.size, args.floor, args.out), indent=2))
-        except BuildError as error:
-            print(f"Could not build: {error}", file=sys.stderr)
-            return 1
-        return 0
-    App.out_dir = args.out
-    server = ThreadingHTTPServer(("127.0.0.1", args.port), App)
-    url = f"http://127.0.0.1:{args.port}/"
-    print(f"Hutchfinity is at {url} (Ctrl-C to stop). STLs go to {args.out}")
-    if not args.no_browser:
-        webbrowser.open(url)
+def self_update() -> None:
+    """Fast-forward this checkout if it can, and restart on the new code."""
+    before = source_commit()
     try:
-        server.serve_forever()
+        subprocess.run(["git", "-C", str(ROOT), "pull", "-q", "--ff-only"], capture_output=True, timeout=8)
+    except subprocess.TimeoutExpired:
+        return
+    if source_commit() != before:
+        os.execv(sys.executable, [sys.executable, str(Path(__file__).resolve()), "--no-update", *sys.argv[1:]])
+
+
+def serve(out: Path, port: int, open_browser: bool, idle_exit: bool) -> int:
+    url = f"http://127.0.0.1:{port}/"
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", port), App)
+    except OSError:
+        if open_browser:  # Already running from an earlier click.
+            webbrowser.open(url)
+        return 0
+    App.out_dir = out
+    print(f"Hutchfinity {VERSION} is at {url} (Ctrl-C to stop). Files go to {out}")
+    if open_browser:
+        webbrowser.open(url)
+    server.timeout = 30
+    try:
+        while not idle_exit or time.time() - App.last_used < IDLE_EXIT_SECONDS:
+            server.handle_request()
     except KeyboardInterrupt:
         pass
+    return 0
+
+
+def install_shortcut(desktop: Path) -> Path:
+    if platform.system() != "Darwin":
+        raise BuildError("the clickable shortcut is macOS only; run python3 hutchfinity.py here")
+    path = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin"
+    script = (
+        f'do shell script "export PATH={path}; cd {shlex_quote(str(ROOT))}; '
+        f'nohup python3 hutchfinity.py --idle-exit > /dev/null 2>&1 &"'
+    )
+    target = desktop / "Hutchfinity.app"
+    subprocess.run(["osacompile", "-o", str(target), "-e", script], check=True)
+    return target
+
+
+def shlex_quote(text: str) -> str:
+    if re.search(r'["\\]', text):
+        raise BuildError(f"unsupported characters in path: {text}")
+    return "'" + text.replace("'", "'\\''") + "'"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("target", nargs="?", choices=TARGETS)
+    parser.add_argument("size", nargs="*", type=int, help="cells wide, cells deep, tallest bin")
+    parser.add_argument("--version", action="version", version=VERSION)
+    parser.add_argument("--floor", choices=FLOORS, default=FLOORS[0])
+    parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    parser.add_argument("--bed", type=float, default=500.0, help="bed width used to lay out rows, mm")
+    for name, default, label in COUNT_OPTIONS:
+        parser.add_argument(f"--{name.replace('_', '-')}", type=int, default=default, help=label)
+    for name, _, default, label in DESIGN_OPTIONS:
+        flag = f"--{name.replace('_', '-')}"
+        if isinstance(default, bool):
+            parser.add_argument(flag, action=argparse.BooleanOptionalAction, default=default, help=label)
+        else:
+            parser.add_argument(flag, type=type(default), default=default, help=f"{label} (default {default})")
+    parser.add_argument("--port", type=int, default=PORT)
+    parser.add_argument("--no-browser", action="store_true")
+    parser.add_argument("--no-update", action="store_true", help="skip the git update at app start")
+    parser.add_argument("--idle-exit", action="store_true", help="stop the app after 30 idle minutes")
+    parser.add_argument("--install-shortcut", action="store_true", help="add Hutchfinity.app to the Desktop")
+    args = parser.parse_args()
+    try:
+        if args.install_shortcut:
+            print(install_shortcut(Path.home() / "Desktop"))
+            return 0
+        if not args.target:
+            if not args.no_update:
+                self_update()
+            return serve(args.out, args.port, not args.no_browser, args.idle_exit)
+        if len(args.size) != 3:
+            parser.error("give three sizes: cells wide, cells deep, tallest bin")
+        design = {
+            name: getattr(args, name) for name, _, default, _ in DESIGN_OPTIONS if getattr(args, name) != default
+        }
+        counts = {name: getattr(args, name) for name, _, _ in COUNT_OPTIONS}
+        print(json.dumps(build(args.target, *args.size, args.floor, args.out, design, counts, args.bed), indent=2))
+    except BuildError as error:
+        print(f"Could not build: {error}", file=sys.stderr)
+        return 1
     return 0
 
 

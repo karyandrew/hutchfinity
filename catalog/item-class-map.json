@@ -1,6 +1,6 @@
 {
   "schema": "hutchfinity-item-class-map-set/v1",
-  "catalog_source_commit": "314731f4a38d7c78ecb4ac3fe01ab6b90c3656a7",
+  "catalog_source_commit": "d98e2f6bb1f43739946213bb03e7cf69c7f304d4",
   "mappings": [
     {
       "schema": "hutchfinity-item-class-map/v1",

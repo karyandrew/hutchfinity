@@ -1,5 +1,5 @@
 ---
-version: 0.19.0
+version: 0.20.0
 sensitivity: public
 ---
 
@@ -23,8 +23,8 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 - Height: `floor + bin_h x 3.5 + 3.74 bin lip + 0.50 air gap + 4.30 stack overlap`. A 10h integral-grid tub is 44.84 mm; a 20h one is 79.84 mm.
 - The 0.50 mm is the real gap above the tallest bin's lip when tubs stack. It replaces 2.01 mm of leftover rounding from the old whole-unit tub height.
 - Floor modes: `integral-grid` (1.30 mm floor, 5 mm built-in grid) and `plain` (1.20 mm floor, takes bins or the removable `grid-insert`). Walls are 2.2 mm. There are no magnet wells.
-- A pull guide sits centered on the wall band above the grid, and shrinks when the band is too short for the 90 x 34 mm pull.
-- `scad/hutchfinity.scad` derives the matching casing, pegs, and pull from the same size. `hutchfinity.py` is the small app over it.
+- There is one pull, 90 x 32.9 mm, the largest that fits the wall band of a 10h tub. It scales down uniformly, with its guide, on anything smaller. The guide is centered on the wall band above the grid.
+- `scad/hutchfinity.scad` derives the matching casing, pegs, and pull from the same size. `hutchfinity.py` is the small app over it and writes each module as one 3MF per print job.
 
 Status: checked in CAD only. Stacking, bin seating, casing slide, and pull size have not been physically tested at this height. `scad/reference/thin-floor-rev05/` keeps the original CadQuery model the port was compared against.
 
@@ -35,7 +35,7 @@ Status: checked in CAD only. Stacking, bin seating, casing slide, and pull size 
 | `scad/casing.scad` | Standalone casing shell with flat-wall stack peg sockets and provisional casing magnet wells. No tub import, no footer mode. |
 | `scad/tub.scad` | Parametric tub and removable grid insert, plus mini/regular/mega wrappers. |
 | `scad/hutchfinity.scad` | Customizer entry point that sizes tub, insert, casing, pegs, and pull together. |
-| `hutchfinity.py` | Small local app and command line that build checked STLs, including bins and baseplates. |
+| `hutchfinity.py` | Small local app and command line that build checked Orca-ready 3MF files, including bins and baseplates. |
 | `scad/peg.scad` | Prototype laid-down hex peg. |
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
@@ -154,7 +154,7 @@ Peg/socket coupon check:
 ```bash
 openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
 openscad -o preview/casing-fit-trial-01/hex-peg-set-7.stl scad/testbed/hex_peg_set.scad
-python3 hutchfinity.py tub 12 16 20 --out preview/casing-fit-trial-01
+python3 hutchfinity.py module 12 16 20 --out preview/casing-fit-trial-01
 ```
 
 Do not render or print `scad/testbed/peg_stack_interface_testbed.scad` for the current validation pass. It is retained only as a failed reference for the rejected external stack-land approach.
@@ -172,7 +172,7 @@ Physical validation packet:
 ```bash
 openscad -o preview/casing-fit-trial-01/casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad
 openscad -o preview/casing-fit-trial-01/casing-fit-regular-23u.stl scad/casing-fit-test.scad
-python3 hutchfinity.py tub 12 16 20 --out preview/casing-fit-trial-01
+python3 hutchfinity.py module 12 16 20 --out preview/casing-fit-trial-01
 openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
 openscad -o preview/casing-fit-trial-01/hex-peg-set-7.stl scad/testbed/hex_peg_set.scad
 ```

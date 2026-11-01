@@ -1,9 +1,10 @@
 """Live tests for hutchfinity.py. These run the real OpenSCAD."""
-import os
+import json
 import shutil
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,43 +26,68 @@ class LiveBuild(unittest.TestCase):
         self.out = Path(tempfile.mkdtemp())
         self.addCleanup(shutil.rmtree, self.out)
 
-    def build(self, part, x, y, h, floor="integral-grid"):
-        result = hutchfinity.build(part, x, y, h, floor, self.out)
-        self.assertTrue(Path(result["path"]).exists())
-        self.assertTrue(result["closed"])
-        return result
+    def mesh(self, part, x, y, h, floor="integral-grid", **design):
+        return hutchfinity.render(part, x, y, h, floor, design)
 
     def test_tub_heights_follow_the_bin(self):
-        small = self.build("tub", 10, 10, 10)
+        small = self.mesh("tub", 10, 10, 10)
         self.assertEqual(small["size_mm"][0], 214.4)
         self.assertEqual(small["size_mm"][2], 44.84)
         self.assertEqual(small["pieces"], 1)
-        self.assertEqual(self.build("tub", 12, 16, 20)["size_mm"][2], 79.84)
-        self.assertEqual(self.build("tub", 10, 10, 10, "plain")["size_mm"][2], 44.74)
+        self.assertEqual(self.mesh("tub", 12, 16, 20)["size_mm"][2], 79.84)
+        self.assertEqual(self.mesh("tub", 10, 10, 10, "plain")["size_mm"][2], 44.74)
 
-    def test_grid_insert_is_one_piece(self):
-        insert = self.build("grid-insert", 4, 3, 1)
-        self.assertEqual(insert["pieces"], 1)
+    def test_options_reach_the_model(self):
+        self.assertEqual(self.mesh("tub", 10, 10, 10, stack_gap=1.5)["size_mm"][2], 45.84)
+        self.assertEqual(self.mesh("casing", 10, 10, 10, side_wall=20.0)["size_mm"][0], 256.4)
+        self.assertLess(
+            self.mesh("tub", 2, 2, 5, pull_guide=False)["facets"], self.mesh("tub", 2, 2, 5)["facets"])
 
-    def test_casing_matches_the_tub(self):
-        casing = self.build("casing", 10, 10, 10)
-        self.assertEqual(casing["size_mm"], [252.4, 232.9, 47.14])
-        self.assertIn("7 pegs", casing["notes"][0])
-        self.assertEqual(self.build("pegs", 10, 10, 10)["pieces"], 7)
+    def test_one_pull_scales_down_on_small_tubs(self):
+        for size in ((10, 10, 10), (12, 16, 20)):
+            self.assertEqual(self.mesh("pull", *size)["size_mm"][:2], [90.0, 32.9])
+        tiny = self.mesh("pull", 1, 1, 1)["size_mm"]
+        self.assertLess(tiny[0], 10)
+        self.assertAlmostEqual(tiny[0] / tiny[1], 90 / 32.9, delta=0.2)
 
-    def test_pull_shrinks_to_fit_the_guide(self):
-        self.assertEqual(self.build("pull", 10, 10, 10)["size_mm"][:2], [90.0, 32.94])
+    def test_regular_tub_mesh_stays_light(self):
+        self.assertLess(self.mesh("tub", 12, 16, 20)["facets"], 60000)
+
+    def test_module_is_a_set_of_3mf_files(self):
+        result = hutchfinity.build("module", 10, 10, 10, "integral-grid", self.out)
+        folder = Path(result["path"])
+        self.assertEqual(
+            sorted(p.name for p in folder.iterdir()),
+            ["1-tub.3mf", "2-casing.3mf", "3-pegs-and-pulls.3mf", "manifest.json"])
+        manifest = json.loads((folder / "manifest.json").read_text())
+        self.assertEqual(manifest["peg_total"], 7)
+        self.assertEqual(manifest["generator_version"], hutchfinity.VERSION)
+        with zipfile.ZipFile(folder / "3-pegs-and-pulls.3mf") as archive:
+            model = archive.read("3D/3dmodel.model").decode()
+        self.assertEqual(model.count("<object "), 2)
+        self.assertEqual(model.count("<item "), 9)
+
+    def test_smallest_module_builds(self):
+        hutchfinity.build("module", 1, 1, 1, "plain", self.out)
+        hutchfinity.build("module", 2, 2, 1, "plain", self.out, counts={"insert": 1})
+        with self.assertRaisesRegex(hutchfinity.BuildError, "at least 2 x 2"):
+            hutchfinity.build("module", 1, 1, 1, "plain", self.out, counts={"insert": 1})
 
     def test_bin_and_baseplate_build(self):
-        self.assertEqual(self.build("bin", 1, 1, 5)["pieces"], 1)
-        self.assertEqual(self.build("baseplate", 2, 2, 1)["size_mm"][:2], [42.0, 42.0])
+        self.assertEqual(self.mesh("bin", 1, 1, 5)["pieces"], 1)
+        self.assertEqual(self.mesh("baseplate", 2, 2, 1)["size_mm"][:2], [42.0, 42.0])
 
 
 class Validation(unittest.TestCase):
     def test_rejects_bad_requests(self):
-        for args in (("nope", 1, 1, 1, "plain"), ("tub", 0, 1, 1, "plain"), ("tub", 1, 1, 1, 'x";system("')):
+        for args in (
+            ("nope", 1, 1, 1, "plain", {}),
+            ("tub", 0, 1, 1, "plain", {}),
+            ("tub", 1, 1, 1, 'x";system("', {}),
+            ("tub", 1, 1, 1, "plain", {"not_an_option": 1}),
+        ):
             with self.assertRaises(hutchfinity.BuildError):
-                hutchfinity.scad_args(*args)
+                hutchfinity.scad_source(*args)
 
 
 if __name__ == "__main__":
