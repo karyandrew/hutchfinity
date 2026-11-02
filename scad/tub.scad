@@ -1,5 +1,5 @@
 // tub.scad
-// version: 1.1.0
+// version: 1.2.0
 // Parametric Hutchfinity drawer tub: thin floor, integral or removable grid.
 //
 // Heights are derived from the tallest bin the tub must hold, not from a fixed
@@ -26,8 +26,9 @@ STACK_OVERLAP = FOOT_VERTICAL_Z + XY_TOLERANCE + TOP_SLOPE;
 
 OUTER_RADIUS = 4.0 + WALL;
 INNER_RADIUS = 4.0;
-INTEGRAL_FLOOR = 1.30;
-PLAIN_FLOOR = 1.20;
+FLOOR_THICKNESS = 1.30;
+INTEGRAL_FLOOR = FLOOR_THICKNESS;
+PLAIN_FLOOR = FLOOR_THICKNESS;
 GRID_Z = 5.0;
 INSERT_CLEARANCE = 1.0;
 EDGE_CHANNEL_OVERLAP = 0.12;

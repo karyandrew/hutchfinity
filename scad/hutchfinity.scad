@@ -1,5 +1,5 @@
 // hutchfinity.scad
-// version: 1.2.0
+// version: 2.0.0
 // One file for every sized Hutchfinity part. Open it in OpenSCAD and use the
 // Customizer panel, or run ../hutchfinity.py for the app and Orca-ready output.
 // Casing, pegs, and pull are derived from the same tub size so they stay matched.

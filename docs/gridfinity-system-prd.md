@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 5.1.5
+version: 5.1.6
 ---
 
 # Gridfinity System PRD — Dental Practice Organization
@@ -277,7 +277,7 @@ The production split is no longer open: #37/#38 assign large tubs and large part
 
 **File paths:**
 - Vendored library: `scad/gridfinity/vendor/<lib>/` + `VENDOR.md` (SHA + provenance)
-- Generator: `hutchfinity.py` builds every part. Generated meshes are not versioned. `dental/build-stl.sh` and `scad/gridfinity/stl/`, named below, have been removed.
+- Generator: `hutchfinity.py` builds every part. Generated meshes are not versioned. `dental/build-stl.sh`, `scad/gridfinity/stl/` and the bin catalog have been removed.
 - Bins (when introduced): `scad/gridfinity/dental/bin-{X}x{Y}x{Z}.scad` — cells X × Y × cell-height Z. Build mechanism for bins is TBD (likely added as a second pass in `build-stl.sh` once bin work starts).
 
 **Build pattern:** `dental/build-stl.sh` is a plain bash script that invokes the vendor combined file directly via `openscad -D <var>=<value>` flags. Project-level constants (wall thickness, lip style, floor thickness, chambers, magnets/screws) live in `TUB_FLAGS` / `BASEPLATE_FLAGS` arrays at the top of the script. Per-SKU params (pitch X for tubs; Width for baseplates) inline per invocation line. Adding a SKU = one new line. **Do not introduce per-SKU wrapper `.scad` files**; the WET wrapper pattern was the v3.0.0/v3.1.0 architecture and was retired in v3.2.0 (see Anti-patterns).

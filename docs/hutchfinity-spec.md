@@ -1,5 +1,5 @@
 ---
-version: 0.21.0
+version: 0.22.0
 sensitivity: public
 ---
 
@@ -22,7 +22,7 @@ The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm t
 - Size is `cells_x x cells_y x bin_h`, where `bin_h` is the tallest bin the tub must hold, in 3.5 mm units, from 5 to 40.
 - Height: `floor + bin_h x 3.5 + 3.74 bin lip + 0.50 air gap + 4.30 stack overlap`. A 10h integral-grid tub is 44.84 mm; a 20h one is 79.84 mm.
 - The 0.50 mm is the real gap above the tallest bin's lip when tubs stack. It replaces 2.01 mm of leftover rounding from the old whole-unit tub height.
-- Floor modes: `integral-grid` (1.30 mm floor, 5 mm built-in grid) and `plain` (1.20 mm floor, takes bins or the removable `grid-insert`). Walls are 2.2 mm. There are no magnet wells.
+- Floor options: `integral-grid` (5 mm grid built into the tub) and `separate-grid` (flat floor plus a loose printed grid). Both have a 1.30 mm floor and the same tub height. Walls are 2.2 mm. There are no magnet wells.
 - There is one pull, 90 x 32.9 mm, the largest that fits the wall band of a 10h tub. It scales down uniformly, with its guide, on anything smaller. The guide is centered on the wall band above the grid.
 - `scad/hutchfinity.scad` derives the matching casing, pegs, and pull from the same size. `hutchfinity.py` is the small app over it and writes each module as one 3MF per print job.
 
@@ -35,7 +35,7 @@ Status: checked in CAD only. Stacking, bin seating, casing slide, and pull size 
 | `scad/casing.scad` | Standalone casing shell with flat-wall stack peg sockets and provisional casing magnet wells. No tub import, no footer mode. |
 | `scad/tub.scad` | Parametric tub and removable grid insert, plus mini/regular/mega wrappers. |
 | `scad/hutchfinity.scad` | Customizer entry point that sizes tub, insert, casing, pegs, and pull together. |
-| `hutchfinity.py` | Small local app and command line that build checked Orca-ready 3MF files, including bins and baseplates. |
+| `hutchfinity.py` | Small local app and command line that build one complete module as checked Orca-ready 3MF files. |
 | `scad/peg.scad` | Prototype laid-down hex peg. |
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
