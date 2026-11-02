@@ -1,0 +1,21 @@
+{
+  "schema": "wrap-deferred-work-result-v1",
+  "sensitivity": "public",
+  "date": "2026-11-01",
+  "manifest": "log/2026-11-01-wrap-thin-floor-through-peg-sockets-deferred-work.json",
+  "result": "routed",
+  "items": [
+    {
+      "id": "thin-floor-1p3",
+      "status": "routed-to-existing-open-issue",
+      "owner": "karyandrew/hutchfinity#29",
+      "issue_route_observed": "agent"
+    },
+    {
+      "id": "through-peg-socket",
+      "status": "routed-to-existing-open-issue",
+      "owner": "karyandrew/hutchfinity#20",
+      "issue_route_observed": "agent"
+    }
+  ]
+}
