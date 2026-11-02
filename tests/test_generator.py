@@ -29,13 +29,18 @@ class LiveBuild(unittest.TestCase):
     def mesh(self, part, x, y, h, floor="integral-grid", **design):
         return hutchfinity.render(part, x, y, h, floor, design)
 
+    def files(self, result):
+        return sorted(p.name for p in Path(result["path"]).iterdir())
+
     def test_tub_heights_follow_the_bin(self):
         small = self.mesh("tub", 10, 10, 10)
         self.assertEqual(small["size_mm"][0], 214.4)
         self.assertEqual(small["size_mm"][2], 44.84)
         self.assertEqual(small["pieces"], 1)
         self.assertEqual(self.mesh("tub", 12, 16, 20)["size_mm"][2], 79.84)
-        self.assertEqual(self.mesh("tub", 10, 10, 10, "plain")["size_mm"][2], 44.74)
+
+    def test_both_floors_give_the_same_tub_height(self):
+        self.assertEqual(self.mesh("tub", 10, 10, 10, "separate-grid")["size_mm"][2], 44.84)
 
     def test_options_reach_the_model(self):
         self.assertEqual(self.mesh("tub", 10, 10, 10, stack_gap=1.5)["size_mm"][2], 45.84)
@@ -53,68 +58,69 @@ class LiveBuild(unittest.TestCase):
     def test_regular_tub_mesh_stays_light(self):
         self.assertLess(self.mesh("tub", 12, 16, 20)["facets"], 60000)
 
-    def test_module_is_a_set_of_3mf_files(self):
-        result = hutchfinity.build("module", 10, 10, 10, "integral-grid", self.out)
+    def test_module_is_always_complete(self):
+        result = hutchfinity.build_module(10, 10, 10, "integral-grid", self.out)
+        self.assertEqual(self.files(result), [
+            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "4-bin-2x2x10h.3mf", "manifest.json"])
         folder = Path(result["path"])
-        self.assertEqual(
-            sorted(p.name for p in folder.iterdir()),
-            ["1-tub.3mf", "2-casing.3mf", "3-pegs-and-pulls.3mf", "manifest.json"])
         manifest = json.loads((folder / "manifest.json").read_text())
         self.assertEqual(manifest["peg_total"], 7)
         self.assertEqual(manifest["generator_version"], hutchfinity.VERSION)
-        with zipfile.ZipFile(folder / "3-pegs-and-pulls.3mf") as archive:
+        with zipfile.ZipFile(folder / "3-pegs-and-pull.3mf") as archive:
             model = archive.read("3D/3dmodel.model").decode()
         self.assertEqual(model.count("<object "), 2)
         self.assertEqual(model.count("<item "), 8)  # seven pegs and one pull
 
-    def test_smallest_module_builds(self):
-        hutchfinity.build("module", 1, 1, 5, "plain", self.out)
-        hutchfinity.build("module", 2, 2, 5, "plain", self.out, counts={"insert": 1})
+    def test_separate_grid_adds_the_grid(self):
+        result = hutchfinity.build_module(2, 2, 5, "separate-grid", self.out, bin_size=(1, 1))
+        self.assertEqual(self.files(result), [
+            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "4-bin-1x1x5h.3mf", "5-grid.3mf", "manifest.json"])
+
+    def test_smallest_modules(self):
+        hutchfinity.build_module(1, 1, 5, "integral-grid", self.out, bin_size=(1, 1))
         with self.assertRaisesRegex(hutchfinity.BuildError, "at least 2 x 2"):
-            hutchfinity.build("module", 1, 1, 5, "plain", self.out, counts={"insert": 1})
+            hutchfinity.build_module(1, 1, 5, "separate-grid", self.out, bin_size=(1, 1))
 
     def test_every_option_builds_at_both_ends_of_its_range(self):
         for name, _, _, _, low, high in hutchfinity.DESIGN_OPTIONS:
             for value in () if low is None else (low, high):
                 with self.subTest(option=name, value=value):
                     design = {name: value}
-                    for part in ("tub", "grid-insert", "casing", "peg", "pull"):
-                        self.mesh(part, 4, 4, 5, "plain", **design)
-                        if part == "tub":
-                            self.mesh(part, 4, 4, 5, **design)
+                    for part, floor in (("tub", "integral-grid"), ("tub", "separate-grid"),
+                                        ("grid-insert", "separate-grid"), ("casing", "integral-grid"),
+                                        ("peg", "integral-grid"), ("pull", "integral-grid")):
+                        self.mesh(part, 4, 4, 5, floor, **design)
 
-    def test_every_catalog_bin_builds_at_its_catalog_size(self):
-        catalog = json.loads((ROOT / "catalog/bin-skus.json").read_text())
-        for row in catalog["items"]:
-            with self.subTest(sku=row["sku"]):
-                size = self.mesh("bin", row["cells_x"], row["cells_y"], row["height_units"])["size_mm"]
-                outer = row["external_bounds_mm"]
-                for got, want in zip(size, (outer["x"], outer["y"], outer["z"])):
+    def test_narrowest_peg_spacing_adds_pegs(self):
+        casing = self.mesh("casing", 10, 10, 10, peg_spacing=15.0)
+        self.assertGreater(int(hutchfinity.re.search(r"(\d+) pegs", casing["notes"][0]).group(1)), 7)
+        self.assertEqual(casing["pieces"], 1)
+
+    def test_bins_match_their_formula(self):
+        for x, y, h in ((1, 1, 5), (2, 4, 10), (5, 9, 5), (2, 2, 20)):
+            with self.subTest(size=(x, y, h)):
+                size = self.mesh("bin", x, y, h)["size_mm"]
+                for got, want in zip(size, (x * 21 - 0.5, y * 21 - 0.5, h * 3.5 + 3.74)):
                     self.assertAlmostEqual(got, want, delta=0.05)
-
-    def test_module_must_fit_the_bed(self):
-        with self.assertRaisesRegex(hutchfinity.BuildError, "too big"):
-            hutchfinity.build("module", 12, 16, 20, "integral-grid", self.out, bed=200.0)
-
-    def test_bin_and_baseplate_build(self):
-        self.assertEqual(self.mesh("bin", 1, 1, 5)["pieces"], 1)
-        self.assertEqual(self.mesh("baseplate", 2, 2, 1)["size_mm"][:2], [42.0, 42.0])
 
 
 class Validation(unittest.TestCase):
     def test_rejects_bad_requests(self):
-        for args in (
-            ("nope", 5, 5, 5, "plain", {}),
-            ("tub", 0, 5, 5, "plain", {}),
-            ("tub", 5, 5, 4, "plain", {}),
-            ("tub", 5, 5, 41, "plain", {}),
-            ("tub", 5, 5, 5, "plain", {"wall": 0.1}),
-            ("casing", 5, 5, 5, "plain", {"side_wall": 12.0}),
-            ("tub", 5, 5, 5, 'x";system("', {}),
-            ("tub", 5, 5, 5, "plain", {"not_an_option": 1}),
+        out = Path(tempfile.gettempdir())
+        for args, kwargs in (
+            ((0, 5, 5, "integral-grid"), {}),
+            ((41, 5, 5, "integral-grid"), {}),
+            ((5, 5, 4, "integral-grid"), {}),
+            ((5, 5, 41, "integral-grid"), {}),
+            ((5, 5, 5, "plain"), {}),
+            ((5, 5, 5, 'x";system("'), {}),
+            ((5, 5, 5, "integral-grid"), {"design": {"wall": 0.1}}),
+            ((5, 5, 5, "integral-grid"), {"design": {"peg_spacing": 14.0}}),
+            ((5, 5, 5, "integral-grid"), {"design": {"not_an_option": 1}}),
+            ((5, 5, 5, "integral-grid"), {"bin_size": (6, 2)}),
         ):
-            with self.assertRaises(hutchfinity.BuildError):
-                hutchfinity.scad_source(*args)
+            with self.subTest(args=args, kwargs=kwargs), self.assertRaises(hutchfinity.BuildError):
+                hutchfinity.build_module(*args, out, **kwargs)
 
 
 if __name__ == "__main__":

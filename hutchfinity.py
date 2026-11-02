@@ -2,8 +2,7 @@
 """Hutchfinity generator: build a full drawer module as Orca-ready 3MF files.
 
     python3 hutchfinity.py                     opens the app in a browser
-    python3 hutchfinity.py module 10 10 10     builds one module folder
-    python3 hutchfinity.py bin 2 2 10          builds one part
+    python3 hutchfinity.py 10 10 10            builds one complete module
     python3 hutchfinity.py --install-shortcut  adds a clickable app to the Desktop
 
 Sizes are cells wide, cells deep, and tallest bin. --help lists every option.
@@ -30,13 +29,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "1.2.1"
+VERSION = "2.0.0"
 ROOT = Path(__file__).resolve().parent
 ENTRY = ROOT / "scad" / "hutchfinity.scad"
 CUP = ROOT / "scad" / "gridfinity" / "vendor" / "extended" / "gridfinity_basic_cup.scad"
-BASEPLATE = ROOT / "scad" / "gridfinity" / "vendor" / "extended" / "gridfinity_baseplate.scad"
-TARGETS = ("module", "tub", "grid-insert", "casing", "pegs", "pull", "bin", "baseplate")
-FLOORS = ("integral-grid", "plain")
+FLOORS = {"integral-grid": "integral-grid", "separate-grid": "plain"}  # name: tub.scad floor_mode
 MAC_APP = "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"
 DEFAULT_OUT = Path.home() / "Downloads" / "hutchfinity"
 PORT = 8421
@@ -47,40 +44,28 @@ DESIGN_OPTIONS = [
     ("pull_guide", "pull_guide", True, "raised guide on the tub front for gluing the pull", None, None),
     ("wall", "WALL", 2.2, "tub wall, mm", 1.2, 4.0),
     ("rim_wall", "MIN_WALL", 0.4, "tub wall at the rim, mm", 0.3, 1.0),
-    ("integral_floor", "INTEGRAL_FLOOR", 1.3, "integral-grid floor, mm", 0.8, 3.0),
-    ("plain_floor", "PLAIN_FLOOR", 1.2, "plain floor, mm", 0.8, 3.0),
+    ("floor_thickness", "FLOOR_THICKNESS", 1.3, "tub floor under the grid, mm", 0.8, 3.0),
     ("grid_height", "GRID_Z", 5.0, "grid height, mm", 5.0, 8.0),
     ("stack_gap", "STACK_GAP", 0.5, "air gap above the tallest bin when stacked, mm", 0.0, 5.0),
     ("bin_lip", "BIN_LIP", 3.74, "bin lip height, mm", 3.0, 5.0),
-    ("insert_clearance", "INSERT_CLEARANCE", 1.0, "grid insert clearance per side, mm", 0.2, 2.0),
+    ("grid_clearance", "INSERT_CLEARANCE", 1.0, "separate grid clearance per side, mm", 0.2, 2.0),
     ("side_wall", "side_wall", 18.0, "casing side wall, mm", 18.0, 40.0),
     ("back_wall", "back_wall", 18.0, "casing back wall, mm", 18.0, 40.0),
     ("riding_slab", "riding_slab", 1.3, "casing slab the tub above rides on, mm", 1.0, 10.0),
     ("side_clearance", "side_clearance", 1.0, "tub to casing, each side, mm", 0.2, 3.0),
     ("back_clearance", "back_clearance", 0.5, "tub to casing, back, mm", 0.2, 3.0),
     ("top_clearance", "top_clearance", 1.0, "tub to casing, top, mm", 0.2, 5.0),
-    ("peg_spacing", "peg_spacing", 190.0, "target peg spacing, mm", 100.0, 400.0),
+    ("peg_spacing", "peg_spacing", 190.0, "target peg spacing, mm", 15.0, 400.0),
     ("peg_bore", "peg_bore", 8.45, "peg socket bore and peg width, mm", 6.0, 9.0),
     ("peg_depth", "peg_depth_max", 10.0, "peg socket depth, mm", 5.0, 15.0),
     ("peg_chamfer", "peg_chamfer", 0.5, "socket opening chamfer, mm", 0.0, 0.75),
     ("peg_end_chamfer", "peg_end_chamfer", 2.5, "peg end chamfer, mm", 0.0, 4.0),
     ("pull_width", "PULL_FLANGE_X", 90.0, "full-size pull flange width, mm", 60.0, 120.0),
     ("pull_height", "PULL_FLANGE_Z", 32.9, "full-size pull flange height, mm", 31.0, 40.0),
-    ("corner_steps", "CORNER_STEPS", 8, "mesh: facets per tub corner", 4, 32),
-    ("cell_corner_steps", "CELL_CORNER_STEPS", 6, "mesh: facets per grid-pocket corner", 3, 16),
-    ("casing_fn", "casing_fn", 32, "mesh: facets per peg socket", 16, 96),
-]
-# name, default, help, lowest, highest. Every tub gets exactly one pull.
-COUNT_OPTIONS = [
-    ("tubs", 1, "tubs in the module", 1, 20),
-    ("casings", 1, "casings in the module", 0, 20),
-    ("spare_pegs", 0, "pegs beyond what the casings need", 0, 50),
-    ("insert", 0, "grid inserts (for a plain floor)", 0, 20),
 ]
 CELLS_RANGE = (1, 40)
 TUB_HEIGHT_RANGE = (5, 40)  # A tub must hold at least a 5h bin.
-BIN_HEIGHT_RANGE = (1, 40)
-BED_RANGE = (100.0, 1000.0)
+BED_MM = 500.0  # Only spaces objects out in the file; the slicer arranges them.
 
 
 class BuildError(Exception):
@@ -106,11 +91,10 @@ def check_range(label: str, value, low, high) -> None:
         raise BuildError(f"{label} must be from {low} to {high}; got {value}")
 
 
-def check_size(part: str, x: int, y: int, h: int) -> None:
+def check_size(x: int, y: int, h: int) -> None:
     check_range("cells wide", x, *CELLS_RANGE)
     check_range("cells deep", y, *CELLS_RANGE)
-    check_range("tallest bin" if part != "bin" else "bin height", h,
-                *(BIN_HEIGHT_RANGE if part in ("bin", "baseplate") else TUB_HEIGHT_RANGE))
+    check_range("tallest bin", h, *TUB_HEIGHT_RANGE)
 
 
 def scad_value(value) -> str:
@@ -136,7 +120,6 @@ def design_overrides(design: dict) -> list[str]:
 
 
 def scad_source(part: str, x: int, y: int, h: int, floor: str, design: dict) -> tuple[Path, list[str]]:
-    check_size(part, x, y, h)
     if floor not in FLOORS:
         raise BuildError(f"unknown floor: {floor}")
     if part == "bin":
@@ -146,12 +129,8 @@ def scad_source(part: str, x: int, y: int, h: int, floor: str, design: dict) -> 
             'label_style="disabled"', 'fingerslide="none"',
             "vertical_chambers=1", "horizontal_chambers=1",
         ]
-    if part == "baseplate":
-        return BASEPLATE, ["pitch=[21,21,3.5]", f"Width=[{x},0]", f"Depth=[{y},0]"]
-    if part not in ("tub", "grid-insert", "casing", "peg", "pegs", "pull"):
-        raise BuildError(f"unknown part: {part}")
     return ENTRY, [
-        f'part="{part}"', f"cells_x={x}", f"cells_y={y}", f"bin_h={h}", f'floor_mode="{floor}"',
+        f'part="{part}"', f"cells_x={x}", f"cells_y={y}", f"bin_h={h}", f'floor_mode="{FLOORS[floor]}"',
         *design_overrides(design),
     ]
 
@@ -282,47 +261,47 @@ def file_record(path: Path, **extra) -> dict:
     }
 
 
-def build_module(x, y, h, floor, out: Path, design=None, counts=None, bed=500.0) -> dict:
-    """Build the print set for one module: one 3MF per print job, plus a manifest."""
+def build_module(x, y, h, floor, out: Path, design=None, bin_size=(2, 2)) -> dict:
+    """Build one complete module: one 3MF per print job, plus a manifest."""
     design = design or {}
-    counts = {**{option[0]: option[1] for option in COUNT_OPTIONS}, **(counts or {})}
-    for name, _, _, low, high in COUNT_OPTIONS:
-        check_range(name.replace("_", " "), counts[name], low, high)
+    check_size(x, y, h)
+    if floor not in FLOORS:
+        raise BuildError(f"unknown floor: {floor}")
+    bin_x, bin_y = bin_size
+    check_range("bin cells wide", bin_x, 1, x)
+    check_range("bin cells deep", bin_y, 1, y)
+    if floor == "separate-grid" and min(x, y) < 2:
+        raise BuildError("a separate grid needs at least 2 x 2 cells")
     render_part = lambda part: render(part, x, y, h, floor, design)
     tub, casing, peg, pull = (render_part(p) for p in ("tub", "casing", "peg", "pull"))
-    check_range("bed", bed, *BED_RANGE)
-    for label, mesh in (("tub", tub), ("casing", casing)):
-        if max(mesh["size_mm"][:2]) > bed or mesh["size_mm"][2] > bed:
-            raise BuildError(f"the {label} is {' x '.join(map(str, mesh['size_mm']))} mm, too big for a {bed:g} mm bed")
-    pegs_needed = int(re.search(r"(\d+) pegs", casing["notes"][0]).group(1))
-    peg_total = pegs_needed * counts["casings"] + counts["spare_pegs"]
+    the_bin = render("bin", bin_x, bin_y, h, floor, {})
+    peg_total = int(re.search(r"(\d+) pegs", casing["notes"][0]).group(1))
 
     folder = out / f"hutchfinity-{x}x{y}x{h}h-{floor}"
     folder.mkdir(parents=True, exist_ok=True)
     for old in folder.glob("*.3mf"):
         old.unlink()
     jobs = [
-        ("1-tub.3mf", [("Tub", tub, counts["tubs"])]),
-        ("2-casing.3mf", [("Casing", casing, counts["casings"])]),
-        ("3-pegs-and-pulls.3mf", [("Peg", peg, peg_total), ("Pull", pull, counts["tubs"])]),
+        ("1-tub.3mf", [("Tub", tub, 1)]),
+        ("2-casing.3mf", [("Casing", casing, 1)]),
+        ("3-pegs-and-pull.3mf", [("Peg", peg, peg_total), ("Pull", pull, 1)]),
+        (f"4-bin-{bin_x}x{bin_y}x{h}h.3mf", [("Bin", the_bin, 1)]),
     ]
-    if counts["insert"]:
-        jobs.append(("4-grid-insert.3mf", [("Grid insert", render_part("grid-insert"), counts["insert"])]))
+    if floor == "separate-grid":
+        jobs.append(("5-grid.3mf", [("Grid", render_part("grid-insert"), 1)]))
     records = []
     for name, objects in jobs:
-        objects = [o for o in objects if o[2] > 0]
-        if objects:
-            write_3mf(folder / name, objects, bed)
-            records.append(file_record(folder / name, parts={o[0]: o[2] for o in objects}))
+        write_3mf(folder / name, objects, BED_MM)
+        records.append(file_record(folder / name, parts={o[0]: o[2] for o in objects}))
     manifest = {
         "generator_version": VERSION,
         "source_commit": source_commit(),
         "size": {"cells_x": x, "cells_y": y, "bin_h": h, "floor": floor},
+        "bin": {"cells_x": bin_x, "cells_y": bin_y, "bin_h": h},
         "design_overrides": design,
-        "counts": counts,
         "peg_total": peg_total,
-        "sizes_mm": {"tub": tub["size_mm"], "casing": casing["size_mm"], "pull": pull["size_mm"], "peg": peg["size_mm"]},
-        "facets": {"tub": tub["facets"], "casing": casing["facets"], "pull": pull["facets"], "peg": peg["facets"]},
+        "sizes_mm": {"tub": tub["size_mm"], "casing": casing["size_mm"], "pull": pull["size_mm"], "peg": peg["size_mm"], "bin": the_bin["size_mm"]},
+        "facets": {"tub": tub["facets"], "casing": casing["facets"], "pull": pull["facets"], "peg": peg["facets"], "bin": the_bin["facets"]},
         "notes": tub["notes"] + casing["notes"] + pull["notes"],
         "files": records,
     }
@@ -331,33 +310,8 @@ def build_module(x, y, h, floor, out: Path, design=None, counts=None, bed=500.0)
         "path": str(folder),
         "files": records,
         "notes": manifest["notes"],
-        "summary": f"{peg_total} pegs, {counts['tubs']} pull(s), "
-        f"{sum(r['bytes'] for r in records) / 1e6:.1f} MB total",
+        "summary": f"{peg_total} pegs, {sum(r['bytes'] for r in records) / 1e6:.1f} MB total",
     }
-
-
-def build_part(part, x, y, h, floor, out: Path, design=None, bed=500.0) -> dict:
-    mesh = render("pegs" if part == "pegs" else part, x, y, h, floor, design or {})
-    size = f"{x}x{y}" if part in ("grid-insert", "baseplate") else f"{x}x{y}x{h}h"
-    out.mkdir(parents=True, exist_ok=True)
-    path = out / f"{part}-{size}.3mf"
-    write_3mf(path, [(part, mesh, 1)], bed)
-    return {
-        "path": str(path),
-        "files": [file_record(path)],
-        "notes": mesh["notes"],
-        "summary": f"{' x '.join(map(str, mesh['size_mm']))} mm, {mesh['facets']} facets, {mesh['pieces']} piece(s)",
-        "size_mm": mesh["size_mm"],
-        "pieces": mesh["pieces"],
-    }
-
-
-def build(target, x, y, h, floor, out, design=None, counts=None, bed=500.0) -> dict:
-    if target not in TARGETS:
-        raise BuildError(f"unknown part: {target}")
-    if target == "module":
-        return build_module(x, y, h, floor, out, design, counts, bed)
-    return build_part(target, x, y, h, floor, out, design, bed)
 
 
 def field(label: str, name: str, default, low=None, high=None) -> str:
@@ -370,8 +324,7 @@ def field(label: str, name: str, default, low=None, high=None) -> str:
 
 
 def page() -> str:
-    targets = "".join(f"<option>{t}" for t in TARGETS)
-    counts = "".join(field(label, name, default, low, high) for name, default, label, low, high in COUNT_OPTIONS)
+    floors = "".join(f"<option>{name}" for name in FLOORS)
     design = "".join(field(label, name, default, low, high) for name, _, default, label, low, high in DESIGN_OPTIONS)
     return f"""<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1">
 <title>Hutchfinity</title><style>
@@ -380,20 +333,19 @@ label{{display:flex;justify-content:space-between;align-items:center;gap:1rem;ma
 input[type=number],select{{font:inherit;width:7rem;padding:.25rem}}button{{font:inherit;padding:.5rem 1rem;margin-top:.6rem}}
 summary{{margin-top:.8rem;cursor:pointer}}pre{{white-space:pre-wrap}}</style>
 <h1>Hutchfinity <small>{VERSION}</small></h1><form id=f>
-<label>Build<select name=target>{targets}</select></label>
 <label>Preset<select id=preset><option value="">custom<option value="6,16,20">Mini
 <option value="12,16,20">Regular<option value="18,16,20">Mega<option value="10,10,10" selected>10 x 10 x 10h</select></label>
 <label>Cells wide<input name=x type=number min=1 max=40 value=10></label>
 <label>Cells deep<input name=y type=number min=1 max=40 value=10></label>
 <label>Tallest bin, 3.5 mm units (5 to 40)<input name=h type=number min=5 max=40 value=10></label>
-<label>Floor<select name=floor><option>integral-grid<option>plain</select></label>
-<details><summary>Quantities</summary>{counts}</details>
-<details><summary>Dimensions and mesh</summary>{design}</details>
+<label>Floor<select name=floor>{floors}</select></label>
+<label>Bin cells wide<input name=bin_x type=number min=1 max=40 value=2></label>
+<label>Bin cells deep<input name=bin_y type=number min=1 max=40 value=2></label>
+<details><summary>Dimensions</summary>{design}</details>
 <button>Build</button></form><pre id=out></pre><script>
 const f=document.getElementById('f'),o=document.getElementById('out');
 document.getElementById('preset').onchange=e=>{{if(!e.target.value)return;
  const v=e.target.value.split(',');f.x.value=v[0];f.y.value=v[1];f.h.value=v[2]}};
-f.target.onchange=()=>{{f.h.min=['bin','baseplate'].includes(f.target.value)?1:5}};
 f.onsubmit=async e=>{{e.preventDefault();o.textContent='Building...';
  const q=new URLSearchParams(new FormData(f));f.querySelectorAll('input[type=checkbox]').forEach(c=>q.set(c.name,c.checked?'1':'0'));
  const r=await fetch('/build?'+q,{{headers:{{'X-Hutchfinity':'1'}}}});const j=await r.json();
@@ -410,8 +362,8 @@ def parse_form(q: dict) -> tuple:
             value = q[name] == "1" if kind is bool else kind(q[name])
             if value != default:
                 design[name] = value
-    counts = {option[0]: int(q[option[0]]) for option in COUNT_OPTIONS if option[0] in q}
-    return q.get("target", "module"), size, q.get("floor", FLOORS[0]), design, counts
+    bin_size = (int(q.get("bin_x", 2)), int(q.get("bin_y", 2)))
+    return size, q.get("floor", "integral-grid"), design, bin_size
 
 
 class App(BaseHTTPRequestHandler):
@@ -437,8 +389,8 @@ class App(BaseHTTPRequestHandler):
             return self.reply(403, b"forbidden", "text/plain")
         q = {k: v[0] for k, v in parse_qs(url.query).items()}
         try:
-            target, size, floor, design, counts = parse_form(q)
-            result, status = build(target, *size, floor, self.out_dir, design, counts), 200
+            size, floor, design, bin_size = parse_form(q)
+            result, status = build_module(*size, floor, self.out_dir, design, bin_size), 200
             if platform.system() == "Darwin":
                 subprocess.run(["open", "-R", result["path"]], check=False)
         except (BuildError, ValueError) as error:
@@ -503,15 +455,12 @@ def shlex_quote(text: str) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("target", nargs="?", choices=TARGETS)
     parser.add_argument("size", nargs="*", type=int, help="cells wide, cells deep, tallest bin")
     parser.add_argument("--version", action="version", version=VERSION)
-    parser.add_argument("--floor", choices=FLOORS, default=FLOORS[0])
+    parser.add_argument("--floor", choices=list(FLOORS), default="integral-grid", help="grid built into the tub, or printed separately")
+    parser.add_argument("--bin-wide", type=int, default=2, help="cells wide of the bin (1 to the tub's width, default 2)")
+    parser.add_argument("--bin-deep", type=int, default=2, help="cells deep of the bin (1 to the tub's depth, default 2)")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    parser.add_argument("--bed", type=float, default=500.0, help="bed width used to lay out rows, mm")
-    for name, default, label, low, high in COUNT_OPTIONS:
-        parser.add_argument(f"--{name.replace('_', '-')}", type=int, default=default,
-                            help=f"{label} ({low} to {high}, default {default})")
     for name, _, default, label, low, high in DESIGN_OPTIONS:
         flag = f"--{name.replace('_', '-')}"
         if isinstance(default, bool):
@@ -528,7 +477,7 @@ def main() -> int:
         if args.install_shortcut:
             print(install_shortcut(Path.home() / "Desktop"))
             return 0
-        if not args.target:
+        if not args.size:
             if not args.no_update:
                 self_update()
             return serve(args.out, args.port, not args.no_browser, args.idle_exit)
@@ -537,8 +486,8 @@ def main() -> int:
         design = {
             option[0]: getattr(args, option[0]) for option in DESIGN_OPTIONS if getattr(args, option[0]) != option[2]
         }
-        counts = {option[0]: getattr(args, option[0]) for option in COUNT_OPTIONS}
-        print(json.dumps(build(args.target, *args.size, args.floor, args.out, design, counts, args.bed), indent=2))
+        result = build_module(*args.size, args.floor, args.out, design, (args.bin_wide, args.bin_deep))
+        print(json.dumps(result, indent=2))
     except BuildError as error:
         print(f"Could not build: {error}", file=sys.stderr)
         return 1
