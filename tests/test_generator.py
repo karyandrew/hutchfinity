@@ -96,6 +96,15 @@ class LiveBuild(unittest.TestCase):
         self.assertGreater(int(hutchfinity.re.search(r"(\d+) pegs", casing["notes"][0]).group(1)), 7)
         self.assertEqual(casing["pieces"], 1)
 
+    def test_written_3mf_has_no_collapsed_triangles(self):
+        result = hutchfinity.build_module(3, 3, 10, "separate-grid", self.out)
+        for path in Path(result["path"]).glob("*.3mf"):
+            with self.subTest(file=path.name), zipfile.ZipFile(path) as archive:
+                model = archive.read("3D/3dmodel.model").decode()
+                vertices = hutchfinity.re.findall(r'<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"', model)
+                for a, b, c in hutchfinity.re.findall(r'<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"', model):
+                    self.assertEqual(len({vertices[int(a)], vertices[int(b)], vertices[int(c)]}), 3)
+
     def test_bins_match_their_formula(self):
         for x, y, h in ((1, 1, 5), (2, 4, 10), (5, 9, 5), (2, 2, 20)):
             with self.subTest(size=(x, y, h)):
