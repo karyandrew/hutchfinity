@@ -1,0 +1,25 @@
+{
+  "schema": "wrap-deferred-work-v1",
+  "sensitivity": "public",
+  "date": "2026-11-01",
+  "source_session": "hutchfinity-thin-floor-through-peg-sockets",
+  "baseline": "54c92737f0bf09956ca0a9a33b7213943576388b",
+  "items": [
+    {
+      "id": "thin-floor-1p3",
+      "decision": "Use a 1.30 mm authored intact Tub floor for the next current-source thin-floor candidate, keep integral grid above the floor, and use a 1.30 mm casing riding slab target.",
+      "disposition": "existing-open-owner",
+      "owner": "karyandrew/hutchfinity#29",
+      "next": "Reconcile the 1.30 mm target against the current PR #49 parametric generator and current height/stacking rules, then physically test before canonical integration.",
+      "evidence": "https://github.com/karyandrew/hutchfinity/issues/29#issuecomment-6567523411"
+    },
+    {
+      "id": "through-peg-socket",
+      "decision": "Make casing peg sockets full-thickness through bores with normal-diameter receiving zones at both faces and a continuing throat approximately 1.0 mm smaller in diameter to stop peg over-insertion.",
+      "disposition": "existing-open-owner",
+      "owner": "karyandrew/hutchfinity#20",
+      "next": "Derive the receiving-zone depth from current peg geometry and desired engagement/protrusion; validate a sectional coupon before changing a full casing.",
+      "evidence": "https://github.com/karyandrew/hutchfinity/issues/20#issuecomment-6567523789"
+    }
+  ]
+}
