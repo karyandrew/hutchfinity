@@ -1,5 +1,5 @@
 ---
-version: 0.22.0
+version: 0.23.0
 sensitivity: public
 ---
 
@@ -35,7 +35,7 @@ Status: checked in CAD only. Stacking, bin seating, casing slide, and pull size 
 | `scad/casing.scad` | Standalone casing shell with flat-wall stack peg sockets and provisional casing magnet wells. No tub import, no footer mode. |
 | `scad/tub.scad` | Parametric tub and removable grid insert, plus mini/regular/mega wrappers. |
 | `scad/hutchfinity.scad` | Customizer entry point that sizes tub, insert, casing, pegs, and pull together. |
-| `hutchfinity.py` | Small local app and command line that build one complete module as checked Orca-ready 3MF files. |
+| `hutchfinity.py` | Small local app and command line that build one complete module, or one cup, as checked Orca-ready 3MF files. |
 | `scad/peg.scad` | Prototype laid-down hex peg. |
 | `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
 | `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |

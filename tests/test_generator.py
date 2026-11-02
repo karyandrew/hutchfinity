@@ -61,7 +61,7 @@ class LiveBuild(unittest.TestCase):
     def test_module_is_always_complete(self):
         result = hutchfinity.build_module(10, 10, 10, "integral-grid", self.out)
         self.assertEqual(self.files(result), [
-            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "4-bin-2x2x10h.3mf", "manifest.json"])
+            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "manifest.json"])
         folder = Path(result["path"])
         manifest = json.loads((folder / "manifest.json").read_text())
         self.assertEqual(manifest["peg_total"], 7)
@@ -72,14 +72,14 @@ class LiveBuild(unittest.TestCase):
         self.assertEqual(model.count("<item "), 8)  # seven pegs and one pull
 
     def test_separate_grid_adds_the_grid(self):
-        result = hutchfinity.build_module(2, 2, 5, "separate-grid", self.out, bin_size=(1, 1))
+        result = hutchfinity.build_module(2, 2, 5, "separate-grid", self.out)
         self.assertEqual(self.files(result), [
-            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "4-bin-1x1x5h.3mf", "5-grid.3mf", "manifest.json"])
+            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "4-grid.3mf", "manifest.json"])
 
     def test_smallest_modules(self):
-        hutchfinity.build_module(1, 1, 5, "integral-grid", self.out, bin_size=(1, 1))
+        hutchfinity.build_module(1, 1, 5, "integral-grid", self.out)
         with self.assertRaisesRegex(hutchfinity.BuildError, "at least 2 x 2"):
-            hutchfinity.build_module(1, 1, 5, "separate-grid", self.out, bin_size=(1, 1))
+            hutchfinity.build_module(1, 1, 5, "separate-grid", self.out)
 
     def test_every_option_builds_at_both_ends_of_its_range(self):
         for name, _, _, _, low, high in hutchfinity.DESIGN_OPTIONS:
@@ -105,12 +105,30 @@ class LiveBuild(unittest.TestCase):
                 for a, b, c in hutchfinity.re.findall(r'<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"', model):
                     self.assertEqual(len({vertices[int(a)], vertices[int(b)], vertices[int(c)]}), 3)
 
-    def test_bins_match_their_formula(self):
-        for x, y, h in ((1, 1, 5), (2, 4, 10), (5, 9, 5), (2, 2, 20)):
+    def test_cups_match_their_formula(self):
+        for x, y, h in ((1, 1, 2), (1, 1, 5), (2, 4, 10), (5, 9, 5), (2, 2, 40)):
             with self.subTest(size=(x, y, h)):
-                size = self.mesh("bin", x, y, h)["size_mm"]
+                size = hutchfinity.render_cup(x, y, h)["size_mm"]
                 for got, want in zip(size, (x * 21 - 0.5, y * 21 - 0.5, h * 3.5 + 3.74)):
                     self.assertAlmostEqual(got, want, delta=0.05)
+
+    def test_cup_compartments_and_wall(self):
+        plain = hutchfinity.render_cup(3, 3, 10)
+        self.assertGreater(hutchfinity.render_cup(3, 3, 10, across=2, along=3)["facets"], plain["facets"])
+        for wall in hutchfinity.CUP_WALL_RANGE:
+            hutchfinity.render_cup(3, 3, 10, wall=wall)
+        hutchfinity.render_cup(5, 5, 5, across=10, along=10)
+
+    def test_cup_file(self):
+        result = hutchfinity.build_cup(2, 4, 10, self.out, across=2)
+        self.assertEqual(Path(result["path"]).name, "cup-2x4x10h-2x1-compartments.3mf")
+        self.assertTrue(Path(result["path"]).is_file())
+
+    def test_cups_fit_the_tub_grid_they_are_sized_for(self):
+        tub = self.mesh("tub", 4, 4, 10)["size_mm"][2]
+        cup = hutchfinity.render_cup(4, 4, 10)["size_mm"]
+        self.assertLess(cup[2], tub)
+        self.assertLess(cup[0], 4 * 21)
 
 
 class Validation(unittest.TestCase):
@@ -126,10 +144,23 @@ class Validation(unittest.TestCase):
             ((5, 5, 5, "integral-grid"), {"design": {"wall": 0.1}}),
             ((5, 5, 5, "integral-grid"), {"design": {"peg_spacing": 14.0}}),
             ((5, 5, 5, "integral-grid"), {"design": {"not_an_option": 1}}),
-            ((5, 5, 5, "integral-grid"), {"bin_size": (6, 2)}),
         ):
             with self.subTest(args=args, kwargs=kwargs), self.assertRaises(hutchfinity.BuildError):
                 hutchfinity.build_module(*args, out, **kwargs)
+
+    def test_rejects_bad_cups(self):
+        out = Path(tempfile.gettempdir())
+        for args, kwargs, message in (
+            ((0, 2, 5), {}, "cells wide"),
+            ((2, 41, 5), {}, "cells deep"),
+            ((2, 2, 1), {}, "height"),
+            ((2, 2, 5), {"across": 11}, "across"),
+            ((2, 2, 5), {"along": 0}, "along"),
+            ((1, 1, 5), {"across": 3}, "at least 10"),
+            ((2, 2, 5), {"wall": 0.1}, "wall"),
+        ):
+            with self.subTest(args=args, kwargs=kwargs), self.assertRaisesRegex(hutchfinity.BuildError, message):
+                hutchfinity.build_cup(*args, out, **kwargs)
 
 
 if __name__ == "__main__":

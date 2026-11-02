@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 2.0.0
+version: 2.1.0
 ---
 
 # hutchfinity
@@ -19,9 +19,10 @@ Tubs slide drawer-style on the top of the casing below (or on a footer / tableto
 
 ## Make parts
 
-With Python and [OpenSCAD](https://openscad.org) installed, run `python3 hutchfinity.py`. Pick a size in the page that opens, and it saves one folder per module to `~/Downloads/hutchfinity`: `1-tub.3mf`, `2-casing.3mf`, `3-pegs-and-pull.3mf`, a bin, a `5-grid.3mf` if the grid is separate, and a `manifest.json`. Each 3MF is one print job, already oriented, that opens directly in OrcaSlicer with your active profile.
+With Python and [OpenSCAD](https://openscad.org) installed, run `python3 hutchfinity.py`. Pick a size in the page that opens, and it saves one folder per module to `~/Downloads/hutchfinity`: `1-tub.3mf`, `2-casing.3mf`, `3-pegs-and-pull.3mf`, a `4-grid.3mf` if the grid is separate, and a `manifest.json`. Each 3MF is one print job, already oriented, that opens directly in OrcaSlicer with your active profile.
 
-- `python3 hutchfinity.py 10 10 10 --stack-gap 0.8` does the same from a terminal. `--help` lists every option and its allowed range. Every run builds one tub, one casing, its pegs, one pull and one bin. Tubs hold at least a 5h bin.
+- `python3 hutchfinity.py 10 10 10 --stack-gap 0.8` does the same from a terminal. `--help` lists every option and its allowed range. Every run builds one tub, one casing, its pegs and one pull. Tubs hold at least a 5h bin.
+- `python3 hutchfinity.py cup 2 4 10 --across 2` builds one cup, also from the app, into a `cups` folder. It takes cells wide, cells deep, height in 3.5 mm units, compartments and wall.
 - `python3 hutchfinity.py --install-shortcut` adds a clickable `Hutchfinity.app` to a Mac's Desktop. It updates itself from `main` when opened.
 - The generator's version is `VERSION` in `hutchfinity.py`, and each output's `manifest.json` records that version and the source commit.
 
