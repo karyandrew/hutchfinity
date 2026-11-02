@@ -29,7 +29,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "2.0.0"
+VERSION = "2.0.1"
 ROOT = Path(__file__).resolve().parent
 ENTRY = ROOT / "scad" / "hutchfinity.scad"
 CUP = ROOT / "scad" / "gridfinity" / "vendor" / "extended" / "gridfinity_basic_cup.scad"
@@ -136,7 +136,11 @@ def scad_source(part: str, x: int, y: int, h: int, floor: str, design: dict) -> 
 
 
 def read_stl(path: Path) -> dict:
-    """Read a binary STL into shared vertices and triangles, and check it is closed."""
+    """Read a binary STL into shared vertices and triangles, and check it is closed.
+
+    Vertices are welded at 0.001 mm. Unwelded slivers from the bin source otherwise
+    collapse when written to 3MF, and the slicer reports open edges.
+    """
     data = path.read_bytes()
     count = struct.unpack_from("<I", data, 80)[0]
     if len(data) != 84 + 50 * count:
@@ -156,11 +160,13 @@ def read_stl(path: Path) -> dict:
         offset = 84 + 50 * facet + 12
         corners = []
         for corner in range(3):
-            vertex = struct.unpack_from("<3f", data, offset + 12 * corner)
+            vertex = tuple(round(value, 3) for value in struct.unpack_from("<3f", data, offset + 12 * corner))
             if vertex not in ids:
                 ids[vertex] = len(ids)
                 parent.append(ids[vertex])
             corners.append(ids[vertex])
+        if len(set(corners)) < 3:
+            continue
         triangles.append(tuple(corners))
         for a, b in zip(corners, corners[1:] + corners[:1]):
             edges[(a, b)] = edges.get((a, b), 0) + 1
@@ -173,7 +179,7 @@ def read_stl(path: Path) -> dict:
         "triangles": triangles,
         "low": low,
         "size_mm": [round(high[i] - low[i], 2) for i in range(3)],
-        "facets": count,
+        "facets": len(triangles),
         "closed": all(edges.get((b, a)) == n for (a, b), n in edges.items()),
         "pieces": len({find(i) for i in range(len(parent))}),
     }
@@ -210,7 +216,7 @@ def write_3mf(path: Path, objects: list[tuple[str, dict, int]], bed: float = 500
     for index, (name, mesh, copies) in enumerate(objects, start=1):
         low = mesh["low"]
         vertices = "".join(
-            f'<vertex x="{p[0] - low[0]:.4f}" y="{p[1] - low[1]:.4f}" z="{p[2] - low[2]:.4f}"/>'
+            f'<vertex x="{p[0] - low[0]:.3f}" y="{p[1] - low[1]:.3f}" z="{p[2] - low[2]:.3f}"/>'
             for p in mesh["points"]
         )
         triangles = "".join(f'<triangle v1="{a}" v2="{b}" v3="{c}"/>' for a, b, c in mesh["triangles"])
