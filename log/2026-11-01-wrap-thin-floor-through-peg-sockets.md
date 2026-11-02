@@ -82,7 +82,7 @@ Qualification: The operator messages directly establish the design intent, while
 
 Observation: The current-source constraints, accepted dimensions/mechanism, stale September lineage boundary, and unresolved implementation parameter are durably preserved on their existing owners.
 
-Falsifier: An owner correction reversing either design choice, a later repository decision that supersedes these issue records, or physical testing showing the proposed floor/socket architecture fails would require a new record and revised implementation.
+Falsifier: An owner correction reversing either design choice, a later repository decision that changes these issue records, or physical testing showing the proposed floor/socket architecture fails would require a new record and revised implementation.
 
 Result: pass
 
