@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from xml.etree import ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -61,7 +62,7 @@ class LiveBuild(unittest.TestCase):
     def test_module_is_always_complete(self):
         result = hutchfinity.build_module(10, 10, 10, "integral-grid", self.out)
         self.assertEqual(self.files(result), [
-            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "manifest.json"])
+            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "PRINTING.md", "manifest.json", "print-settings.json"])
         folder = Path(result["path"])
         manifest = json.loads((folder / "manifest.json").read_text())
         self.assertEqual(manifest["peg_total"], 7)
@@ -74,7 +75,7 @@ class LiveBuild(unittest.TestCase):
     def test_separate_grid_adds_the_grid(self):
         result = hutchfinity.build_module(2, 2, 5, "separate-grid", self.out)
         self.assertEqual(self.files(result), [
-            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "4-grid.3mf", "manifest.json"])
+            "1-tub.3mf", "2-casing.3mf", "3-pegs-and-pull.3mf", "4-grid.3mf", "PRINTING.md", "manifest.json", "print-settings.json"])
 
     def test_smallest_modules(self):
         hutchfinity.build_module(1, 1, 5, "integral-grid", self.out)
@@ -100,10 +101,13 @@ class LiveBuild(unittest.TestCase):
         result = hutchfinity.build_module(3, 3, 10, "separate-grid", self.out)
         for path in Path(result["path"]).glob("*.3mf"):
             with self.subTest(file=path.name), zipfile.ZipFile(path) as archive:
-                model = archive.read("3D/3dmodel.model").decode()
-                vertices = hutchfinity.re.findall(r'<vertex x="([^"]+)" y="([^"]+)" z="([^"]+)"', model)
-                for a, b, c in hutchfinity.re.findall(r'<triangle v1="(\d+)" v2="(\d+)" v3="(\d+)"', model):
-                    self.assertEqual(len({vertices[int(a)], vertices[int(b)], vertices[int(c)]}), 3)
+                model = ET.fromstring(archive.read("3D/3dmodel.model"))
+                for obj in model.findall("{*}resources/{*}object"):
+                    vertices = [tuple(float(vertex.attrib[axis]) for axis in ("x", "y", "z"))
+                                for vertex in obj.findall("{*}mesh/{*}vertices/{*}vertex")]
+                    for triangle in obj.findall("{*}mesh/{*}triangles/{*}triangle"):
+                        indices = [int(triangle.attrib[index]) for index in ("v1", "v2", "v3")]
+                        self.assertEqual(len({vertices[index] for index in indices}), 3)
 
     def test_cups_match_their_formula(self):
         for x, y, h in ((1, 1, 2), (1, 1, 5), (2, 4, 10), (5, 9, 5), (2, 2, 40)):

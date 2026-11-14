@@ -1,196 +1,160 @@
 ---
-version: 0.23.0
+version: 0.25.0
 sensitivity: public
 ---
 
 # Hutchfinity system spec
 
-This technical spec translates `docs/chest-prd.md` into module contracts for the authored Hutchfinity SCAD parts. The chest PRD remains the product authority; this page defines the first casing interface so `casing.scad` can exist without silently deciding the provisional magnet and peg recipes.
+This contract implements the single-slot architecture in [`chest-prd.md`](chest-prd.md). It describes the current authored parts and generator. Historical trial dimensions and physical observations remain in their trial records; they are not defaults for newly generated parts.
 
-## Casing contract
+## Current module
 
-`scad/casing.scad` emits one drawer-slot casing in print orientation: the casing top is on the build plate and the side/back walls rise upward. The physical part has a top, left side, right side, and back; it has no front and no bottom. The current prototype cuts flat-wall stack sockets and provisional casing-side magnet wells by default.
+`python3 hutchfinity.py` opens the local generator. A module contains one tub, one matching casing, its complete peg set and one glue-on pull. Selecting the separate grid adds one removable grid. Cups have their own command and form.
 
-The casing module is tub-agnostic. It accepts direct slot dimensions rather than importing `tub.scad` or deriving from tub cell count, pitch, or wall thickness. Assembly-level files such as `scad/hutchfinity-assembly.scad` choose casing slot dimensions that match a tub or preview target.
+`scad/hutchfinity.scad` derives every part from the same size and design options. The core in `scad/casing.scad` remains tub-agnostic: it takes direct slot dimensions and never imports the tub to infer them.
 
-The target enclosed slot range is 200-450mm wide, 200-450mm deep, and 25-450mm tall. The current representative casing uses width for left/right across the drawer opening and depth for front/back drawer travel. For the regular tub, casing width spans the tub width, while casing depth uses the shared 16-cell front-to-back tub dimension. Stacked casings use the same flat casing footprint and prototype peg/socket geometry.
+| Part | Current contract |
+|---|---|
+| Tub | Intact 1.30 mm floor, 2.2 mm structural walls, stacking lip, integral or separate grid. No magnet wells. |
+| Casing | One top, two sides and a back; no front or bottom. Prints riding-slab-down. Flat side/back exterior faces. No default magnet wells. |
+| Pegs | Laid-down hex pegs for vertical stacking; continuous bores have receivers at both faces and a narrower insertion stop. |
+| Pull | One glue-on drawer pull with a flat bonding footprint; scales uniformly with its positioning guide on small tubs. |
+| Grid | Integral grid or separate insert; separate-grid modules require at least 2 × 2 cells. |
 
-## Current tub contract
+No drawer-count parameter, rails, front stop, external stack pads or footer mode belongs to the casing. The bottom drawer rides on a tabletop or separate footer. Lateral linking and furniture-scale load qualification remain separate work.
 
-`scad/tub.scad` authors the tub directly. It replaces the old 23h STL wrappers and is the source of truth over any older tub figure below or in the PRDs.
+## Dimensions and defaults
 
-- Size is `cells_x x cells_y x bin_h`, where `bin_h` is the tallest bin the tub must hold, in 3.5 mm units, from 5 to 40.
-- Height: `floor + bin_h x 3.5 + 3.74 bin lip + 0.50 air gap + 4.30 stack overlap`. A 10h integral-grid tub is 44.84 mm; a 20h one is 79.84 mm.
-- The 0.50 mm is the real gap above the tallest bin's lip when tubs stack. It replaces 2.01 mm of leftover rounding from the old whole-unit tub height.
-- Floor options: `integral-grid` (5 mm grid built into the tub) and `separate-grid` (flat floor plus a loose printed grid). Both have a 1.30 mm floor and the same tub height. Walls are 2.2 mm. There are no magnet wells.
-- There is one pull, 90 x 32.9 mm, the largest that fits the wall band of a 10h tub. It scales down uniformly, with its guide, on anything smaller. The guide is centered on the wall band above the grid.
-- `scad/hutchfinity.scad` derives the matching casing, pegs, and pull from the same size. `hutchfinity.py` is the small app over it and writes each module as one 3MF per print job.
+Input size is `cells_x × cells_y × bin_h`: width/depth in 21 mm cells and the tallest bin in 3.5 mm height units. The app supports 1–40 cells on each axis and 5–40h bins. These are geometric limits, not a promise that a part fits a particular printer. Check the complete casing footprint in the receiving slicer.
 
-Status: checked in CAD only. Stacking, bin seating, casing slide, and pull size have not been physically tested at this height. `scad/reference/thin-floor-rev05/` keeps the original CadQuery model the port was compared against.
+| Input | Generator default | Meaning |
+|---|---:|---|
+| Tub floor | 1.30 mm | Authored floor under the grid; independent of casing thickness. |
+| Tub wall / rim wall | 2.2 / 0.4 mm | Structural wall and stacking rim. |
+| Grid height | 5.0 mm | Grid above the authored floor. |
+| Stack gap | 0.50 mm | Gap above the tallest bin lip when tubs stack. |
+| Bin lip | 3.74 mm | Height added above the bin's nominal height. |
+| Casing sides / back | 18 / 18 mm | Wall footprints containing the stack bores. |
+| Casing riding slab | **3.0 mm** | Changes casing exterior height, not tub height or clear slot height. |
+| Slot side clearance | 1.0 mm per side | Left/right running clearance around the tub body. |
+| Slot back clearance | 0.5 mm | Extra depth at the closed back. |
+| Slot top clearance | 1.0 mm | Clearance above the tub. |
+| Peg spacing | 190 mm | Target spacing; count and safe positions are derived. |
+| Receiving bore | 8.45 mm | Preserves the successful prototype's receiving diameter. |
+| Nominal insertion depth | 10 mm | Maximum peg-tip depth, shortened when the casing requires it. |
+| Socket mouth / peg-end chamfer | 0.5 / 2.5 mm | Independent opening and peg-tip shapes. |
+| Throat reduction | 1.0 mm diameter | Default through throat is 7.45 mm. |
 
-## Files
+The standalone casing keeps direct slot inputs and 25 mm prototype side/back defaults. Its slab also defaults to 3.0 mm. Both entry points use the same shell and bore implementation. `--help` is the complete option/range reference; explicit overrides such as `--riding-slab 1.3` remain supported. Existing output files and saved presets are not silently regenerated.
+
+### Formulas
+
+With default wall/rim geometry, stack overlap is 4.30 mm:
+
+```text
+tub width  = cells_x × 21 + 2 × tub wall
+tub depth  = cells_y × 21 + 2 × tub wall
+tub height = floor + bin_h × 3.5 + bin lip + stack gap + stack overlap
+
+slot width  = tub width + 2 × side clearance
+slot depth  = tub depth + back clearance
+slot height = tub height + top clearance
+
+casing width  = slot width + 2 × side wall
+casing depth  = slot depth + back wall
+casing height = riding slab + slot height
+```
+
+Integral and separate-grid floor modes have the same tub height. Wall/rim options also change the derived stacking overlap; 4.30 mm is the default, not a constant for every configuration.
+
+Grid pockets stay open through the selected grid height, including the 8 mm maximum. The cavity and insert lofts include only transitions inside their actual vertical extent, preserving thick-floor and thick-wall overrides without folded surfaces or detached corner fragments.
+
+| Default module | Tub body width × depth × height | Casing width × depth × height |
+|---|---|---|
+| 10 × 10 × 10h | 214.4 × 214.4 × 44.84 mm | 252.4 × 232.9 × 48.84 mm |
+| Regular, 12 × 16 × 20h | 256.4 × 340.4 × 79.84 mm | 294.4 × 358.9 × 83.84 mm |
+
+The pull guide projects from the tub front. Body dimensions above exclude that projection; mesh bounds include it. The full-size pull flange is 90 × 32.9 mm and scales down uniformly where the wall band or tub width is smaller. It is a drawer pull, not a carrying handle.
+
+## Coordinates and stacking
+
+| Axis / face | Meaning |
+|---|---|
+| X | Left/right across the drawer opening. |
+| Y | Front/back travel; Y = 0 is the open front. |
+| Print Z = 0 | Bed-facing slab; installed top of the casing. |
+| Print Z = casing height | Wall feet; installed bottom of the casing. |
+
+The wall feet of the upper installed casing rest on the top of the casing below. Pegs register those mating faces. The open front span has no sockets because it has no matching wall foot. There is no hidden bottom plate.
+
+Socket centers stay within the flat side/back footprints. Placement uses the actual receiving bore, mouth chamfer and material land. Short axes use a single centered position when two mouths would overlap; wider spans divide the spacing evenly. The manifest's peg count comes from that same position set. Equal-footprint casings also need matching wall and peg-placement settings to stack together. Height alone does not change the XY pattern.
+
+## Continuous peg bore and insertion stop
+
+The shared cutter opens a passage through the entire wall height. It does not connect two blind sockets with an arbitrary smaller hole: that would let the chamfered nose travel beyond the intended stop.
+
+For the default 19.6 mm peg and 10 mm maximum tip insertion:
+
+1. Each face has an 8.45 mm receiving zone.
+2. The full-diameter zone ends 7.5 mm from the face.
+3. A 0.5 mm transition narrows to the 7.45 mm throat.
+4. The nose enters the throat while its matching taper seats. The tip reaches 10 mm and leaves 9.6 mm of the peg exposed.
+
+Two flush casing faces provide 20 mm total tip travel for the same 19.6 mm peg, retaining 0.4 mm axial allowance. Both ends are mirrored. The transition follows the actual peg-end chamfer, including the peg's minimum tip diameter; blunt pegs retain a stop too.
+
+Short casings reduce insertion depth, peg length and effective end chamfer together. The cutter rejects a closed/non-positive throat, missing full-diameter receiver, or receivers that eliminate the central stop. The narrowing prints as a taper rather than a horizontal blind-hole roof.
+
+Use `scad/testbed/through_peg_socket_testbed.scad` for the current bore. The whole coupon tests fit and insertion from both faces. The sectioned version shows the geometry but cannot establish retention after its wall is opened. The older blind-socket coupon is historical clearance evidence only.
+
+## Print settings and generated output
+
+Each module exports separate, oriented 3MF jobs plus a manifest and printing companions. Geometry-only output remains available without embedded process settings. Optional CLI/form import accepts one exported Orca process JSON and retains only supported explicit object-setting values.
+
+Supported context includes layer height, selected line widths, infill, wall loops and shell settings. Native process exports may identify themselves with `print_settings_id` without a `type` key. Printer/filament bundles and G-code are not imported. Preset `inherits` is not resolved. Global first-layer height/width remain in the receiving slicer.
+
+Part recommendations keep pegs/pulls solid and preserve solid coverage through the authored tub floor and casing slab. The optional crossing constraint selects a casing sparse-infill pattern explicitly; it is not imposed on every printer or part. No option silently enables a global zero-top-shell trial.
+
+`PRINTING.md` and `print-settings.json` distinguish exact applied values, recommendations, inherited fields and orientations. The manifest records output hashes and source provenance. A build must finish and validate its output before replacing previous good files. Each generated part must be one connected, closed solid at its serialized mesh precision. Native slicer compatibility and physical process performance require their own evidence.
+
+## Source and validation map
 
 | File | Role |
 |---|---|
-| `scad/casing.scad` | Standalone casing shell with flat-wall stack peg sockets and provisional casing magnet wells. No tub import, no footer mode. |
-| `scad/tub.scad` | Parametric tub and removable grid insert, plus mini/regular/mega wrappers. |
-| `scad/hutchfinity.scad` | Customizer entry point that sizes tub, insert, casing, pegs, and pull together. |
-| `hutchfinity.py` | Small local app and command line that build one complete module, or one cup, as checked Orca-ready 3MF files. |
-| `scad/peg.scad` | Prototype laid-down hex peg. |
-| `scad/knob.scad` | Optional glue-on tub pull with a broad, thin flared base. |
-| `scad/hutchfinity-assembly.scad` | Preview/assembly caller that can place casing, tub, knob, and pegs together. |
-| `scad/casing-fit-test.scad` | Fit-test caller that maps current tub-source dimensions and named clearance candidates to a casing slot. |
-| `scad/testbed/peg_socket_fit_testbed.scad` | Cheap coupon for provisional peg/socket clearance and chamfer checks. |
-| `scad/testbed/hex_peg_set.scad` | Seven loose hex pegs for one representative casing stack interface. |
-| `scad/testbed/peg_stack_interface_testbed.scad` | Rejected stack-land coupon retained only as a failed design reference. |
-| `scad/testbed/casing_mouth_fit_gauge.scad` | Shallow front-mouth gauge for checking tub entry and top clearance before printing a full casing. |
-| `scad/testbed/magnet_well_shape_inspection.scad` | Real-CAD face coupons showing the current 5mm tub and 6mm casing magnet-well profiles. |
-| `scad/testbed/casing-fit-trial-01.md` | Planned physical validation log for the #20 casing fit and peg/socket coupon print. |
+| `hutchfinity.py` | CLI/local app, input validation, rendered-mesh checks, 3MF jobs and manifests. |
+| `print_settings.py` | Explicit process import, per-part recommendations and printing guidance. |
+| `scad/hutchfinity.scad` | Shared sizing and current generator entry point. |
+| `scad/casing.scad` | Tub-agnostic shell, safe socket positions and continuous bore cutter. |
+| `scad/tub.scad` | Authored tub, integral grid, removable insert and pull guide. |
+| `scad/peg.scad`, `scad/knob.scad` | Peg and pull geometry. |
+| `scad/hutchfinity-assembly.scad` | Current-source inspection layout. |
+| `scad/testbed/casing_mouth_fit_gauge.scad` | Current-source shallow entry/ceiling check. |
+| `scad/testbed/through_peg_socket_testbed.scad` | Current bore/stop physical-test coupon. |
+| `scad/casing-fit-test.scad` | Current-source casing fit wrapper; size and design overrides match the generator. |
+| `scad/testbed/peg_socket_fit_testbed.scad` | Historical blind-socket clearance sweep. |
+| `scad/testbed/casing-fit-trial-01.md` | Historical trial identity and observations. |
+| `scad/reference/thin-floor-rev05/` | Preserved older thin-floor reference model. |
 
-No shared `hutchfinity-dimensions.scad` file is part of this pass.
-
-## Coordinate convention
-
-| Axis | Meaning |
-|---|---|
-| X | Left/right across the drawer opening. |
-| Y | Front/back; `Y=0` is the open front, the back wall is at maximum Y. |
-| Z | Print Z. `Z=0` is the bed-facing top surface; walls rise in +Z from the top slab. |
-
-This convention keeps the STL in the intended no-support print orientation. In installed use, the bed-facing slab is the upper riding surface and the open side opposite it is the missing bottom. Documentation should name whether a dimension is a print-coordinate value or an installed-use value when ambiguity matters.
-
-Socket face naming is deliberately explicit: installed-top sockets open on print `Z=0` through the top slab, while installed-bottom sockets open on the print `Z=print_z` wall-foot faces. The casing still has no bottom plate.
-
-The PRD requires flat side and back exterior faces. External stack lands, pads, bosses, lugs, ribs, or other protrusions on the casing sides/back are rejected even if they would give peg sockets more material.
-
-## Dimensional formulas
-
-Default values are intentionally conservative fit-test numbers, not final ergonomic values. The current representative XY target is a thick-wall regular 12 x 16 tub with `256.4mm` left/right width and `340.4mm` front/back length from `docs/gridfinity-system-prd.md`. The fit-test caller maps that tub to a `258.4 x 340.9 x 85.24mm` slot: `1.0mm` side clearance per side, `0.5mm` closed-back clearance, and `1.0mm` top clearance. The current source tub height is 23u body height, so the tub exterior height is `23 * 3.5 + 3.74 = 84.24mm`, matching the rounded `84.2mm` total Z listed in `docs/gridfinity-system-prd.md`. The earlier PR #19 `73.74mm` value was a 20u representative casing target, not the current regular tub source height.
-
-Thickness requirements are not finalized here. The printed part will not behave like a solid-wall analytical beam: slicer wall loops, sparse infill density/pattern, material, nozzle, and layer height all matter. This spec therefore keeps thicknesses as named prototype parameters rather than deriving them from a structural formula.
-
-`scad/casing-fit-test.scad` is the physical-fit caller for issue #20. It separates three concepts that should not be conflated:
-
-| Concept | Where it belongs | Notes |
-|---|---|---|
-| Tub source dimensions | `docs/gridfinity-system-prd.md` and tub build scripts | Current regular tub source is 23u total height with `2.2mm` walls, not the PR #19 20u casing target. |
-| Casing slot clearance | `scad/casing-fit-test.scad` / assembly mapping | Geometry clearance around the printed tub; side, back, and top clearances are named separately. |
-| Slicer contour compensation | Slicer/process profile and trial notes | The observed `+0.6mm` contour-compensation result was tub-print process evidence. It is not a casing wall-thickness formula. |
-
-
-| Term | Formula / default | Notes |
-|---|---|---|
-| `slot_width` | `258.4mm` in the fit caller | Direct enclosed slot width: left/right across the drawer opening; tub width plus side clearance. |
-| `slot_depth` | `340.9mm` in the fit caller | Direct enclosed slot depth: front/back drawer travel; shared tub front/back length plus closed-back clearance. |
-| `slot_height` | `85.24mm` in the fit caller | Direct enclosed slot height for the current 23u source tub plus top clearance. |
-| `outer_x` | `slot_width + 2 * side_thickness` | Includes left and right walls. |
-| `outer_y` | `slot_depth + back_thickness` | Includes back wall; no front wall. |
-| `print_z` | `top_thickness + slot_height` | Top slab plus wall height in print orientation. |
-| `peg_axis_intervals_between` | `max(1, ceil((end - start) / peg_spacing))` | Derived; not an argument. |
-| `peg_count` | length of perimeter socket positions | Derived from one `peg_spacing`; not an argument. |
-
-There is no `bottom_thickness` term. The casing has no floor/bottom plate.
-
-## Parameters
-
-| Parameter | Default | Status |
-|---|---:|---|
-| `slot_width`, `slot_depth`, `slot_height` | `256.4, 340.4, 84.24` in `casing.scad`; `258.4, 340.9, 85.24` in the regular fit caller | Casing stays slot-dimension based; assembly/fit callers add tub clearance. |
-| `side_thickness` | `25` | Prototype side wall value. |
-| `back_thickness` | `25` | Prototype back wall value. |
-| `top_thickness` | `10` | Prototype ceiling/riding surface; bed-facing in print orientation. |
-| `peg_spacing` | `190` | Single target spacing. Count is derived per side and positions divide evenly between derived end insets. |
-| `peg_diameter`, `peg_clearance` | `8, 0.45` | Prototype peg/socket fit values. |
-| `peg_socket_depth`, `peg_chamfer` | `10, 2.5` | Prototype top-slab through-sockets and wall-foot sockets with generous chamfers at both ends. |
-| `peg_socket_edge_land` | `4.0` | Minimum material land used when checking socket chamfer clearance. |
-| `enable_peg_holes` | `true` | Cuts prototype top-slab sockets and matching wall-foot receiver sockets into the flat side/back wall footprints. |
-| `enable_magnet_holes` | `true` | Cuts provisional casing magnet wells into the installed top surface. |
-| `casing_magnet_bore_diameter`, `casing_magnet_rib_tip_diameter` | `6.40, 6.10` | Current 6mm magnet press-fit candidate. |
-| `casing_magnet_well_depth`, `casing_magnet_chamfer` | `1.60, 0.30` | Current 6mm magnet pocket depth, `0.4mm` shallower than the 2.0mm recovery-sled pocket family. |
-| `casing_magnet_fore_aft_inset` | `8.0` | Magnet center inset from the front/back travel edges. |
-| `casing_magnet_paramedian_offset` | `21.0` | Lateral offset for the optional paramedian columns around the centerline. |
-| `extended_warning_travel_fraction` | `0.75` | Places the rear-pair warning detent wells at 75% drawer travel. |
-| `show_debug_markers` | `false` | Optional reference-point markers only when peg holes are disabled. |
-
-Not casing arguments: tub cell counts, pitch values, tub wall thickness, tub-to-slot clearance, bottom thickness, footer/base controls, `peg_count`, and `peg_edge_margin`. Those belong to tub generation, assembly mapping, a future footer/base design, or a future validated interface.
-
-## Provisional interfaces
-
-Magnet dimensions are not final in this spec. `wiki/magnet-press-fit.md`, hutchfinity#7, and PR #13 remain the live sources for magnet press-fit validation.
-
-The casing module now cuts nine provisional magnet wells into the installed top surface, which is print `Z=0`: six closed-position wells in two front/back rows and three lateral columns, plus three rear-magnet wells at 75% drawer travel as an extended-warning detent. The lateral columns are median and paramedian, centered on the drawer midline with `21mm` offsets. The current casing recipe is an 8-rib bore-minus-notch well: `6.40mm` bore, `6.10mm` rib-tip diameter, `1.60mm` deep, with a `0.30mm` chamfer.
-
-The current `scad/tub.scad` has no magnet wells; #30 owns any return of them. The earlier tub wrappers cut six bottom magnet wells in two front/back rows and three median/paramedian lateral columns. The current tub recipe is an 8-rib bore-minus-notch well: `5.40mm` bore, `5.25mm` rib-tip diameter, `1.10mm` deep, with a `0.30mm` chamfer. These wrappers do not make `casing.scad` depend on the tub model.
-
-The casing module cuts prototype peg sockets by default. The stack is casing-to-casing: the bottom wall feet of an upper casing sit on the top slab of the casing below, and pegs register that pair. The open front span has no sockets because there is no front wall-foot receiver in the casing above.
-
-The external stack-land approach tested in the previous model is rejected by the flat side/back requirement. Current casing sockets are centered in the 25mm side/back wall footprints and spaced from the open front and rear edges by the derived socket end inset.
-
-Peg sockets use generous 2.5mm chamfers at their openings and deepest ends. `scad/peg.scad` uses a laid-down hex profile with no crush ribs. The default printable peg is 8.45mm point-to-point, matching the current `8.0mm` nominal socket plus `0.45mm` prototype socket clearance. The module `hutchfinity_peg()` still models the installed vertical peg for assembly use; `hutchfinity_peg_print_layout()` rotates it onto a flat-friendly face for standalone/testbed printing. The casing stack interface remains provisional until tested on an actual casing pair.
-
-`scad/testbed/peg_socket_fit_testbed.scad` renders a small clearance sweep using the same socket cutter and laid-down hex peg print module: `0.30`, `0.45`, and `0.60mm` socket clearance around the 8mm nominal socket diameter, tested against an 8.45mm point-to-point hex peg. The raised index marks count from left to right. This coupon is a physical validation aid, not a locked press-fit recipe.
-
-Footer behavior is outside `casing.scad`. A footer, tabletop, or future base/riser belongs in assembly-level design, not in the casing module argument surface.
-
-## Render checks
-
-Minimum first-pass check:
+### Reproducible checks
 
 ```bash
-openscad -o preview/casing-representative.stl scad/casing.scad
+python3 -m unittest discover -s tests -v
+python3 hutchfinity.py 10 10 10 --out preview/current-module
+python3 hutchfinity.py 12 16 20 --floor separate-grid --out preview/current-module
+openscad -o preview/through-peg-coupon.stl scad/testbed/through_peg_socket_testbed.scad
+openscad -o preview/through-peg-section.stl -D SECTION=true scad/testbed/through_peg_socket_testbed.scad
+openscad -o preview/casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad
 ```
 
-Generated review artifacts should live under `preview/<issue-or-head>/` or another explicit trial directory. Avoid suffixes such as `final`; they do not say what changed or what commit produced the file.
+Use current OpenSCAD with the Manifold backend for the production generator suite. Focused geometric tests may also run on CGAL. Create output directories before invoking OpenSCAD directly. Generated meshes are not versioned source.
 
-Fit-test caller check:
+Acceptance covers actual passage connectivity, receiver/throat dimensions, both insertion faces, real-peg collision at the stop, axial allowance, small-module socket separation, unchanged tub heights, complete peg counts, watertight output, option combinations and CLI/form/3MF behavior.
 
-```bash
-openscad -o preview/casing-fit-trial-01/casing-fit-regular-23u.stl scad/casing-fit-test.scad
-openscad -o preview/casing-fit-trial-01/fit-pr19-20u-check.stl -D FIT_TUB_HEIGHT_U=20 scad/casing-fit-test.scad
-```
+## Validation boundaries and historical evidence
 
-Peg/socket coupon check:
+The earlier small prototype slid correctly and its hex pegs fit, but its geometry differs from the present authored generator. The later 45.79 mm thin-floor tub and the retired 23u/84.24 mm tub are separate artifacts too. Their results do not validate the current 44.84 mm tub, 3 mm slab or continuous stop bore.
 
-```bash
-openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
-openscad -o preview/casing-fit-trial-01/hex-peg-set-7.stl scad/testbed/hex_peg_set.scad
-python3 hutchfinity.py module 12 16 20 --out preview/casing-fit-trial-01
-```
+Physical acceptance still requires the whole coupon, a matching casing pair and the current tub: insertion/protrusion/removal, flush mating, slide clearance, bin seating, tub stacking, pull size/bond and representative slab stiffness. Keep printer/profile/artifact identity with observations. No load rating, long-term creep result or production qualification follows from CAD checks.
 
-Do not render or print `scad/testbed/peg_stack_interface_testbed.scad` for the current validation pass. It is retained only as a failed reference for the rejected external stack-land approach.
+Magnet wells remain disabled in ordinary generated parts. Optional standalone magnet geometry is a provisional historical interface; its recipe and printability need separate validation. Do not resurrect old 5 mm tub recipes or change the held 6 mm recipe as part of casing-generator repairs.
 
-Assembly caller check:
-
-```bash
-openscad -o preview/casing-fit-trial-01/assembly-check.stl scad/hutchfinity-assembly.scad
-openscad -o preview/casing-fit-trial-01/hex-peg-check.stl scad/peg.scad
-openscad -o preview/casing-fit-trial-01/knob-check.stl scad/knob.scad
-```
-
-Physical validation packet:
-
-```bash
-openscad -o preview/casing-fit-trial-01/casing-mouth-fit-gauge.stl scad/testbed/casing_mouth_fit_gauge.scad
-openscad -o preview/casing-fit-trial-01/casing-fit-regular-23u.stl scad/casing-fit-test.scad
-python3 hutchfinity.py module 12 16 20 --out preview/casing-fit-trial-01
-openscad -o preview/casing-fit-trial-01/peg-socket-fit-testbed.stl scad/testbed/peg_socket_fit_testbed.scad
-openscad -o preview/casing-fit-trial-01/hex-peg-set-7.stl scad/testbed/hex_peg_set.scad
-```
-
-Aligned inspection packet:
-
-```bash
-```
-
-Record the physical result in `scad/testbed/casing-fit-trial-01.md`. Casing and mouth-gauge artifacts print inverted; flip them into installed orientation for fit testing, with the slab above the tub and the walls down. The mouth gauge is a cheaper entry/ceiling check only; it does not replace full-depth casing slide validation. The current regular trial uses `1.0mm` side clearance per side, `0.5mm` at the closed back, and `1.0mm` above the tub.
-
-For visual review, render a PNG from the same file when OpenSCAD is available. If OpenSCAD is unavailable, static syntax and parameter review are still required, and the missing renderer is reported in the PR.
-
-## Acceptance criteria
-
-- Casing dimensions are direct slot parameters, not coupled to tub internals.
-- The casing has no front and no bottom.
-- Same flat casing footprint casings cut a prototype two-ended peg/socket interface for vertical stacking.
-- Tub body geometry is not rewritten to create the slide path.
-- Optional knob geometry has a broad, thin glue base for tub attachment.
-- Magnet geometry is present in the casing and mini/regular/mega tub wrappers, and stays explicitly provisional until physical validation closes the dependency.
+Current correction sources: [casing slab and through bore](https://github.com/karyandrew/hutchfinity/issues/20#issuecomment-6842947338), [peg-stop direction](https://github.com/karyandrew/hutchfinity/issues/20#issuecomment-6567523789), and [generator print context](https://github.com/karyandrew/hutchfinity/issues/29#issuecomment-6842947591).

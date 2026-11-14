@@ -1,11 +1,11 @@
 ---
 sensitivity: public
-version: 1.4.1
+version: 1.5.0
 ---
 
 # Hutchfinity Chest PRD
 
-> **Superseded for tubs:** the current tub height, floor, and magnet contract is in [`hutchfinity-spec.md`](hutchfinity-spec.md) under "Current tub contract". Older tub figures here (23h body, 84.24 mm, 4.75 mm cavity floor, 2.01 mm clearance, tub magnets) are history.
+> **Current generator:** [`hutchfinity-spec.md`](hutchfinity-spec.md) defines the authored tub, 3.0 mm casing slab and continuous peg-stop bore. Ordinary generated tubs and casings have no magnet wells. Older tub figures here (23h body, 84.24 mm, 4.75 mm cavity floor, 2.01 mm clearance) and the magnet-specific sections describe historical prototypes or an optional variant requiring separate validation.
 
 **Audience:** agents and contributors drafting the Hutchfinity chest SCAD modules. Read this before designing or modifying `tub.scad`, `casing.scad`, `knob.scad`, or `peg.scad`.
 
@@ -36,11 +36,11 @@ A single drawer slot is one tub plus one casing, with an optional knob. Chests g
 | HR-3 | **Casing has back, sides, and top only.** No bottom, no front. | No front means there is an opening for the drawer. No bottom keeps the model simpler to print and lets each drawer ride on the top of the casing below, footer, or tabletop. |
 | HR-4 | **Casing prints inverted with the top on the bed.** | Sides and back rise as vertical perimeters; the model should avoid bridges and manual supports. |
 | HR-5 | **The bottom-most drawer can ride on a footer or tabletop.** Footer/base behavior is outside `casing.scad`. | Keeps the casing module a single supportless shell while leaving bottom support and robot-vacuum clearance to assembly-level design. |
-| HR-6 | **Tub geometry remains compatible with the existing tub catalog.** The lip stays; optional magnet wells and glue-on knob bases must not break stacking or basic tub use. | Hutchfinity should extend tubs into drawers without making every tub a one-off chest-only part. |
+| HR-6 | **Tubs retain their independent stacking and bin-seating interfaces.** The lip stays; optional chest features must not break stacking or basic tub use. | Hutchfinity should extend tubs into drawers without making every tub a one-off chest-only part. Historical meshes do not establish interchangeability with a changed interface. |
 | HR-7 | **Sliding interface is tub-on-casing-top.** Each tub rides on the top of the casing below; the bottom tub rides on the footer top or tabletop. | No rails, tracks, or drawer hardware in v1. |
 | HR-8 | **Drawers are fully removable.** No pull-out stop in v1. | Clean removal is simpler, easier to print, and easier to inspect. |
 | HR-9 | **Pegs register and retain vertical casing stacks.** Side-by-side and multi-column linking are v2. | v1 solves vertical chest assembly first. Lateral assemblies add another fit problem and should not block the single-column chest. |
-| HR-10 | **Magnets provide closed retention and an extended-warning detent.** Magnet wells must not protrude into tub storage volume or interfere with mating surfaces. | Drawers should feel intentional in the closed position and warn before accidental over-extension. |
+| HR-10 | **The optional magnetic variant provides closed retention and an extended-warning detent.** Its wells must not protrude into storage volume or interfere with mating surfaces. Default generated parts omit wells while that variant remains under separate validation. | Preserves the magnetic interface goal without silently putting unvalidated wells into the current thin-floor generator. |
 | HR-11 | **Press-fit dimensions are provisional until physical validation lands.** Use the current crush-rib testbed and magnet wiki as the live recipe source. | Trial-01 was PHATTY-process evidence; standard-settings validation is still pending. |
 | HR-12 | **All XY dimensions derive from tub cell count and pitch.** | Parametric source stays the contract; manually tuned outer dimensions are drift magnets. |
 | HR-13 | **v1 is general-purpose.** No domain-specific assumptions, labels, colors, storage categories, or workflow content belong in the chest architecture. | This repo is public OSS and the chest is a general organizer system. |
@@ -73,8 +73,9 @@ The casing is a single-piece inverted print:
 - Back and side exterior faces remain flat planes.
 - No bottom face.
 - No front face.
-- Peg interface reference points are reserved for vertical stacking; final socket geometry remains testbed-gated and must not add side/back protrusions.
-- Magnet wells for the tub above are reserved, but their casing-side orientation is an implementation risk: blind wells opening on the final top surface may conflict with top-on-bed printing. Validate whether they print cleanly as bed-side features, move the wells to an insert/post-process operation, or revise the casing orientation before locking `casing.scad`.
+- The default casing riding slab is 3.0 mm. This is separate from the 1.30 mm tub floor; changing the slab must not change tub or slot height.
+- Continuous peg bores connect both stacking faces inside the flat wall footprints. A narrower throat stops the chamfered peg; its geometry and physical validation are specified below.
+- Magnet wells are disabled by default. The standalone opt-in prototype retains the unresolved risk that blind wells on the bed-facing slab can create a bridge. Its recipe and printability require separate validation before use; it does not change the ordinary casing orientation contract.
 
 The inverted orientation is part of the product contract. If an implementation requires support material or bridges for the casing shell, it is violating the v1 intent.
 
@@ -95,7 +96,7 @@ The tub is the drawer pan. v1 tub requirements:
 - Does not require rails, rollers, or extra slide hardware.
 - Remains useful as a tub outside the chest.
 
-The available foot-envelope budget for tub magnets is about 4.75mm Z. The magnet design must not touch the 1.2mm floor above that envelope.
+The historical tub had an approximately 4.75 mm foot-envelope budget above a 1.2 mm floor. That is not the current 1.30 mm thin-floor geometry, which has no magnet wells. Any future magnetic variant must establish its own envelope without compromising the intact floor.
 
 ### Knob
 
@@ -111,13 +112,14 @@ Pegs are mass-printable dowels for vertical casing stacks:
 - Slip-fit plus glue is rejected for v1 because it gives weaker reversible registration.
 - Snap-fit pegs are deferred.
 - Pegs register and retain casing-to-casing stacking.
+- Casing peg holes are continuous through bores with a narrower central throat. Receiving zones at both faces retain the successful fit diameter; the throat is approximately 1.0 mm smaller in diameter and limits insertion. Derive the receiving-zone length from the actual chamfered peg. A sectioned coupon shows the stop geometry; the whole coupon and mating casings establish physical fit and retention.
 - Side-by-side casing linking is out of scope for v1.
 - Compliant male geometry is an explicit exploration path: crush ribs, hollow/concave profiles, star-like polygons, or other shapes that make the peg deform more tolerantly than a solid cylinder.
 - Candidate peg shapes should be validated in the print orientation that best preserves lengthwise strength and compliant fit. The current prototype prints laid down, then installs vertically as a stack connector.
 
 Peg dimensions should use the same press-fit discipline as magnets: testbed first, then lock the recipe.
 
-## Magnet and crush-rib requirements
+## Optional magnet interface and historical trials
 
 Magnets are optional hardware, but the architecture reserves for them:
 
@@ -127,7 +129,7 @@ Magnets are optional hardware, but the architecture reserves for them:
 | Casing closed-position array | Top of casing below | Retains the drawer closed. |
 | Casing extended-warning array | Top of casing below, about 75% extended | Gives tactile warning before full removal. |
 
-The current magnet sizes in use are:
+The original trial used the following sizes. These are historical context, not instructions to add wells to the current generator; the active shared-recipe work is tracked in #30.
 
 | Size | Intended location | Status |
 |---|---|---|
@@ -151,8 +153,8 @@ Dimensional recipe authority lives in `wiki/magnet-press-fit.md` and the active 
 | Parameter | Meaning | v1 guidance |
 |---|---|---|
 | `slot_width`, `slot_depth`, `slot_height` | Casing enclosed slot size | Direct casing inputs. Assembly may derive them from a tub, but `casing.scad` stays tub-agnostic. |
-| `side_thickness`, `back_thickness`, `top_thickness` | Casing shell thicknesses | Implementation values TBD; must print cleanly and resist normal drawer use. There is no bottom thickness. |
-| `peg_spacing` | Vertical stack reference spacing | Single casing input; peg count is derived by indexing corners and evenly dividing each side. |
+| `side_thickness`, `back_thickness`, `top_thickness` | Casing shell thicknesses | The generated casing uses 18mm side/back walls and a 3.0mm riding slab by default. These are prototype values, not load ratings. There is no bottom plate. |
+| `peg_spacing` | Vertical stack reference spacing | A target spacing; derive safe centers and a material web from the actual bore/chamfer. Short spans use a centered socket rather than overlapping endpoints. |
 | `pitch_xy`, `pitch_z`, `cells_x`, `cells_y`, `cells_z` | Tub/assembly grid sizing | Default 21mm XY and 3.5mm Z remain system conventions, but they are not casing-module arguments. |
 | Tub-to-slot clearance | Assembly clearance from tub exterior to casing slot | Assembly/tub-fit concern, not a casing-module argument. |
 | `peg_profile`, `peg_diameter`, `peg_clearance` | Peg press-fit recipe | TBD by testbed/prototype; include compliant male profiles, not just solid cylinders. |
@@ -188,8 +190,8 @@ System works when all hold:
 
 1. **Single-slot printability.** A casing prints inverted without supports, bridging surprises, or fragile unsupported features.
 2. **Drawer fit.** A matching tub slides in and out by hand without binding under ordinary FDM variance.
-3. **Drawer retention.** Closed-position magnets hold the tub closed under normal handling but do not make the drawer annoying to open.
-4. **Extended warning.** The detent near 75% extension is noticeable before full drawer removal.
+3. **Optional magnetic drawer retention.** When that variant is implemented and validated, closed-position magnets hold the tub closed without making it annoying to open.
+4. **Optional magnetic extended warning.** For that variant, the detent near 75% extension is noticeable before full drawer removal.
 5. **Full removal.** The drawer can be removed cleanly without tools.
 6. **Vertical stack.** Two or more casings with the same XY footprint stack squarely using pegs.
 7. **Footer behavior.** The bottom drawer rides cleanly on a footer or tabletop without needing a special bottom casing.
@@ -224,4 +226,6 @@ System works when all hold:
 - `scad/testbed/trial-log-01.md` - PHATTY-process crush-rib trial data.
 - `hutchfinity#2` - chest PRD issue.
 - `hutchfinity#7` - crush-rib testbed iteration 2.
-- `hutchfinity PR #13` - open draft PR for testbed v1.4.0 and trial-02 scaffold.
+- `hutchfinity PR #13` - historical testbed v1.4.0 and trial-02 scaffold, closed without merge.
+- `hutchfinity#20` - current casing and continuous peg-stop validation.
+- `hutchfinity#29` - current authored generator and optional print-context direction.

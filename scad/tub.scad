@@ -1,5 +1,5 @@
 // tub.scad
-// version: 1.2.0
+// version: 1.2.1
 // Parametric Hutchfinity drawer tub: thin floor, integral or removable grid.
 //
 // Heights are derived from the tallest bin the tub must hold, not from a fixed
@@ -33,7 +33,6 @@ GRID_Z = 5.0;
 INSERT_CLEARANCE = 1.0;
 EDGE_CHANNEL_OVERLAP = 0.12;
 EDGE_CHANNEL_MARGIN = 2.0;
-CORNER_SLIVER = 2.4;
 
 // Receiving recess for one 21 mm cell: [z, width, corner radius].
 CELL_PROFILE = [
@@ -145,21 +144,25 @@ module _tub_envelope(ox, oy, total_z) {
 
 module _tub_cavity(ox, oy, floor_top, total_z) {
     rim = [ox - 2 * MIN_WALL, oy - 2 * MIN_WALL, OUTER_RADIUS - MIN_WALL];
-    rounded_loft([
-        _with_z(floor_top, _inner_profile_at(floor_top, ox, oy)),
-        _with_z(FOOT_VERTICAL_Z, _inner_profile_at(FOOT_VERTICAL_Z, ox, oy)),
-        _with_z(FOOT_TOP_Z, _inner_profile_at(FOOT_TOP_Z, ox, oy)),
-        [total_z - TOP_SLOPE, ox - 2 * WALL, oy - 2 * WALL, INNER_RADIUS],
-        _with_z(total_z, rim),
-        _with_z(total_z + 0.1, rim),
-    ]);
+    // Thick floors can start above the foot's vertical section. Keep only
+    // interior breakpoints so the cavity never folds back below its floor.
+    rounded_loft(concat(
+        [_with_z(floor_top, _inner_profile_at(floor_top, ox, oy))],
+        [for (z = [FOOT_VERTICAL_Z, FOOT_TOP_Z])
+            if (z > floor_top && z < total_z - TOP_SLOPE)
+                _with_z(z, _inner_profile_at(z, ox, oy))],
+        [[total_z - TOP_SLOPE, ox - 2 * WALL, oy - 2 * WALL, INNER_RADIUS],
+         _with_z(total_z, rim),
+         _with_z(total_z + 0.1, rim)]
+    ));
 }
 
 module _cell_cutter() {
     top = CELL_PROFILE[len(CELL_PROFILE) - 1];
     rounded_loft(concat(
         [for (p = CELL_PROFILE) [p[0], p[1], p[1], p[2]]],
-        [[top[0] + 0.03, top[1], top[1], top[2]]]
+        // A taller grid extends the receiving wall; it must not cap the pocket.
+        [[max(GRID_Z, top[0]) + 0.03, top[1], top[1], top[2]]]
     ), CELL_CORNER_STEPS);
 }
 
@@ -261,7 +264,20 @@ module hutchfinity_grid_insert(cells_x, cells_y) {
     assert(cells_x >= 2 && cells_y >= 2, "a grid insert needs at least 2 x 2 cells");
     ox = tub_outer_x(cells_x);
     oy = tub_outer_y(cells_y);
-    events = [0, FOOT_VERTICAL_Z - PLAIN_FLOOR, FOOT_TOP_Z - PLAIN_FLOOR, GRID_Z];
+    // Only transitions inside the insert belong in its loft. A thick tub
+    // wall can move the foot transition above GRID_Z; a thick floor can move
+    // the lower transition below zero. Including either folds the mesh.
+    events = concat([0],
+        [for (z = [FOOT_VERTICAL_Z - PLAIN_FLOOR, FOOT_TOP_Z - PLAIN_FLOOR])
+            if (z > 0 && z < GRID_Z) z],
+        [GRID_Z]);
+    // Edge channels can isolate a cap outside each corner pocket. Remove the
+    // whole cap from its arc's tangent center, independent of tub wall/floor
+    // and insert clearance. A fixed trim measured from the insert edge misses
+    // detached slivers when those dimensions change.
+    corner_tangent = min([for (p = CELL_PROFILE) p[1] / 2 - p[2]]);
+    corner_x = (cells_x - 1) * PITCH / 2 + corner_tangent;
+    corner_y = (cells_y - 1) * PITCH / 2 + corner_tangent;
 
     difference() {
         rounded_loft([for (z = events) _with_z(z, _insert_profile_at(z, ox, oy))]);
@@ -270,10 +286,10 @@ module hutchfinity_grid_insert(cells_x, cells_y) {
             _edge_channel(0, side, (iy - (cells_y - 1) / 2) * PITCH, cells_x, cells_y, ox, oy);
         for (ix = [0:cells_x - 1], side = [-1, 1])
             _edge_channel(1, side, (ix - (cells_x - 1) / 2) * PITCH, cells_x, cells_y, ox, oy);
-        // The two channels meeting at a corner leave a loose sliver of grid; remove it.
         for (sx = [-1, 1], sy = [-1, 1])
-            translate([sx * (ox / 2 - WALL - INSERT_CLEARANCE), sy * (oy / 2 - WALL - INSERT_CLEARANCE), GRID_Z / 2])
-                cube([2 * CORNER_SLIVER, 2 * CORNER_SLIVER, GRID_Z + 1], center = true);
+            translate([sx * corner_x, sy * corner_y, -EPS])
+                scale([sx, sy, 1])
+                    cube([ox / 2 - corner_x + EPS, oy / 2 - corner_y + EPS, GRID_Z + 2 * EPS]);
     }
 }
 
