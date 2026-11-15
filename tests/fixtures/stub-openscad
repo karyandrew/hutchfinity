@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+"""Stand-in OpenSCAD for testing ./ci without a real install.
+
+HF_STUB_MODE picks the behavior: manifold (default), classic (a build with no
+Manifold backend; rejects --backend), or broken (cannot start).
+"""
+import os
+import sys
+
+mode = os.environ.get("HF_STUB_MODE", "manifold")
+args = sys.argv[1:]
+
+if mode == "broken":
+    sys.exit(127)
+if "--version" in args:
+    print("OpenSCAD version 2025.01.01 (stub)", file=sys.stderr)
+    sys.exit(0)
+if any(a.startswith("--backend") for a in args) and mode == "classic":
+    print("openscad: unrecognised option '--backend'", file=sys.stderr)
+    sys.exit(1)
+if "-o" in args:
+    out = args[args.index("-o") + 1]
+    with open(out, "wb") as handle:
+        handle.write(b"\0" * 80 + (0).to_bytes(4, "little"))
+sys.exit(0)

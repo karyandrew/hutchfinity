@@ -1,0 +1,298 @@
+#!/usr/bin/env python3
+"""Offline gate for hutchfinity: one command, one verdict.
+
+    ./ci [--root DIR] [--report-dir DIR]
+
+Exit codes:
+    0  every test ran and passed
+    1  a check failed: a test failed or errored, any test was skipped, or the
+       run did not complete
+    2  setup failure: no usable OpenSCAD with the Manifold backend, an unusable
+       report directory, an empty suite, or an internal error
+
+A skipped test is a failure here, whichever test file or gate skips it, so a
+machine without OpenSCAD can never pass by skipping the geometry tests.
+
+Evidence goes to the report directory (default $TMPDIR, which must exist, be
+writable and lie outside the checkout):
+    hutchfinity-ci-roster.json   written before any test runs
+    hutchfinity-ci-report.json   written after the run, or on a setup failure
+
+The runner uses only the Python standard library, needs no network, and never
+writes into the checkout.
+"""
+import argparse
+import hashlib
+import json
+import os
+import platform
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.dont_write_bytecode = True
+os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+
+ROSTER_NAME = "hutchfinity-ci-roster.json"
+REPORT_NAME = "hutchfinity-ci-report.json"
+MAC_APP = "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"
+
+# (name, directory under the root); both are required.
+SUITES = [
+    ("tests", "tests"),
+    ("experiments/baseplate-tessellation", "experiments/baseplate-tessellation"),
+]
+
+EXCLUDED = [
+    {
+        "path": "scripts/test_presentation_packet_negative.py",
+        "reason": (
+            "a standalone script, not unittest tests; it replays a pinned older "
+            "commit from git history, which an exported or shallow checkout lacks, "
+            "and guards the one-off presentation preview packet rather than the "
+            "generator"
+        ),
+    },
+]
+
+OK_OUTCOMES = {"passed", "expected_failure"}
+RANK = {"passed": 0, "expected_failure": 1, "skipped": 2,
+        "unexpected_success": 3, "failed": 4, "error": 5}
+
+
+class SetupFailure(Exception):
+    pass
+
+
+class Outcomes(unittest.TextTestResult):
+    """Records one outcome per test id, keeping the worst when several arrive."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.outcomes = {}
+        self.reasons = {}
+
+    def note(self, test, outcome, reason=None):
+        test = getattr(test, "test_case", test)  # a subtest counts for its test
+        key = test.id()
+        if RANK[outcome] >= RANK.get(self.outcomes.get(key), -1):
+            self.outcomes[key] = outcome
+        if reason is not None:
+            self.reasons[key] = reason
+
+    def addSuccess(self, test):
+        super().addSuccess(test)
+        self.note(test, "passed")
+
+    def addFailure(self, test, err):
+        super().addFailure(test, err)
+        self.note(test, "failed")
+
+    def addError(self, test, err):
+        super().addError(test, err)
+        self.note(test, "error")
+
+    def addSkip(self, test, reason):
+        super().addSkip(test, reason)
+        self.note(test, "skipped", reason)
+
+    def addExpectedFailure(self, test, err):
+        super().addExpectedFailure(test, err)
+        self.note(test, "expected_failure")
+
+    def addUnexpectedSuccess(self, test):
+        super().addUnexpectedSuccess(test)
+        self.note(test, "unexpected_success")
+
+    def addSubTest(self, test, subtest, err):
+        super().addSubTest(test, subtest, err)
+        if err is not None:
+            failed = issubclass(err[0], test.failureException)
+            self.note(test, "failed" if failed else "error")
+
+
+def write_json(path, data):
+    scratch = path.with_name("." + path.name + ".tmp")
+    scratch.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+    os.replace(scratch, path)
+
+
+def inside(path, root):
+    path, root = Path(os.path.realpath(path)), Path(os.path.realpath(root))
+    return path == root or root in path.parents
+
+
+def check_directory(path, label, root):
+    if not path.is_dir():
+        raise SetupFailure(f"{label} does not exist: {path}")
+    if not os.access(path, os.W_OK | os.X_OK):
+        raise SetupFailure(f"{label} is not writable: {path}")
+    if inside(path, root):
+        raise SetupFailure(f"{label} lies inside the checkout: {path}")
+
+
+def resolve_openscad():
+    configured = os.environ.get("OPENSCAD_BIN")
+    if configured:
+        found = configured if os.sep in configured else shutil.which(configured)
+    else:
+        found = shutil.which("openscad")
+        if not found and platform.system() == "Darwin" and Path(MAC_APP).is_file():
+            found = MAC_APP
+    if not found or not Path(found).is_file() or not os.access(found, os.X_OK):
+        raise SetupFailure(
+            "OpenSCAD not found or not executable; install a build with the "
+            "Manifold backend or set OPENSCAD_BIN")
+    return found
+
+
+def preflight_openscad():
+    path = resolve_openscad()
+    try:
+        version = subprocess.run([path, "--version"], capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.SubprocessError) as error:
+        raise SetupFailure(f"OpenSCAD failed to start: {path}: {error}") from None
+    if version.returncode != 0:
+        raise SetupFailure(f"OpenSCAD failed to start: {path} --version exited {version.returncode}")
+    text = (version.stderr + version.stdout).strip().splitlines()
+    # A real render proves the Manifold backend: a build without it rejects the
+    # option or produces nothing.
+    with tempfile.TemporaryDirectory(prefix="hutchfinity-ci-preflight-") as work:
+        source = Path(work) / "probe.scad"
+        out = Path(work) / "probe.stl"
+        source.write_text("cube(1);\n")
+        try:
+            probe = subprocess.run(
+                [path, "--backend=Manifold", "--export-format=binstl", "-o", str(out), str(source)],
+                capture_output=True, text=True, timeout=120)
+        except (OSError, subprocess.SubprocessError) as error:
+            raise SetupFailure(f"OpenSCAD Manifold probe could not run: {error}") from None
+        if probe.returncode != 0 or not out.is_file() or out.stat().st_size == 0:
+            raise SetupFailure(
+                "OpenSCAD lacks the Manifold backend (the --backend=Manifold probe "
+                f"render failed with exit {probe.returncode}); install a Manifold build")
+    return {"path": path, "version": text[0] if text else "unknown", "backend": "Manifold"}
+
+
+def flatten(suite):
+    for item in suite:
+        if isinstance(item, unittest.TestSuite):
+            yield from flatten(item)
+        else:
+            yield item
+
+
+def discover(root):
+    loaded = []
+    for name, rel in SUITES:
+        start = root / rel
+        if not start.is_dir():
+            raise SetupFailure(f"suite directory missing: {rel}")
+        suite = unittest.TestLoader().discover(str(start), pattern="test*.py", top_level_dir=str(start))
+        loaded.append((name, suite, sorted(t.id() for t in flatten(suite))))
+    return loaded
+
+
+def counts_for(outcomes, expected):
+    tally = {key: 0 for key in RANK}
+    for outcome in outcomes.values():
+        tally[outcome] += 1
+    return {
+        "expected": expected, "run": len(outcomes), "passed": tally["passed"],
+        "failed": tally["failed"], "errors": tally["error"], "skipped": tally["skipped"],
+        "expected_failures": tally["expected_failure"],
+        "unexpected_successes": tally["unexpected_success"],
+    }
+
+
+def run(args):
+    root = Path(args.root).resolve() if args.root else Path(__file__).resolve().parent
+    report_dir = Path(args.report_dir or os.environ.get("TMPDIR") or tempfile.gettempdir())
+    check_directory(report_dir, "report directory", root)
+    check_directory(Path(tempfile.gettempdir()), "temporary directory", root)
+    roster_path, report_path = report_dir / ROSTER_NAME, report_dir / REPORT_NAME
+    for stale in (roster_path, report_path):
+        stale.unlink(missing_ok=True)
+
+    report = {"schema": "hutchfinity-ci-report/1", "status": "setup-failure", "exit_code": 2,
+              "complete": False, "reason": None, "roster_sha256": None, "openscad": None,
+              "counts": counts_for({}, 0), "results": {}, "failed": [], "errors": [],
+              "unexpected_successes": [], "skipped": [], "missing": [], "excluded": EXCLUDED}
+
+    def finish(code, status, reason):
+        report.update(exit_code=code, status=status, reason=reason)
+        write_json(report_path, report)
+        label = {"pass": "PASS", "fail": "FAIL"}.get(status, "SETUP FAILURE")
+        print(f"ci: {label}: {reason}\nci: report: {report_path}")
+        return code
+
+    try:
+        if sys.version_info < (3, 9):
+            raise SetupFailure("Python 3.9 or newer is required")
+        if not root.is_dir():
+            raise SetupFailure(f"root does not exist: {root}")
+        report["openscad"] = preflight_openscad()
+        os.environ["OPENSCAD_BIN"] = report["openscad"]["path"]
+        os.chdir(root)
+        loaded = discover(root)
+        roster = sorted(f"{name}::{tid}" for name, _suite, ids in loaded for tid in ids)
+        if not roster:
+            raise SetupFailure("no tests were discovered")
+        if len(set(roster)) != len(roster):
+            raise SetupFailure("duplicate test ids were discovered")
+    except SetupFailure as error:
+        return finish(2, "setup-failure", str(error))
+
+    write_json(roster_path, {
+        "schema": "hutchfinity-ci-roster/1", "count": len(roster), "tests": roster,
+        "suites": [{"name": name, "count": len(ids)} for name, _suite, ids in loaded],
+        "openscad": report["openscad"]})
+    report["roster_sha256"] = hashlib.sha256(roster_path.read_bytes()).hexdigest()
+
+    outcomes, reasons = {}, {}
+    for name, suite, _ids in loaded:
+        runner = unittest.TextTestRunner(stream=sys.stderr, verbosity=2, resultclass=Outcomes)
+        result = runner.run(suite)
+        for key, outcome in result.outcomes.items():
+            outcomes[f"{name}::{key}"] = outcome
+        for key, why in result.reasons.items():
+            reasons[f"{name}::{key}"] = why
+
+    missing = [tid for tid in roster if tid not in outcomes]
+    bad = {key: value for key, value in outcomes.items() if value not in OK_OUTCOMES}
+    report.update(
+        complete=not missing, results=dict(sorted(outcomes.items())), missing=missing,
+        counts=counts_for(outcomes, len(roster)),
+        failed=sorted(k for k, v in outcomes.items() if v == "failed"),
+        errors=sorted(k for k, v in outcomes.items() if v == "error"),
+        unexpected_successes=sorted(k for k, v in outcomes.items() if v == "unexpected_success"),
+        skipped=[{"id": k, "reason": reasons.get(k, "")} for k, v in sorted(outcomes.items()) if v == "skipped"])
+    tally = report["counts"]
+    summary = (f"{tally['passed']} passed, {tally['failed']} failed, {tally['errors']} errors, "
+               f"{tally['skipped']} skipped, {len(missing)} missing of {len(roster)} expected")
+    if bad or missing:
+        return finish(1, "fail", summary + ("; skips count as failures" if tally["skipped"] else ""))
+    return finish(0, "pass", summary)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Run the hutchfinity offline gate.", epilog=__doc__,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--root", help="checkout to test (default: where this script lives)")
+    parser.add_argument("--report-dir", help="where the roster and report go (default: $TMPDIR)")
+    args = parser.parse_args()
+    try:
+        return run(args)
+    except SetupFailure as error:
+        print(f"ci: SETUP FAILURE: {error}", file=sys.stderr)
+        return 2
+    except Exception as error:  # an internal error must never read as a failed check or a pass
+        print(f"ci: SETUP FAILURE: internal error: {error!r}", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
