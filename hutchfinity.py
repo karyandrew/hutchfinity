@@ -38,11 +38,11 @@ from urllib.parse import parse_qs, urlparse
 from xml.etree import ElementTree as ET
 
 from print_settings import (
-    CASING_CORE_ASSUMPTIONS, PrintOptions, PrintSettingsError, casing_core_assumption, core_road,
+    CASING_CORE_ASSUMPTIONS, CASING_REGION_SETTINGS, PrintOptions, PrintSettingsError, casing_core_assumption, core_road,
     load_print_options, part_record, print_options, write_printing_files,
 )
 
-VERSION = "2.4.0"
+VERSION = "2.5.0"
 ROOT = Path(__file__).resolve().parent
 ENTRY = ROOT / "scad" / "hutchfinity.scad"
 CUP = ROOT / "scad" / "gridfinity" / "vendor" / "extended" / "gridfinity_basic_cup.scad"
@@ -82,10 +82,8 @@ CHOICE_OPTIONS = {"casing_core": ("solid", "webbed", "open-infill")}
 CHOICE_LABELS = {
     "solid": "Solid (current)",
     "webbed": "Webbed walls (model replaces infill)",
-    "open-infill": "Open infill (not yet available)",
+    "open-infill": "Open infill (slicer infill exposed, top surfaces off)",
 }
-# Named but not built yet: a request for one is refused, never answered with another value.
-CHOICES_NOT_YET = {"casing_core": ("open-infill",)}
 CELLS_RANGE = (1, 40)
 CUP_HEIGHT_RANGE = (2, 40)  # At 1 the source breaks into separate pieces.
 CUP_COMPARTMENTS_RANGE = (1, 10)
@@ -156,9 +154,6 @@ def scad_value(value) -> str:
 def check_choice(name: str, value) -> None:
     if type(value) is not str or value not in CHOICE_OPTIONS[name]:
         raise BuildError(f"{name} must be one of {', '.join(CHOICE_OPTIONS[name])}; got {value!r}")
-    if value in CHOICES_NOT_YET.get(name, ()):
-        raise BuildError(f"{name} {value} is not available yet; choose "
-                         + " or ".join(v for v in CHOICE_OPTIONS[name] if v not in CHOICES_NOT_YET[name]))
 
 
 def design_overrides(design: dict) -> list[str]:
@@ -474,13 +469,27 @@ def _build_cup(x, y, h, out, across, along, wall, printing, work) -> dict:
 
 
 def write_3mf(path: Path, objects: list[tuple[str, dict, int]], bed: float = 500.0,
-              object_settings: dict[str, dict[str, str]] | None = None) -> None:
+              object_settings: dict[str, dict[str, str]] | None = None,
+              object_regions: dict[str, list[tuple[str, dict, dict[str, str]]]] | None = None) -> None:
     """Write named objects, each with a copy count, laid out in rows from the bed corner.
 
     Plain files share meshes between copies. With settings, each physical copy
     gets its own direct mesh resource so Orca can retain its object overrides.
     Printer, filament and all unlisted settings remain the receiver's choice.
+
+    `object_regions` maps an object name to setting regions: (name, mesh, settings)
+    for each. Such an object is written as one object made of parts: the body is a
+    normal part and each region a modifier part with its own settings, all sharing
+    the body's origin. Regions are not printed material, and a plain file cannot mark
+    them as such, so they need object settings.
     """
+    regions_by_object = object_regions or {}
+    if regions_by_object:
+        if object_settings is None:
+            raise BuildError("setting regions need object settings; a plain 3MF would print them as material")
+        unknown = sorted(set(regions_by_object) - {name for name, _, _ in objects})
+        if unknown:
+            raise BuildError(f"setting regions for unknown objects: {', '.join(unknown)}")
     gap = 8.0
     resources, items = [], []
     settings_root = ET.Element("config")
@@ -488,22 +497,53 @@ def write_3mf(path: Path, objects: list[tuple[str, dict, int]], bed: float = 500
     resources_to_write = objects if object_settings is None else [
         (name, mesh, 1) for name, mesh, copies in objects for _ in range(copies)
     ]
-    for index, (name, mesh, copies) in enumerate(resources_to_write, start=1):
-        low = mesh["low"]
+    identity = "1 0 0 0 1 0 0 0 1 0 0 0"
+
+    def mesh_object(object_id: int, name: str, mesh: dict, low: list[float]) -> str:
         vertices = "".join(
             f'<vertex x="{p[0] - low[0]:.6f}" y="{p[1] - low[1]:.6f}" z="{p[2] - low[2]:.6f}"/>'
             for p in mesh["points"]
         )
         triangles = "".join(f'<triangle v1="{a}" v2="{b}" v3="{c}"/>' for a, b, c in mesh["triangles"])
-        resources.append(
-            f'<object id="{index}" name="{html.escape(name)}" type="model"><mesh>'
-            f"<vertices>{vertices}</vertices><triangles>{triangles}</triangles></mesh></object>"
-        )
+        return (f'<object id="{object_id}" name="{html.escape(name)}" type="model"><mesh>'
+                f"<vertices>{vertices}</vertices><triangles>{triangles}</triangles></mesh></object>")
+
+    def part(parent: ET.Element, part_id: int, subtype: str, name: str, values: dict[str, str]) -> None:
+        element = ET.SubElement(parent, "part", id=str(part_id), subtype=subtype)
+        ET.SubElement(element, "metadata", key="name", value=name)
+        ET.SubElement(element, "metadata", key="matrix", value="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1")
+        for key, value in sorted(values.items()):
+            ET.SubElement(element, "metadata", key=key, value=value)
+
+    next_id = 1
+    for name, mesh, copies in resources_to_write:
+        low = mesh["low"]
+        regions = regions_by_object.get(name, [])
+        if regions:
+            body_id = next_id
+            region_ids = [next_id + 1 + i for i in range(len(regions))]
+            index = next_id + 1 + len(regions)
+            next_id = index + 1
+            resources.append(mesh_object(body_id, name, mesh, low))
+            resources.extend(mesh_object(rid, rname, rmesh, low)
+                             for rid, (rname, rmesh, _) in zip(region_ids, regions))
+            components = "".join(f'<component objectid="{cid}" transform="{identity}"/>'
+                                 for cid in [body_id, *region_ids])
+            resources.append(f'<object id="{index}" name="{html.escape(name)}" type="model">'
+                             f"<components>{components}</components></object>")
+        else:
+            index = next_id
+            next_id += 1
+            resources.append(mesh_object(index, name, mesh, low))
         if object_settings is not None:
             obj = ET.SubElement(settings_root, "object", id=str(index))
             ET.SubElement(obj, "metadata", key="name", value=name)
             for key, value in sorted(object_settings.get(name, {}).items()):
                 ET.SubElement(obj, "metadata", key=key, value=value)
+            if regions:
+                part(obj, body_id, "normal_part", name, {})
+                for rid, (rname, _, rsettings) in zip(region_ids, regions):
+                    part(obj, rid, "modifier_part", rname, rsettings)
         width, depth, _ = mesh["size_mm"]
         for _copy in range(copies):
             if cursor_x > gap and cursor_x + width > bed - gap:
@@ -589,7 +629,33 @@ def build_module(x, y, h, floor, out: Path, design=None, printing: PrintOptions 
         raise BuildError(f"Could not save module files: {error.strerror or str(error)}") from None
 
 
-def casing_core_record(mode: str, notes: list[str], road: float, road_source: str) -> dict:
+def render_regions(notes: list[str], x: int, y: int, h: int, floor: str, design: dict) -> list[dict]:
+    """The open-infill casing's setting regions, one small render each: the slab plate, then the bore blocks."""
+    found = re.search(r"casing core: open-infill; regions=(\d+)", "\n".join(notes))
+    if not found or int(found[1]) < 1:
+        raise BuildError("The casing renderer did not report its regions")
+    meshes = [render("casing-region", x, y, h, floor, design, (f"region_index={index}",))
+              for index in range(int(found[1]))]
+    for mesh in meshes:
+        if mesh["pieces"] != 1:
+            raise BuildError(f"A casing region came out in {mesh['pieces']} pieces; no output was replaced")
+    return meshes
+
+
+def region_items(meshes: list[dict]) -> list[dict]:
+    """What the guides and manifest say about each region; regions are never counted as printed solids."""
+    return [{"kind": "slab-plate" if index == 0 else "bore-block",
+             "low_mm": [round(v, 2) + 0.0 for v in mesh["low"]],
+             "size_mm": mesh["size_mm"],
+             "z_range_mm": [round(mesh["low"][2], 2) + 0.0, round(mesh["low"][2] + mesh["size_mm"][2], 2) + 0.0]}
+            for index, mesh in enumerate(meshes)]
+
+
+def casing_core_record(mode: str, notes: list[str], road: float, road_source: str,
+                       regions: list[dict] | None = None, embedded: bool = False) -> dict:
+    if mode == "open-infill":
+        return {"mode": mode, "region_count": len(regions or []), "regions": regions or [],
+                "regions_embedded": embedded}
     if mode != "webbed":
         return {"mode": mode}
     found = re.search(r"casing core: webbed; pockets=(\d+); foot_bearing=([0-9.]+)", "\n".join(notes))
@@ -607,6 +673,8 @@ def _build_module(x, y, h, floor, out, design, printing, work) -> dict:
     extra = (f"core_road={road!r}",) if casing_core == "webbed" and road_source != "default" else ()
     render_part = lambda part: render(part, x, y, h, floor, design, extra if part == "casing" else ())
     tub, casing, peg, pull = (render_part(p) for p in ("tub", "casing", "peg", "pull"))
+    region_meshes = render_regions(casing["notes"], x, y, h, floor, design) if casing_core == "open-infill" else []
+    regions = region_items(region_meshes)
     peg_match = re.search(r"\b(\d+) pegs\b", "\n".join(casing["notes"]))
     if not peg_match or int(peg_match[1]) < 1:
         raise BuildError("The casing renderer did not report a valid peg count")
@@ -632,10 +700,16 @@ def _build_module(x, y, h, floor, out, design, printing, work) -> dict:
     floor_depths = {"Tub": design.get("floor_thickness", defaults["floor_thickness"]),
                     "Casing": design.get("riding_slab", defaults["riding_slab"])}
     for name, objects in jobs:
-        parts = {part: part_record(part, copies, printing, floor_depths.get(part), casing_core)
+        parts = {part: part_record(part, copies, printing, floor_depths.get(part), casing_core,
+                                   regions if part == "Casing" else None)
                  for part, _, copies in objects}
         settings = None if printing.geometry_only else {part: record["applied_overrides"] for part, record in parts.items()}
-        write_3mf(folder / name, objects, BED_MM, settings)
+        # Regions travel only in a file that can mark them as settings; a plain file carries the solid body alone.
+        embedded = None
+        if region_meshes and settings is not None and "Casing" in parts:
+            embedded = {"Casing": [("slab-plate" if i == 0 else f"bore-block-{i}", mesh, dict(CASING_REGION_SETTINGS))
+                                   for i, mesh in enumerate(region_meshes)]}
+        write_3mf(folder / name, objects, BED_MM, settings, embedded)
         print_jobs.append({"file": name, "parts": parts})
         records.append(file_record(folder / name, parts={o[0]: o[2] for o in objects}))
     records.extend(file_record(path) for path in write_printing_files(folder, print_jobs, printing,
@@ -645,7 +719,8 @@ def _build_module(x, y, h, floor, out, design, printing, work) -> dict:
         **provenance,
         "size": {"cells_x": x, "cells_y": y, "bin_h": h, "floor": floor},
         "design_overrides": design,
-        "casing_core": casing_core_record(casing_core, casing["notes"], road, road_source),
+        "casing_core": casing_core_record(casing_core, casing["notes"], road, road_source, regions,
+                                          not printing.geometry_only),
         "printing": printing.record(),
         "peg_total": peg_total,
         "sizes_mm": {"tub": tub["size_mm"], "casing": casing["size_mm"], "pull": pull["size_mm"], "peg": peg["size_mm"]},
@@ -676,8 +751,7 @@ def _build_module(x, y, h, floor, out, design, printing, work) -> dict:
 
 def choice_field(label: str, name: str, default: str) -> str:
     options = "".join(
-        f"<option value={value}{' selected' if value == default else ''}"
-        f"{' disabled' if value in CHOICES_NOT_YET.get(name, ()) else ''}>{html.escape(CHOICE_LABELS[value])}"
+        f"<option value={value}{' selected' if value == default else ''}>{html.escape(CHOICE_LABELS[value])}"
         for value in CHOICE_OPTIONS[name])
     notes = "".join(f"<p class=note data-{name.replace('_', '-')}={value}{'' if value == default else ' hidden'}>"
                     f"{html.escape(text)}</p>" for value, text in CASING_CORE_ASSUMPTIONS.items())
@@ -1007,8 +1081,7 @@ def main() -> int:
         flag = f"--{name.replace('_', '-')}"
         if name in CHOICE_OPTIONS:
             parser.add_argument(flag, choices=list(CHOICE_OPTIONS[name]), default=default,
-                                help=f"{label}: {', '.join(CHOICE_OPTIONS[name])} (default {default}); "
-                                     + ", ".join(f"{v} is not available yet" for v in CHOICES_NOT_YET.get(name, ())))
+                                help=f"{label}: {', '.join(CHOICE_OPTIONS[name])} (default {default})")
         elif isinstance(default, bool):
             parser.add_argument(flag, action=argparse.BooleanOptionalAction, default=default, help=label)
         else:

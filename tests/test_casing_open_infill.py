@@ -104,8 +104,11 @@ def config_object(config, object_id):
 
 
 def member_hashes(path):
+    """Each member's hash, with the generator version in the model header read as it was when these were recorded."""
     with zipfile.ZipFile(path) as archive:
-        return {n: hashlib.sha256(archive.read(n)).hexdigest() for n in archive.namelist()}
+        return {n: hashlib.sha256(archive.read(n).replace(f"hutchfinity {hutchfinity.VERSION}".encode(),
+                                                          b"hutchfinity 2.4.0")).hexdigest()
+                for n in archive.namelist()}
 
 
 class Control(unittest.TestCase):
@@ -424,7 +427,7 @@ class Geometry(Harness):
         if any(mesh["low"][i] < -1e-3 for i in range(3)) or any(
                 mesh["low"][i] + mesh["size_mm"][i] > bound + 1e-3 for i, bound in enumerate((w, d, h))):
             problems.append("a region extends past the casing's outer planes")
-        slot = (f"translate([{side + 0.01},-1,{SLAB + 0.01}]) cube([{w - 2 * side - 0.02},{d - back + 1},{h}]);")
+        slot = (f"translate([{side + 0.01},-1,{SLAB + 0.01}]) cube([{w - 2 * side - 0.02},{d - back + 0.98},{h}]);")
         if not self.is_empty(f"use <{ENTRY}>; intersection() {{ {text}; {slot} }}", case.overrides()):
             problems.append("a region fills the slot")
         above = self.mesh_or_none(

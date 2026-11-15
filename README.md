@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 2.4.0
+version: 2.5.0
 ---
 
 # hutchfinity
@@ -50,7 +50,7 @@ python3 hutchfinity.py 10 10 10 --plain-3mf
 
 Only supported explicit object settings are copied. Preset inheritance is not resolved; printer, filament, first-layer settings, temperatures, speeds and G-code remain in the receiving slicer. The printing companions show what was applied and what is inherited. Per-part overrides keep pegs/pulls solid and cover the authored tub floor and casing slab. `--avoid-crossings` explicitly selects TPMS-D for casing sparse infill and leaves its density selected or inherited.
 
-`--casing-core webbed` (or the form's casing wall core select) builds the casing side and back walls as two flat skins with cross webs and solid pillars around every peg bore, open at the feet, instead of solid walls. `solid` is the default. `open-infill` is not available yet and is refused. The webbed option is not print-proven; the printing guide states what it assumes of the slicer.
+`--casing-core webbed` (or the form's casing wall core select) builds the casing side and back walls as two flat skins with cross webs and solid pillars around every peg bore, open at the feet, instead of solid walls. `--casing-core open-infill` keeps the casing body identical to solid and prints it with top surfaces off, so the slicer's infill shows where a top skin would have been. The generator adds setting regions to the casing job (a solid slab plate and a solid block around every peg bore, with top shells off for the casing only); they are written as modifier parts of one casing object and are never printed material. They need embedded print settings (a process JSON or the crossing option): with plain geometry output the file is the solid casing and the guide lists the settings and region positions to set up by hand. `solid` is the default. Neither option is print-proven; the printing guide states what each assumes of the slicer.
 
 `--plain-3mf` applies no overrides and cannot be combined with a process profile or crossing override. If you launch the app without dimensions, choose design and print settings in the form; supplying those options without dimensions is rejected instead of silently ignoring them.
 

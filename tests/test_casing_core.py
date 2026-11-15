@@ -351,9 +351,10 @@ class Layout(Harness):
                     self.render(f"use <{CASING}>; " + call.format(f"{name}={bad}"), assertion="must be positive")
         self.render(f"use <{CASING}>; " + call.format("web_pitch=5"), assertion="web_pitch")
         self.render(f"use <{CASING}>; hutchfinity_casing(casing_core=\"mesh\");", assertion="unknown casing_core")
-        self.render(f"use <{CASING}>; hutchfinity_casing(casing_core=\"open-infill\");",
-                    assertion="not yet available")
-        self.render(f"use <{ENTRY}>; sized_casing(core=\"open-infill\");", assertion="not yet available")
+        # open-infill reads the same road and collar, so it rejects the same values.
+        for name in ("core_road", "core_collar"):
+            self.render(f"use <{CASING}>; " + call.format(f"{name}=0").replace("webbed", "open-infill"),
+                        assertion="must be positive")
 
     def test_layout_checks_can_fail(self):
         """Test 14, layout part: a broken layout is flagged by the same checks."""

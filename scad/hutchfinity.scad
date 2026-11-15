@@ -1,5 +1,5 @@
 // hutchfinity.scad
-// version: 2.2.0
+// version: 2.3.0
 // One file for every sized Hutchfinity part. Open it in OpenSCAD and use the
 // Customizer panel, or run ../hutchfinity.py for the app and Orca-ready output.
 // Casing, pegs, and pull are derived from the same tub size so they stay matched.
@@ -11,7 +11,7 @@ use <peg.scad>;
 use <knob.scad>;
 
 /* [Part] */
-part = "tub"; // [tub, grid-insert, casing, peg, pegs, pull]
+part = "tub"; // [tub, grid-insert, casing, casing-reinforcement, casing-region, peg, pegs, pull]
 
 /* [Tub size] */
 cells_x = 12; // [1:1:40]
@@ -30,13 +30,16 @@ back_clearance = 0.5;
 top_clearance = 1.0;
 peg_spacing = 190;
 casing_fn = 32;
-// Wall construction: solid, or webbed (two skins, cross webs and solid pillars
-// around every peg bore, open at the feet). open-infill is not yet available.
+// Wall construction: solid; webbed (two skins, cross webs and solid pillars around
+// every peg bore, open at the feet); or open-infill (the solid body, plus setting
+// regions the generator exports so the slab and every bore print solid).
 casing_core = "solid"; // [solid, webbed, open-infill]
 // One deposited road, mm. The generator sets it from a selected process's wall width.
 core_road = 1.4;
 // Solid ring beyond the peg bore, mm; undef means two roads.
 core_collar = undef;
+// With part = "casing-region": which setting region to give (0 is the slab plate).
+region_index = 0;
 
 /* [Pegs] */
 peg_bore = 8.45;
@@ -63,7 +66,7 @@ peg_positions = casing_peg_positions(
     peg_bore, peg_chamfer, peg_edge_land);
 
 // Printed slab-down, then inverted for installation.
-module sized_casing(core=casing_core) {
+module sized_casing(core=casing_core, output="body", region=undef) {
     echo(str("casing: ", casing_x, " x ", casing_y, " x ", casing_z, " mm; ", len(peg_positions), " pegs"));
     hutchfinity_casing(
         slot_width=slot_x, slot_depth=slot_y, slot_height=slot_z,
@@ -72,7 +75,7 @@ module sized_casing(core=casing_core) {
         peg_socket_depth=peg_depth, peg_chamfer=peg_chamfer,
         peg_socket_edge_land=peg_edge_land, peg_end_chamfer=effective_peg_end_chamfer,
         enable_magnet_holes=false, casing_core=core, core_road=core_road, core_collar=core_collar,
-        $fn=casing_fn);
+        casing_output=output, casing_region=region, $fn=casing_fn);
 }
 
 // A shallow entry/ceiling check with the same current dimensions as the casing.
@@ -117,6 +120,8 @@ module sized_module_preview(show_optional_parts=true) {
 if (part == "tub") hutchfinity_tub(cells_x, cells_y, bin_h, floor_mode, pull_guide);
 else if (part == "grid-insert") hutchfinity_grid_insert(cells_x, cells_y);
 else if (part == "casing") sized_casing();
+else if (part == "casing-reinforcement") sized_casing(output="regions");
+else if (part == "casing-region") sized_casing(output="regions", region=region_index);
 else if (part == "peg") one_peg();
 else if (part == "pegs") sized_pegs();
 else if (part == "pull") sized_pull();
