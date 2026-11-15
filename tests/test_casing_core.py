@@ -2,8 +2,8 @@
 
 Same harness as test_casing_geometry.py: direct OpenSCAD renders, the layout read
 back with echo over a case product, meshes read with read_stl. File and text checks
-need no OpenSCAD. Chunk A offers solid and webbed; open-infill is a named value
-that is refused until a later chunk builds it, so it is never silently solid.
+need no OpenSCAD. This file covers solid and webbed; open-infill (chunk B) is
+tested in test_casing_open_infill.py.
 """
 import ast
 import itertools
@@ -215,20 +215,6 @@ class Control(unittest.TestCase):
         self.assertIn("value=solid selected", page)
         self.assertIn("value=webbed", page)
 
-    def test_open_infill_is_named_but_refused_never_silently_solid(self):
-        self.assertIn("open-infill", hutchfinity.CHOICE_OPTIONS["casing_core"])
-        with self.assertRaisesRegex(hutchfinity.BuildError, "not available yet"):
-            hutchfinity.design_overrides({"casing_core": "open-infill"})
-        with self.assertRaisesRegex(hutchfinity.BuildError, "not available yet"):
-            hutchfinity.build_module(1, 1, 5, "integral-grid", Path(tempfile.gettempdir()),
-                                     {"casing_core": "open-infill"})
-        # The form still shows the value so the control keeps its final shape, but it cannot be chosen.
-        self.assertRegex(hutchfinity.page(), r"<option value=open-infill disabled")
-        cli = subprocess.run([sys.executable, str(ROOT / "hutchfinity.py"), "1", "1", "5", "--casing-core",
-                              "open-infill", "--out", tempfile.gettempdir()], text=True, capture_output=True)
-        self.assertEqual(cli.returncode, 1)
-        self.assertIn("not available yet", cli.stderr)
-
     def test_unknown_and_non_text_values_are_rejected(self):
         for value in ("combined", "Webbed", "webbed,open-infill", "", 1, True, None, ["webbed"]):
             with self.subTest(value=value), self.assertRaises(hutchfinity.BuildError):
@@ -240,14 +226,14 @@ class Control(unittest.TestCase):
     def test_assumptions_table_is_the_single_source(self):
         """Test 15, text part: page, PRINTING.md and print-settings.json read one table."""
         table = print_settings.CASING_CORE_ASSUMPTIONS
-        self.assertEqual(set(table), {"solid", "webbed"})
+        self.assertEqual(set(table), {"solid", "webbed", "open-infill"})
         page = hutchfinity.page()
         for value, text in table.items():
             with self.subTest(value=value):
                 self.assertTrue(text.strip())
                 self.assertIn(text, page)
                 self.assertEqual(print_settings.casing_core_assumption(value), text)
-        for value in ("combined", "open-infill", "", None, 3):
+        for value in ("combined", "", None, 3):
             with self.subTest(rejected=value), self.assertRaises(print_settings.PrintSettingsError):
                 print_settings.casing_core_assumption(value)
         with tempfile.TemporaryDirectory() as folder:
