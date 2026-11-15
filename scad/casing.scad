@@ -1,12 +1,12 @@
 // casing.scad
-// version: 0.11.0
+// version: 0.12.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
-// no front, no bottom. Installed-top and installed-bottom peg sockets are cut
-// into the flat side/back wall footprints by default. Casing magnet wells are
-// cut into the installed top surface for closed retention and an extended-warning
-// detent.
+// no front, no bottom. Continuous hourglass peg bores connect both faces
+// inside the flat side/back wall footprints. Optional legacy magnet wells
+// remain a separate, physically unvalidated interface.
 
 use <magnet_well.scad>;
+use <peg.scad>;
 
 $fn = 64;
 EPS = 0.01;
@@ -21,15 +21,17 @@ SLOT_DEPTH = 340.4;
 SLOT_HEIGHT = 79.84;
 SIDE_THICKNESS = 25;
 BACK_THICKNESS = 25;
-TOP_THICKNESS = 10;
+TOP_THICKNESS = 3;
 PEG_SPACING = 190.0;
 PEG_DIAMETER = 8.0;
 PEG_CLEARANCE = 0.45;
-PEG_SOCKET_DEPTH = TOP_THICKNESS;
+PEG_SOCKET_DEPTH = 10;
 PEG_CHAMFER = 2.5;
+PEG_END_CHAMFER = 2.5;
+PEG_THROAT_REDUCTION = 1.0;
 PEG_SOCKET_EDGE_LAND = 4.0;
 ENABLE_PEG_HOLES = true;
-ENABLE_MAGNET_HOLES = true;
+ENABLE_MAGNET_HOLES = false;
 CASING_MAGNET_BORE_DIAMETER = 6.40;
 CASING_MAGNET_RIB_TIP_DIAMETER = 6.10;
 CASING_MAGNET_WELL_DEPTH = 1.60;
@@ -57,26 +59,38 @@ function peg_socket_end_inset(side_thickness, back_thickness, peg_diameter, peg_
 
 // Peg reference points are derived from one spacing target. Centers sit on the
 // side/back wall centerlines so stack sockets do not require exterior lands.
-function peg_axis_intervals_between(start, end, peg_spacing) =
-    max(1, ceil((end - start) / peg_spacing));
-function peg_axis_positions_between(start, end, peg_spacing) =
-    let(intervals = peg_axis_intervals_between(start, end, peg_spacing), usable = end - start)
-    [for (i = [0 : intervals]) start + i * usable / intervals];
-function peg_axis_middle_positions_between(start, end, peg_spacing) =
-    let(intervals = peg_axis_intervals_between(start, end, peg_spacing), usable = end - start)
+// Spacing is a target, subordinate to keeping a material web between mouths.
+// A short or reversed span has one centered position, never overlapping ends.
+function peg_axis_intervals_between(start, end, peg_spacing, minimum_spacing=0) =
+    let(usable = end - start,
+        wanted = max(1, ceil(usable / peg_spacing)),
+        available = minimum_spacing > 0 ? floor(usable / minimum_spacing) : wanted)
+    usable <= 0 || available < 1 ? 0 : min(wanted, available);
+function peg_axis_positions_between(start, end, peg_spacing, minimum_spacing=0) =
+    let(intervals = peg_axis_intervals_between(start, end, peg_spacing, minimum_spacing), usable = end - start)
+    intervals == 0 ? [(start + end) / 2] :
+        [for (i = [0 : intervals]) start + i * usable / intervals];
+function peg_axis_middle_positions_between(start, end, peg_spacing, minimum_spacing=0) =
+    let(intervals = peg_axis_intervals_between(start, end, peg_spacing, minimum_spacing), usable = end - start)
     intervals <= 1 ? [] : [for (i = [1 : intervals - 1]) start + i * usable / intervals];
-function peg_side_y_positions(depth, peg_spacing, end_inset) =
-    peg_axis_positions_between(end_inset, depth - end_inset, peg_spacing);
-function peg_back_x_positions(width, peg_spacing, end_inset) =
-    peg_axis_middle_positions_between(end_inset, width - end_inset, peg_spacing);
-function peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing, end_inset) = concat(
-    [for (y = peg_side_y_positions(depth, peg_spacing, end_inset))
+function peg_side_y_positions(depth, peg_spacing, end_inset, minimum_spacing=0) =
+    peg_axis_positions_between(end_inset, depth - end_inset, peg_spacing, minimum_spacing);
+function peg_back_x_positions(width, peg_spacing, end_inset, minimum_spacing=0) =
+    peg_axis_middle_positions_between(end_inset, width - end_inset, peg_spacing, minimum_spacing);
+function peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing, end_inset,
+    minimum_spacing=PEG_DIAMETER + PEG_CLEARANCE + 2 * PEG_CHAMFER + 2 * PEG_SOCKET_EDGE_LAND) = concat(
+    [for (y = peg_side_y_positions(depth, peg_spacing, end_inset, minimum_spacing))
         [side_thickness / 2, y]],
-    [for (y = peg_side_y_positions(depth, peg_spacing, end_inset))
+    [for (y = peg_side_y_positions(depth, peg_spacing, end_inset, minimum_spacing))
         [width - side_thickness / 2, y]],
-    [for (x = peg_back_x_positions(width, peg_spacing, end_inset))
+    [for (x = peg_back_x_positions(width, peg_spacing, end_inset, minimum_spacing))
         [x, depth - back_thickness / 2]]
 );
+function casing_peg_positions(width, depth, side_thickness, back_thickness, peg_spacing,
+    socket_diameter, socket_chamfer, edge_land) =
+    peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing,
+        peg_socket_end_inset(side_thickness, back_thickness, socket_diameter, 0, socket_chamfer, edge_land),
+        socket_diameter + 2 * socket_chamfer + 2 * edge_land);
 function peg_count(width, depth, side_thickness, back_thickness, peg_spacing, end_inset) =
     len(peg_reference_positions(width, depth, side_thickness, back_thickness, peg_spacing, end_inset));
 function magnet_column_offsets(paramedian_offset) =
@@ -138,6 +152,52 @@ module chamfered_peg_foot_socket_cuts(positions, socket_diameter, socket_depth, 
         );
 }
 
+// The peg tip may enter the smaller through-bore. Match the narrowing taper
+// to the peg's end taper, so insertion_depth names the actual maximum tip
+// depth, not the end of a straight cylinder. Default: 10 mm tip depth,
+// 2.5 mm peg chamfer => 7.5 mm full-diameter receiver + 0.5 mm transition.
+function peg_receiver_depth(insertion_depth, peg_end_chamfer) =
+    insertion_depth - peg_end_chamfer;
+function peg_socket_transition_height(socket_diameter, peg_end_chamfer, throat_reduction) =
+    peg_end_chamfer == 0 ? throat_reduction / 2 :
+    peg_end_chamfer * throat_reduction /
+        (socket_diameter - peg_tip_diameter(socket_diameter, peg_end_chamfer));
+
+module through_peg_socket_cut(position, socket_diameter, print_z, insertion_depth,
+    socket_chamfer, peg_end_chamfer, throat_reduction=PEG_THROAT_REDUCTION) {
+    receiver = peg_receiver_depth(insertion_depth, peg_end_chamfer);
+    transition = peg_socket_transition_height(socket_diameter, peg_end_chamfer, throat_reduction);
+    throat = socket_diameter - throat_reduction;
+    mouth_chamfer = min(socket_chamfer, receiver);
+
+    assert(throat_reduction > 0 && throat > 0, "peg throat must be smaller than the receiver and remain open");
+    assert(peg_end_chamfer >= 0 && receiver > 0, "peg needs a positive full-diameter receiving zone");
+    assert(socket_chamfer >= 0, "socket opening chamfer must be non-negative");
+    assert(print_z > 2 * (receiver + transition), "casing is too short for two receivers and a stop throat");
+
+    module receiving_end() {
+        translate([0, 0, -EPS]) cylinder(d=socket_diameter, h=receiver + EPS);
+        translate([0, 0, receiver]) cylinder(d1=socket_diameter, d2=throat, h=transition);
+        if (mouth_chamfer > 0)
+            translate([0, 0, -EPS])
+                cylinder(d1=socket_diameter + 2 * mouth_chamfer,
+                    d2=socket_diameter, h=mouth_chamfer + EPS);
+    }
+
+    translate([position[0], position[1], 0]) union() {
+        translate([0, 0, -EPS]) cylinder(d=throat, h=print_z + 2 * EPS);
+        receiving_end();
+        translate([0, 0, print_z]) mirror([0, 0, 1]) receiving_end();
+    }
+}
+
+module through_peg_socket_cuts(positions, socket_diameter, print_z, insertion_depth,
+    socket_chamfer, peg_end_chamfer, throat_reduction=PEG_THROAT_REDUCTION) {
+    for (p = positions)
+        through_peg_socket_cut(p, socket_diameter, print_z, insertion_depth,
+            socket_chamfer, peg_end_chamfer, throat_reduction);
+}
+
 module peg_debug_markers(positions) {
     color([0.1, 0.35, 0.9, 0.35])
     for (p = positions)
@@ -167,34 +227,30 @@ module hutchfinity_casing(
     casing_magnet_paramedian_offset=CASING_MAGNET_PARAMEDIAN_OFFSET,
     casing_magnet_drawer_depth=undef,
     extended_warning_travel_fraction=EXTENDED_WARNING_TRAVEL_FRACTION,
-    show_debug_markers=SHOW_DEBUG_MARKERS
+    show_debug_markers=SHOW_DEBUG_MARKERS,
+    peg_end_chamfer=PEG_END_CHAMFER,
+    peg_throat_reduction=PEG_THROAT_REDUCTION
 ) {
     outer_x = casing_outer_x(slot_width, side_thickness);
     outer_y = casing_outer_y(slot_depth, back_thickness);
     print_z = casing_print_z(slot_height, top_thickness);
     socket_diameter = peg_socket_diameter(peg_diameter, peg_clearance);
-    socket_depth = min(peg_socket_depth, top_thickness);
+    // Socket engagement is in the side/back walls, independent of slab thickness.
+    socket_depth = min(peg_socket_depth, (print_z - 2) / 2);
+    socket_peg_chamfer = min(peg_end_chamfer, (2 * socket_depth - 0.4) / 4);
     socket_opening_radius = peg_socket_opening_radius(peg_diameter, peg_clearance, peg_chamfer);
-    socket_end_inset = peg_socket_end_inset(
-        side_thickness,
-        back_thickness,
-        peg_diameter,
-        peg_clearance,
-        peg_chamfer,
-        peg_socket_edge_land
-    );
     magnet_drawer_depth = is_undef(casing_magnet_drawer_depth) ?
         slot_depth :
         casing_magnet_drawer_depth;
-    side_ys = peg_side_y_positions(outer_y, peg_spacing, socket_end_inset);
-    back_xs = peg_back_x_positions(outer_x, peg_spacing, socket_end_inset);
-    peg_positions = peg_reference_positions(
+    peg_positions = casing_peg_positions(
         outer_x,
         outer_y,
         side_thickness,
         back_thickness,
         peg_spacing,
-        socket_end_inset
+        socket_diameter,
+        peg_chamfer,
+        peg_socket_edge_land
     );
     magnet_positions = casing_magnet_positions(
         slot_width,
@@ -226,7 +282,7 @@ module hutchfinity_casing(
         "casing magnet fore/aft inset must keep wells inside the tub footprint");
     assert(casing_magnet_paramedian_offset >= 0,
         "casing magnet paramedian offset must be non-negative");
-    assert(casing_magnet_paramedian_offset < slot_width / 2 - casing_magnet_bore_diameter / 2,
+    assert(!enable_magnet_holes || casing_magnet_paramedian_offset < slot_width / 2 - casing_magnet_bore_diameter / 2,
         "casing magnet paramedian columns must stay inside the slot width");
     assert(extended_warning_travel_fraction > 0 && extended_warning_travel_fraction < 1,
         "extended warning travel fraction must be between 0 and 1");
@@ -239,7 +295,8 @@ module hutchfinity_casing(
                casing_magnet_fore_aft_inset,
         "extended-warning magnets must remain inside the casing top footprint");
     assert(!enable_peg_holes ||
-           (outer_x > 2 * socket_end_inset && outer_y > 2 * socket_end_inset),
+           (outer_x >= 2 * (socket_opening_radius + peg_socket_edge_land) &&
+            outer_y >= 2 * (socket_opening_radius + peg_socket_edge_land)),
         "peg sockets must fit inside the casing footprint");
     assert(!enable_peg_holes ||
            (side_thickness / 2 >= socket_opening_radius + peg_socket_edge_land &&
@@ -249,18 +306,8 @@ module hutchfinity_casing(
     difference() {
         casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness);
         if (enable_peg_holes) {
-            // In print orientation this opens on the bed-facing top slab.
-            // In installed orientation it is the top socket face.
-            chamfered_peg_socket_cuts(peg_positions, socket_diameter, socket_depth, peg_chamfer);
-            // In print orientation this opens on the upper wall-foot face.
-            // In installed orientation it is the bottom socket face.
-            chamfered_peg_foot_socket_cuts(
-                peg_positions,
-                socket_diameter,
-                socket_depth,
-                peg_chamfer,
-                print_z
-            );
+            through_peg_socket_cuts(peg_positions, socket_diameter, print_z,
+                socket_depth, peg_chamfer, socket_peg_chamfer, peg_throat_reduction);
         }
         if (enable_magnet_holes)
             hutchfinity_magnet_well_cuts(

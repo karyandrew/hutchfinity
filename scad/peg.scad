@@ -1,5 +1,5 @@
 // peg.scad
-// version: 0.4.0
+// version: 0.5.0
 // Prototype laid-down hex peg for vertical Hutchfinity casing stacks.
 
 $fn = 64;
@@ -8,7 +8,8 @@ EPS = 0.01;
 // Diameter is point-to-point across the hex. The default matches the current
 // casing socket default: 8.0mm nominal peg + 0.45mm socket clearance.
 PEG_DIAMETER = 8.45;
-PEG_LENGTH = 20.0;
+// Two nominal 10 mm receivers leave 0.4 mm total axial allowance.
+PEG_LENGTH = 19.6;
 PEG_END_CHAMFER = 2.5;
 PEG_CORE_SIDES = 6;
 PEG_PRINT_FACE_ROTATION = 30;

@@ -1,0 +1,17 @@
+{
+  "name": "Example process",
+  "print_settings_id": "Example process",
+  "inherits": "Example parent preset",
+  "compatible_printers": ["Example printer"],
+  "layer_height": "0.2",
+  "line_width": "0.45",
+  "sparse_infill_density": "20%",
+  "sparse_infill_pattern": "grid",
+  "wall_loops": "2",
+  "top_shell_layers": "3",
+  "bottom_shell_layers": "2",
+  "initial_layer_print_height": "0.25",
+  "initial_layer_line_width": "0.5",
+  "outer_wall_speed": "60",
+  "notes": "An exported process can omit type. This fixture contains no personal preset data."
+}
