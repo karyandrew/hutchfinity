@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 2.3.0
+version: 2.4.0
 ---
 
 # hutchfinity
@@ -49,6 +49,8 @@ python3 hutchfinity.py 10 10 10 --plain-3mf
 ```
 
 Only supported explicit object settings are copied. Preset inheritance is not resolved; printer, filament, first-layer settings, temperatures, speeds and G-code remain in the receiving slicer. The printing companions show what was applied and what is inherited. Per-part overrides keep pegs/pulls solid and cover the authored tub floor and casing slab. `--avoid-crossings` explicitly selects TPMS-D for casing sparse infill and leaves its density selected or inherited.
+
+`--casing-core webbed` (or the form's casing wall core select) builds the casing side and back walls as two flat skins with cross webs and solid pillars around every peg bore, open at the feet, instead of solid walls. `solid` is the default. `open-infill` is not available yet and is refused. The webbed option is not print-proven; the printing guide states what it assumes of the slicer.
 
 `--plain-3mf` applies no overrides and cannot be combined with a process profile or crossing override. If you launch the app without dimensions, choose design and print settings in the form; supplying those options without dimensions is rejected instead of silently ignoring them.
 

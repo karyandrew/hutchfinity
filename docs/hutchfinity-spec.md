@@ -1,5 +1,5 @@
 ---
-version: 0.25.0
+version: 0.26.0
 sensitivity: public
 ---
 
@@ -106,6 +106,18 @@ Short casings reduce insertion depth, peg length and effective end chamfer toget
 
 Use `scad/testbed/through_peg_socket_testbed.scad` for the current bore. The whole coupon tests fit and insertion from both faces. The sectioned version shows the geometry but cannot establish retention after its wall is opened. The older blind-socket coupon is historical clearance evidence only.
 
+## Casing wall core
+
+`casing_core` (CLI `--casing-core`, form select, saved with the other design options) is one exclusive choice for how the side and back walls are built. `solid` is the default and is identical to earlier output. `webbed` models the walls as two flat skins, cross webs and solid pillars, open at the feet, so a print needs almost no slicer-generated interior fill and never bridges over it. `open-infill` is a named value for a later change: it is refused as not yet available at the form, the CLI and the SCAD entry, and is never built as another value. Nothing here is printed or validated; physical claims stay with the validation issues.
+
+Webbed layout, all in multiples of one deposited road (default 1.4 mm; a selected process's outer wall line width, or its line width, when it gives one in millimetres):
+
+- Skins, webs and the ring around each bore are two roads wide, so a member is two contour loops with no infill and every junction is a T. A pocket is at least three roads; a narrower gap, a wall too thin for a pocket, or a casing with under 8 mm of cavity is built solid.
+- Each peg gets a pillar across the full wall thickness, reaching the larger of the receiver and mouth-chamfer radius plus the ring along the wall. The bores, chamfers and insertion stop are cut afterwards exactly as in the solid casing.
+- Between pillars, a wall's pockets are the fewest equal pockets whose pocket plus web is at most 24 mm. The two side-wall corners where they meet the back wall, the front ends of the side walls and every exterior and slot-facing plane stay solid for one skin.
+- Pockets are vertical prisms from the top of the riding slab to the feet and are open there. The slab is never hollowed. The pattern depends on plan dimensions only, never on height or slab thickness, so stacked casings with the same footprint put skin on skin and web on web.
+- The manifest records the mode, pocket count, the solid share of the wall footprint at the feet (bores not counted) and the road with its source. Webbed guidance recommends 100% casing infill with a solid-compatible pattern; no option sets a zero-top-shell value. The assumptions shown beside the control, in `PRINTING.md` and in `print-settings.json` come from one table in `print_settings.py`.
+
 ## Print settings and generated output
 
 Each module exports separate, oriented 3MF jobs plus a manifest and printing companions. Geometry-only output remains available without embedded process settings. Optional CLI/form import accepts one exported Orca process JSON and retains only supported explicit object-setting values.
@@ -124,6 +136,7 @@ Part recommendations keep pegs/pulls solid and preserve solid coverage through t
 | `print_settings.py` | Explicit process import, per-part recommendations and printing guidance. |
 | `scad/hutchfinity.scad` | Shared sizing and current generator entry point. |
 | `scad/casing.scad` | Tub-agnostic shell, safe socket positions and continuous bore cutter. |
+| `scad/casing_core.scad` | Webbed wall layout: pillar zones, pockets and their cutter. |
 | `scad/tub.scad` | Authored tub, integral grid, removable insert and pull guide. |
 | `scad/peg.scad`, `scad/knob.scad` | Peg and pull geometry. |
 | `scad/hutchfinity-assembly.scad` | Current-source inspection layout. |

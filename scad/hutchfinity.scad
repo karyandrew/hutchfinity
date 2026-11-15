@@ -1,5 +1,5 @@
 // hutchfinity.scad
-// version: 2.1.0
+// version: 2.2.0
 // One file for every sized Hutchfinity part. Open it in OpenSCAD and use the
 // Customizer panel, or run ../hutchfinity.py for the app and Orca-ready output.
 // Casing, pegs, and pull are derived from the same tub size so they stay matched.
@@ -30,6 +30,13 @@ back_clearance = 0.5;
 top_clearance = 1.0;
 peg_spacing = 190;
 casing_fn = 32;
+// Wall construction: solid, or webbed (two skins, cross webs and solid pillars
+// around every peg bore, open at the feet). open-infill is not yet available.
+casing_core = "solid"; // [solid, webbed, open-infill]
+// One deposited road, mm. The generator sets it from a selected process's wall width.
+core_road = 1.4;
+// Solid ring beyond the peg bore, mm; undef means two roads.
+core_collar = undef;
 
 /* [Pegs] */
 peg_bore = 8.45;
@@ -56,7 +63,7 @@ peg_positions = casing_peg_positions(
     peg_bore, peg_chamfer, peg_edge_land);
 
 // Printed slab-down, then inverted for installation.
-module sized_casing() {
+module sized_casing(core=casing_core) {
     echo(str("casing: ", casing_x, " x ", casing_y, " x ", casing_z, " mm; ", len(peg_positions), " pegs"));
     hutchfinity_casing(
         slot_width=slot_x, slot_depth=slot_y, slot_height=slot_z,
@@ -64,7 +71,8 @@ module sized_casing() {
         peg_spacing=peg_spacing, peg_diameter=peg_bore, peg_clearance=0,
         peg_socket_depth=peg_depth, peg_chamfer=peg_chamfer,
         peg_socket_edge_land=peg_edge_land, peg_end_chamfer=effective_peg_end_chamfer,
-        enable_magnet_holes=false, $fn=casing_fn);
+        enable_magnet_holes=false, casing_core=core, core_road=core_road, core_collar=core_collar,
+        $fn=casing_fn);
 }
 
 // A shallow entry/ceiling check with the same current dimensions as the casing.

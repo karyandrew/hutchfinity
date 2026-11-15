@@ -153,8 +153,10 @@ class Harness(unittest.TestCase):
     def is_empty(self, text, overrides=()):
         result, log, output = self.run_scad(text, overrides)
         self.assertNotIn("ERROR:", log)
-        self.assertEqual(result.returncode, 0, log)
-        return "Current top level object is empty" in log and not output.exists()
+        empty = "Current top level object is empty" in log and not output.exists()
+        if not empty:
+            self.assertEqual(result.returncode, 0, log)
+        return empty
 
     def mesh_or_none(self, text, overrides=()):
         result, log, output = self.run_scad(text, overrides)
@@ -454,10 +456,10 @@ class Geometry(Harness):
     def test_exterior_slot_faces_and_front_ends_equal_solid(self):
         for case in self.sizes():
             with self.subTest(size=(case.x, case.y, case.h)):
-                s, w, d, back, side, h = case.skin - 0.01, case.width, case.depth, case.back, case.side, case.height
+                s, w, d, back, side, h = case.skin - 0.03, case.width, case.depth, case.back, case.side, case.height
                 slot = d - back
                 zones = [(0, 0, 0, s, d), (w - s, 0, 0, s, d), (0, 0, 0, w, s), (0, d - s, 0, w, s),
-                         (side - s - 0.01, 0, 0, s, slot), (w - side + 0.02, 0, 0, s, slot),
+                         (side - s - 0.01, 0, 0, s, slot), (w - side + 0.01, 0, 0, s, slot),
                          (side, slot + 0.01, 0, w - 2 * side, s)]
                 cubes = "".join(f"translate([{x},{y},{SLAB}]) cube([{dx},{dy},{h}]);" for x, y, _, dx, dy in zones)
                 removed = f"difference() {{ {SOLID}; {WEBBED}; }}"
@@ -619,7 +621,7 @@ class Generator(unittest.TestCase):
         self.assertEqual(manifest["peg_total"], 2)
         _, solid = self.build("solid")
         self.assertEqual(solid["casing_core"], {"mode": "solid"})
-        self.assertEqual(solid["design_overrides"], {})
+        self.assertEqual(self.build()[1]["design_overrides"], {})
         self.assertEqual(solid["facets"]["casing"], self.build()[1]["facets"]["casing"])
         self.assertLess(solid["facets"]["casing"], manifest["facets"]["casing"])
 

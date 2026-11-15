@@ -38,11 +38,11 @@ from urllib.parse import parse_qs, urlparse
 from xml.etree import ElementTree as ET
 
 from print_settings import (
-    PrintOptions, PrintSettingsError, load_print_options, part_record,
-    print_options, write_printing_files,
+    CASING_CORE_ASSUMPTIONS, PrintOptions, PrintSettingsError, casing_core_assumption, core_road,
+    load_print_options, part_record, print_options, write_printing_files,
 )
 
-VERSION = "2.3.0"
+VERSION = "2.4.0"
 ROOT = Path(__file__).resolve().parent
 ENTRY = ROOT / "scad" / "hutchfinity.scad"
 CUP = ROOT / "scad" / "gridfinity" / "vendor" / "extended" / "gridfinity_basic_cup.scad"
@@ -68,6 +68,7 @@ DESIGN_OPTIONS = [
     ("side_clearance", "side_clearance", 1.0, "tub to casing, each side, mm", 0.2, 3.0),
     ("back_clearance", "back_clearance", 0.5, "tub to casing, back, mm", 0.2, 3.0),
     ("top_clearance", "top_clearance", 1.0, "tub to casing, top, mm", 0.2, 5.0),
+    ("casing_core", "casing_core", "solid", "casing wall core", None, None),
     ("peg_spacing", "peg_spacing", 190.0, "target peg spacing, mm", 15.0, 400.0),
     ("peg_bore", "peg_bore", 8.45, "peg socket bore and peg width, mm", 6.0, 9.0),
     ("peg_depth", "peg_depth_max", 10.0, "peg socket depth, mm", 5.0, 15.0),
@@ -76,6 +77,15 @@ DESIGN_OPTIONS = [
     ("pull_width", "PULL_FLANGE_X", 90.0, "full-size pull flange width, mm", 60.0, 120.0),
     ("pull_height", "PULL_FLANGE_Z", 32.9, "full-size pull flange height, mm", 31.0, 40.0),
 ]
+# Options whose value is one of a fixed set of names rather than a number or a switch.
+CHOICE_OPTIONS = {"casing_core": ("solid", "webbed", "open-infill")}
+CHOICE_LABELS = {
+    "solid": "Solid (current)",
+    "webbed": "Webbed walls (model replaces infill)",
+    "open-infill": "Open infill (not yet available)",
+}
+# Named but not built yet: a request for one is refused, never answered with another value.
+CHOICES_NOT_YET = {"casing_core": ("open-infill",)}
 CELLS_RANGE = (1, 40)
 CUP_HEIGHT_RANGE = (2, 40)  # At 1 the source breaks into separate pieces.
 CUP_COMPARTMENTS_RANGE = (1, 10)
@@ -143,6 +153,14 @@ def scad_value(value) -> str:
     raise BuildError(f"bad value: {value!r}")
 
 
+def check_choice(name: str, value) -> None:
+    if type(value) is not str or value not in CHOICE_OPTIONS[name]:
+        raise BuildError(f"{name} must be one of {', '.join(CHOICE_OPTIONS[name])}; got {value!r}")
+    if value in CHOICES_NOT_YET.get(name, ()):
+        raise BuildError(f"{name} {value} is not available yet; choose "
+                         + " or ".join(v for v in CHOICE_OPTIONS[name] if v not in CHOICES_NOT_YET[name]))
+
+
 def design_overrides(design: dict) -> list[str]:
     if not isinstance(design, dict):
         raise BuildError("design options must be an object")
@@ -152,6 +170,11 @@ def design_overrides(design: dict) -> list[str]:
         if name not in known:
             raise BuildError(f"unknown option: {name}")
         _, var, default, _, low, high = known[name]
+        if name in CHOICE_OPTIONS:
+            check_choice(name, value)
+            if value != default:
+                overrides.append(f'{var}="{value}"')
+            continue
         if isinstance(default, bool) and type(value) is not bool:
             raise BuildError(f"{name} must be true or false")
         if low is not None:
@@ -161,12 +184,13 @@ def design_overrides(design: dict) -> list[str]:
     return overrides
 
 
-def scad_source(part: str, x: int, y: int, h: int, floor: str, design: dict) -> tuple[Path, list[str]]:
+def scad_source(part: str, x: int, y: int, h: int, floor: str, design: dict,
+                extra: tuple[str, ...] = ()) -> tuple[Path, list[str]]:
     if floor not in FLOORS:
         raise BuildError(f"unknown floor: {floor}")
     return ENTRY, [
         f'part="{part}"', f"cells_x={x}", f"cells_y={y}", f"bin_h={h}", f'floor_mode="{FLOORS[floor]}"',
-        *design_overrides(design),
+        *design_overrides(design), *extra,
     ]
 
 
@@ -302,8 +326,8 @@ def run_openscad(label: str, source: Path, overrides: list[str]) -> dict:
     return mesh
 
 
-def render(part: str, x: int, y: int, h: int, floor: str, design: dict) -> dict:
-    return run_openscad(part, *scad_source(part, x, y, h, floor, design))
+def render(part: str, x: int, y: int, h: int, floor: str, design: dict, extra: tuple[str, ...] = ()) -> dict:
+    return run_openscad(part, *scad_source(part, x, y, h, floor, design, extra))
 
 
 def render_cup(x: int, y: int, h: int, across: int = 1, along: int = 1, wall: float | None = None) -> dict:
@@ -565,9 +589,23 @@ def build_module(x, y, h, floor, out: Path, design=None, printing: PrintOptions 
         raise BuildError(f"Could not save module files: {error.strerror or str(error)}") from None
 
 
+def casing_core_record(mode: str, notes: list[str], road: float, road_source: str) -> dict:
+    if mode != "webbed":
+        return {"mode": mode}
+    found = re.search(r"casing core: webbed; pockets=(\d+); foot_bearing=([0-9.]+)", "\n".join(notes))
+    if not found:
+        raise BuildError("The casing renderer did not report its webbed layout")
+    return {"mode": mode, "pockets": int(found[1]), "foot_bearing_ratio": float(found[2]),
+            "road_mm": road, "road_source": road_source}
+
+
 def _build_module(x, y, h, floor, out, design, printing, work) -> dict:
     provenance = source_provenance()
-    render_part = lambda part: render(part, x, y, h, floor, design)
+    casing_core = design.get("casing_core", "solid")
+    road, road_source = core_road(printing)
+    # Only a webbed casing reads the road, so a solid build renders exactly as before.
+    extra = (f"core_road={road!r}",) if casing_core == "webbed" and road_source != "default" else ()
+    render_part = lambda part: render(part, x, y, h, floor, design, extra if part == "casing" else ())
     tub, casing, peg, pull = (render_part(p) for p in ("tub", "casing", "peg", "pull"))
     peg_match = re.search(r"\b(\d+) pegs\b", "\n".join(casing["notes"]))
     if not peg_match or int(peg_match[1]) < 1:
@@ -594,17 +632,20 @@ def _build_module(x, y, h, floor, out, design, printing, work) -> dict:
     floor_depths = {"Tub": design.get("floor_thickness", defaults["floor_thickness"]),
                     "Casing": design.get("riding_slab", defaults["riding_slab"])}
     for name, objects in jobs:
-        parts = {part: part_record(part, copies, printing, floor_depths.get(part)) for part, _, copies in objects}
+        parts = {part: part_record(part, copies, printing, floor_depths.get(part), casing_core)
+                 for part, _, copies in objects}
         settings = None if printing.geometry_only else {part: record["applied_overrides"] for part, record in parts.items()}
         write_3mf(folder / name, objects, BED_MM, settings)
         print_jobs.append({"file": name, "parts": parts})
         records.append(file_record(folder / name, parts={o[0]: o[2] for o in objects}))
-    records.extend(file_record(path) for path in write_printing_files(folder, print_jobs, printing))
+    records.extend(file_record(path) for path in write_printing_files(folder, print_jobs, printing,
+                                                                      casing_core=casing_core))
     manifest = {
         "generator_version": VERSION,
         **provenance,
         "size": {"cells_x": x, "cells_y": y, "bin_h": h, "floor": floor},
         "design_overrides": design,
+        "casing_core": casing_core_record(casing_core, casing["notes"], road, road_source),
         "printing": printing.record(),
         "peg_total": peg_total,
         "sizes_mm": {"tub": tub["size_mm"], "casing": casing["size_mm"], "pull": pull["size_mm"], "peg": peg["size_mm"]},
@@ -633,7 +674,19 @@ def _build_module(x, y, h, floor, out, design, printing, work) -> dict:
     }
 
 
+def choice_field(label: str, name: str, default: str) -> str:
+    options = "".join(
+        f"<option value={value}{' selected' if value == default else ''}"
+        f"{' disabled' if value in CHOICES_NOT_YET.get(name, ()) else ''}>{html.escape(CHOICE_LABELS[value])}"
+        for value in CHOICE_OPTIONS[name])
+    notes = "".join(f"<p class=note data-{name.replace('_', '-')}={value}{'' if value == default else ' hidden'}>"
+                    f"{html.escape(text)}</p>" for value, text in CASING_CORE_ASSUMPTIONS.items())
+    return f"<label>{html.escape(label)}<select name={name}>{options}</select></label>{notes}"
+
+
 def field(label: str, name: str, default, low=None, high=None) -> str:
+    if name in CHOICE_OPTIONS:
+        return choice_field(label, name, default)
     if isinstance(default, bool):
         checked = " checked" if default else ""
         return f"<label>{html.escape(label)}<input type=checkbox name={name}{checked}></label>"
@@ -659,7 +712,8 @@ def page() -> str:
 <title>Hutchfinity</title><style>
 :root{{color-scheme:light dark}}body{{font:16px system-ui;max-width:30rem;margin:2rem auto;padding:0 1rem}}
 label{{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:.5rem 0}}
-input[type=number],select{{font:inherit;width:7rem;padding:.25rem}}button{{font:inherit;padding:.5rem 1rem;margin-top:.6rem}}
+input[type=number],select{{font:inherit;width:7rem;padding:.25rem}}select[name=casing_core]{{width:16rem}}
+.note{{margin:.2rem 0 .5rem;font-size:.9rem}}button{{font:inherit;padding:.5rem 1rem;margin-top:.6rem}}
 summary{{margin-top:.8rem;cursor:pointer}}pre{{white-space:pre-wrap}}</style>
 <h1>Hutchfinity <small>{VERSION}</small></h1><h2>Module</h2><form id=f>
 <label>Preset<select id=preset><option value="">custom<option value="6,16,20">Mini
@@ -680,6 +734,7 @@ summary{{margin-top:.8rem;cursor:pointer}}pre{{white-space:pre-wrap}}</style>
 {print_fields()}
 <button>Build cup</button></form><pre id=out></pre><script>
 const f=document.getElementById('f'),c=document.getElementById('c'),o=document.getElementById('out');
+f.casing_core.onchange=e=>document.querySelectorAll('[data-casing-core]').forEach(n=>n.hidden=n.dataset.casingCore!==e.target.value);
 document.getElementById('preset').onchange=e=>{{if(!e.target.value)return;
  const v=e.target.value.split(',');f.x.value=v[0];f.y.value=v[1];f.h.value=v[2]}};
 const send=(form,path)=>async e=>{{e.preventDefault();o.textContent='Building...';
@@ -729,7 +784,10 @@ def parse_form(q: dict) -> tuple:
     design = {}
     for name, _, default, *_ in DESIGN_OPTIONS:
         if name in q:
-            value = form_boolean(q[name], name) if isinstance(default, bool) else form_number(q[name], name)
+            if name in CHOICE_OPTIONS:
+                value = q[name]
+            else:
+                value = form_boolean(q[name], name) if isinstance(default, bool) else form_number(q[name], name)
             if value != default:
                 design[name] = value
     return size, q.get("floor", "integral-grid"), design
@@ -947,7 +1005,11 @@ def main() -> int:
     add_print_arguments(parser, casing=True)
     for name, _, default, label, low, high in DESIGN_OPTIONS:
         flag = f"--{name.replace('_', '-')}"
-        if isinstance(default, bool):
+        if name in CHOICE_OPTIONS:
+            parser.add_argument(flag, choices=list(CHOICE_OPTIONS[name]), default=default,
+                                help=f"{label}: {', '.join(CHOICE_OPTIONS[name])} (default {default}); "
+                                     + ", ".join(f"{v} is not available yet" for v in CHOICES_NOT_YET.get(name, ())))
+        elif isinstance(default, bool):
             parser.add_argument(flag, action=argparse.BooleanOptionalAction, default=default, help=label)
         else:
             parser.add_argument(flag, type=type(default), default=default, help=f"{label} ({low} to {high}, default {default})")
