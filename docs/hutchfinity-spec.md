@@ -1,5 +1,5 @@
 ---
-version: 0.26.0
+version: 0.27.0
 sensitivity: public
 ---
 
@@ -108,7 +108,7 @@ Use `scad/testbed/through_peg_socket_testbed.scad` for the current bore. The who
 
 ## Casing wall core
 
-`casing_core` (CLI `--casing-core`, form select, saved with the other design options) is one exclusive choice for how the side and back walls are built. `solid` is the default and is identical to earlier output. `webbed` models the walls as two flat skins, cross webs and solid pillars, open at the feet, so a print needs almost no slicer-generated interior fill and never bridges over it. `open-infill` is a named value for a later change: it is refused as not yet available at the form, the CLI and the SCAD entry, and is never built as another value. Nothing here is printed or validated; physical claims stay with the validation issues.
+`casing_core` (CLI `--casing-core`, form select, saved with the other design options) is one exclusive choice for how the side and back walls are built. `solid` is the default and is identical to earlier output. `webbed` models the walls as two flat skins, cross webs and solid pillars, open at the feet, so a print needs almost no slicer-generated interior fill and never bridges over it. `open-infill` leaves the casing body identical to `solid` and is sliced with top surfaces off (see below). A combined or unknown value is rejected at the form, the CLI and the SCAD entry. Nothing here is printed or validated; physical claims stay with the validation issues.
 
 Webbed layout, all in multiples of one deposited road (default 1.4 mm; a selected process's outer wall line width, or its line width, when it gives one in millimetres):
 
@@ -117,6 +117,19 @@ Webbed layout, all in multiples of one deposited road (default 1.4 mm; a selecte
 - Between pillars, a wall's pockets are the fewest equal pockets whose pocket plus web is at most 24 mm. The two side-wall corners where they meet the back wall, the front ends of the side walls and every exterior and slot-facing plane stay solid for one skin.
 - Pockets are vertical prisms from the top of the riding slab to the feet and are open there. The slab is never hollowed. The pattern depends on plan dimensions only, never on height or slab thickness, so stacked casings with the same footprint put skin on skin and web on web.
 - The manifest records the mode, pocket count, the solid share of the wall footprint at the feet (bores not counted) and the road with its source. Webbed guidance recommends 100% casing infill with a solid-compatible pattern; no option sets a zero-top-shell value. The assumptions shown beside the control, in `PRINTING.md` and in `print-settings.json` come from one table in `print_settings.py`.
+
+### Open-infill core
+
+The body is the solid casing, mesh for mesh. The casing job adds setting regions, which the slicer reads as settings and does not print:
+
+- A slab plate: the whole casing footprint, from the bed to the top of the riding slab.
+- A bore block per peg bore: the same pillar zone the webbed core keeps solid (full wall thickness, reaching the larger of the receiver and mouth-chamfer radius plus the collar along the wall), from the bed to the feet.
+
+Both come from `casing_core_regions` in `scad/casing_core.scad`, which takes its blocks from the same `casing_core_pillar_zones` function as the webbed pockets. Walls elsewhere get no region and print the process's own infill. Each region asks for `sparse_infill_density=100%` with a solid-compatible pattern. The casing job also sets `top_shell_layers=0` and `top_shell_thickness=0` as object settings, for the casing only and only because this value was chosen; no other value, part or run sets them.
+
+The generator renders each region (`part="casing-region"`, `region_index`; `casing-reinforcement` gives all of them) and writes the casing as one 3MF object made of parts: the body is a normal part and each region a modifier part with its own settings, all sharing the body's origin. Regions are written only with embedded print settings. A plain geometry file carries the solid body alone, because a file that cannot mark a region would print it as material; the printing guide then lists the settings as recommended and the regions' positions for manual setup. The manifest records the mode, the region count and each region's position, size and z range; regions are not counted as printed solids.
+
+The assumptions state what the mode needs: top surfaces off, that a slicer which drops per-object settings or region bodies prints the solid casing on its own defaults, what to inspect in the preview, and that neither the mode nor the 3MF region path is qualified on a native slicer. A command-line slice in OrcaSlicer 2.5.1 of a generated 1 x 1 x 5h open-infill casing job (0.8 mm nozzle, 0.5 mm layers, 28 percent sparse infill) sliced every slab layer and every layer of both bore blocks as solid infill, put no extrusion in the bores, kept sparse infill elsewhere in the walls, put no top surface on any layer, and printed nothing outside the body. With bottom-shell settings removed, the slab plate alone kept the slab solid; the same job without regions left sparse infill in the slab layers. That is a slice, not a print, and not a Bambu Studio or graphical-import result.
 
 ## Print settings and generated output
 
@@ -136,7 +149,7 @@ Part recommendations keep pegs/pulls solid and preserve solid coverage through t
 | `print_settings.py` | Explicit process import, per-part recommendations and printing guidance. |
 | `scad/hutchfinity.scad` | Shared sizing and current generator entry point. |
 | `scad/casing.scad` | Tub-agnostic shell, safe socket positions and continuous bore cutter. |
-| `scad/casing_core.scad` | Webbed wall layout: pillar zones, pockets and their cutter. |
+| `scad/casing_core.scad` | Webbed wall layout (pillar zones, pockets and their cutter) and the open-infill setting regions. |
 | `scad/tub.scad` | Authored tub, integral grid, removable insert and pull guide. |
 | `scad/peg.scad`, `scad/knob.scad` | Peg and pull geometry. |
 | `scad/hutchfinity-assembly.scad` | Current-source inspection layout. |

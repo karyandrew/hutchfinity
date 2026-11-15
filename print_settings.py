@@ -52,7 +52,6 @@ IMPORT_NOTE = (
 
 
 # One table feeds the app note, PRINTING.md and print-settings.json, so they cannot disagree.
-# open-infill is a named control value that is not yet available, so it has no entry.
 CASING_CORE_ASSUMPTIONS = {
     "solid": "Solid casing walls: no assumption beyond the settings of the receiving slicer.",
     "webbed": (
@@ -61,13 +60,30 @@ CASING_CORE_ASSUMPTIONS = {
         "for the skins and webs, which are two roads wide, with no crossing pattern needed. The pockets are open at the "
         "feet and need no bridging."
     ),
+    "open-infill": (
+        "Open infill: the casing prints as the solid model with its top surfaces off, so slicer infill shows "
+        "where a top skin would have been. The casing job sets top_shell_layers=0 and top_shell_thickness=0, "
+        "applied as per-object settings when print settings are embedded and otherwise recommended, not embedded. "
+        "They apply to the casing job only, never to the tub, pegs or pull, and only because this mode was chosen. "
+        "Setting regions, which the slicer treats as settings and not as printed material, ask for solid fill "
+        "(sparse_infill_density=100% with a solid-compatible pattern): one slab plate over the whole footprint "
+        "from the bed to the top of the riding slab, and one bore block around each peg bore from the bed to the "
+        "feet. Walls elsewhere keep the interior infill of the selected process or the avoid-crossings choice. "
+        "This mode only makes sense with top surfaces off. If the receiving slicer drops per-object settings or "
+        "region bodies, the casing prints as the solid model with that slicer on its own defaults: no failure, but not "
+        "this mode. A slicer that does not understand modifier parts could print the regions as material, so check "
+        "the preview before slicing: infill, not skin, in the last layers at the feet; solid layers through the "
+        "slab; solid fill around each bore; and no slab over the slot. Neither this mode nor the 3MF region path "
+        "is qualified on a native slicer or printed."
+    ),
 }
+# Open infill: what the casing job's setting regions ask for, and the shells it turns off.
+CASING_REGION_SETTINGS = {"sparse_infill_density": "100%", "sparse_infill_pattern": "rectilinear"}
+OPEN_INFILL_TOP_SETTINGS = {"top_shell_layers": "0", "top_shell_thickness": "0"}
 DEFAULT_CORE_ROAD = 1.4
 
 
 def casing_core_assumption(value) -> str:
-    if value == "open-infill":
-        raise PrintSettingsError("casing_core open-infill is not available yet")
     if not isinstance(value, str) or value not in CASING_CORE_ASSUMPTIONS:
         raise PrintSettingsError(f"unknown casing_core: {value!r}")
     return CASING_CORE_ASSUMPTIONS[value]
@@ -183,10 +199,16 @@ def load_print_options(path: Path | None = None, *, avoid_crossings=False, geome
 
 
 def part_record(name: str, copies: int, options: PrintOptions, floor_mm: float | None = None,
-                casing_core: str = "solid") -> dict:
+                casing_core: str = "solid", regions: list[dict] | None = None) -> dict:
     casing_core_assumption(casing_core)
     recommended: dict[str, str] = {}
     reasons = []
+    open_infill = name == "Casing" and casing_core == "open-infill"
+    if open_infill:
+        recommended.update(OPEN_INFILL_TOP_SETTINGS)
+        reasons.append("Open-infill casing: top shells are off for this casing only (top_shell_layers=0, "
+                       "top_shell_thickness=0) because open infill was chosen. Setting regions keep the slab and every "
+                       "peg bore solid.")
     if name == "Casing" and casing_core == "webbed":
         recommended.update(sparse_infill_density="100%", sparse_infill_pattern="rectilinear", fill_multiline="1")
         reasons.append("Webbed casing: 100% infill with a solid-compatible sparse pattern, so any gap residue prints solid. "
@@ -196,7 +218,7 @@ def part_record(name: str, copies: int, options: PrintOptions, floor_mm: float |
     if name in {"Peg", "Pull"}:
         recommended.update(sparse_infill_density="100%", sparse_infill_pattern="rectilinear", fill_multiline="1")
         reasons.append("Solid accessory: 100% infill with a solid-compatible sparse pattern. The actual solid-infill path pattern remains the receiver's setting.")
-    if name == "Casing" and options.avoid_crossings and casing_core == "solid":
+    if name == "Casing" and options.avoid_crossings and casing_core in ("solid", "open-infill"):
         recommended["sparse_infill_pattern"] = "tpmsd"
         reasons.append("Avoid-crossings choice uses TPMS-D for casing sparse infill; density stays inherited unless selected.")
     if floor_mm is not None:
@@ -204,13 +226,35 @@ def part_record(name: str, copies: int, options: PrintOptions, floor_mm: float |
         recommended["bottom_shell_thickness"] = f"{max(floor_mm, float(options.process.get('bottom_shell_thickness', '0'))):g}"
         reasons.append(f"Keep the bed-facing authored floor/slab solid through at least {floor_mm:g} mm and one bottom layer.")
     applied = {} if options.geometry_only else {**options.process, **recommended}
-    return {
+    record = {
         "copies": copies,
         "orientation": ORIENTATIONS[name],
         "recommended_overrides": recommended,
         "applied_overrides": applied,
         "reasons": reasons,
     }
+    if open_infill:
+        items = list(regions or [])
+        record["regions"] = {"embedded": not options.geometry_only, "settings": dict(CASING_REGION_SETTINGS),
+                             "count": len(items), "items": items}
+    return record
+
+
+def region_lines(regions: dict) -> list[str]:
+    """The casing job's setting regions: what they ask for, where they are, and whether the file carries them."""
+    settings = ", ".join(f"`{key}={value}`" for key, value in regions["settings"].items())
+    lines = [f"**Regions** ({regions['count']}, setting regions and not printed material): {settings}.", ""]
+    if regions["embedded"]:
+        lines += ["The regions are embedded in this file as modifier parts of the casing object.", ""]
+    else:
+        lines += ["The regions are not embedded in this file because it is geometry only. To use this mode, add "
+                  "modifier regions with these settings by hand at the positions below, or print the plain solid casing.", ""]
+    lines += ["| Region | Position x, y, z (mm) | Size x, y, z (mm) | z range (mm) |", "|---|---|---|---|"]
+    for item in regions["items"]:
+        lines.append(f"| {item['kind']} | {', '.join(f'{v:g}' for v in item['low_mm'])} | "
+                     f"{', '.join(f'{v:g}' for v in item['size_mm'])} | "
+                     f"{item['z_range_mm'][0]:g} to {item['z_range_mm'][1]:g} |")
+    return lines + [""]
 
 
 def write_printing_files(folder: Path, jobs: list[dict], options: PrintOptions, *, stem: str = "",
@@ -244,6 +288,8 @@ def write_printing_files(folder: Path, jobs: list[dict], options: PrintOptions, 
             else:
                 lines += ["No object settings applied; use the receiving slicer's settings.", ""]
             lines += part["reasons"] + ([""] if part["reasons"] else [])
+            if "regions" in part:
+                lines += region_lines(part["regions"])
             if options.geometry_only and part["recommended_overrides"]:
                 lines += ["Recommended, not embedded: " + "; ".join(f"{k}={v}" for k, v in part["recommended_overrides"].items()) + ".", ""]
     lines += ["Recommendations do not establish physical print performance. No G-code is generated or sent.", ""]

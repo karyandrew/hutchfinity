@@ -1,5 +1,5 @@
 // casing_core.scad
-// version: 0.1.0
+// version: 0.2.0
 // Webbed casing walls. Each side and back wall keeps two flat skins and is
 // otherwise hollowed into vertical pockets separated by cross webs, with a
 // solid pillar around every peg bore. Pockets run from the top of the riding
@@ -20,6 +20,12 @@
 // Along a wall, pockets fill the gaps between solid zones (the pillars and the
 // wall ends): a gap is split into the fewest equal pockets whose pocket plus
 // web is at most `pitch`, and a gap narrower than the minimum pocket is solid.
+//
+// The open-infill core builds no pockets. Its body is the solid casing, and this file
+// supplies the setting regions that the generator exports beside it: a slab plate over
+// the whole footprint and one block per peg bore (the same pillar zones as above).
+// A region is [x0, y0, z0, x1, y1, z1]. Regions mark where the slicer must fill solid;
+// they are never printed material.
 
 // A casing with less cavity depth than this is built solid.
 function casing_core_min_cavity_depth() = 8;
@@ -113,4 +119,26 @@ module casing_core_pocket_cuts(pockets, slab_top, feet) {
     for (r = pockets)
         translate([r[0], r[1], slab_top])
             cube([r[2] - r[0], r[3] - r[1], feet - slab_top + CORE_EPS]);
+}
+
+// Setting regions of the open-infill core: the slab plate (the whole footprint from the
+// bed to the top of the riding slab), then one block per peg bore, from the bed to the
+// feet, over the same pillar zone the webbed core keeps solid.
+function casing_core_regions(outer_x, outer_y, side_thickness, back_thickness, slab, height, positions, radius) =
+    concat(
+        [[0, 0, 0, outer_x, outer_y, slab]],
+        [for (z = casing_core_pillar_zones(positions, outer_x, side_thickness, back_thickness, radius))
+            [z[0], z[1], 0, z[2], z[3], height]]);
+
+module casing_core_region_volume(region) {
+    translate([region[0], region[1], region[2]])
+        cube([region[3] - region[0], region[4] - region[1], region[5] - region[2]]);
+}
+
+// All regions together, or the one at `index`.
+module casing_core_region_volumes(regions, index=undef) {
+    if (is_undef(index))
+        for (region = regions) casing_core_region_volume(region);
+    else
+        casing_core_region_volume(regions[index]);
 }

@@ -1,11 +1,12 @@
 // casing.scad
-// version: 0.13.0
+// version: 0.14.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
 // no front, no bottom. Continuous hourglass peg bores connect both faces
 // inside the flat side/back wall footprints. Optional legacy magnet wells
 // remain a separate, physically unvalidated interface. casing_core selects the
-// wall construction: "solid" (default) or "webbed" (casing_core.scad). "open-infill"
-// is a named value that is not yet available and is refused.
+// wall construction: "solid" (default), "webbed" or "open-infill" (casing_core.scad).
+// open-infill's body is the solid casing; casing_output="regions" instead gives the
+// setting regions the generator exports with it (all of them, or one by casing_region).
 
 use <magnet_well.scad>;
 use <peg.scad>;
@@ -238,7 +239,9 @@ module hutchfinity_casing(
     core_skin=undef,
     core_web=undef,
     core_collar=undef,
-    web_pitch=24
+    web_pitch=24,
+    casing_output="body",
+    casing_region=undef
 ) {
     outer_x = casing_outer_x(slot_width, side_thickness);
     outer_y = casing_outer_y(slot_depth, back_thickness);
@@ -271,6 +274,7 @@ module hutchfinity_casing(
     );
 
     webbed = casing_core == "webbed";
+    open_infill = casing_core == "open-infill";
     skin = is_undef(core_skin) ? 2 * core_road : core_skin;
     web = is_undef(core_web) ? 2 * core_road : core_web;
     collar = is_undef(core_collar) ? 2 * core_road : core_collar;
@@ -281,9 +285,19 @@ module hutchfinity_casing(
         casing_core_pockets(outer_x, outer_y, side_thickness, back_thickness,
             enable_peg_holes ? peg_positions : [], core_radius, skin, web, web_pitch, min_pocket) : [];
 
-    assert(casing_core != "open-infill", "casing_core open-infill is not yet available; use solid or webbed");
-    assert(casing_core == "solid" || webbed, "unknown casing_core: use solid or webbed");
-    assert(!webbed || (core_road > 0 && skin > 0 && web > 0 && collar > 0),
+    // Regions exist only for open-infill, and only where there are bores to reinforce.
+    regions = open_infill ?
+        casing_core_regions(outer_x, outer_y, side_thickness, back_thickness, top_thickness, print_z,
+            enable_peg_holes ? peg_positions : [], core_radius) : [];
+
+    assert(casing_core == "solid" || webbed || open_infill, "unknown casing_core: use solid, webbed or open-infill");
+    assert(casing_output == "body" || casing_output == "regions", "unknown casing output: use body or regions");
+    assert(casing_output == "body" || open_infill, "casing regions exist only for open-infill");
+    assert(is_undef(casing_region) ||
+           (casing_output == "regions" && is_num(casing_region) && casing_region == floor(casing_region) &&
+            casing_region >= 0 && casing_region < len(regions)),
+        "casing region index out of range");
+    assert(!(webbed || open_infill) || (core_road > 0 && skin > 0 && web > 0 && collar > 0),
         "core road, skin, web and collar must be positive");
     assert(!webbed || web_pitch >= web + min_pocket,
         "web_pitch must leave room for a web and a minimum pocket");
@@ -329,27 +343,33 @@ module hutchfinity_casing(
             back_thickness / 2 >= socket_opening_radius + peg_socket_edge_land),
         "peg socket chamfer must fit inside the side/back wall thickness with edge land");
 
-    difference() {
-        casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness);
-        if (webbed) casing_core_pocket_cuts(core_pockets, top_thickness, print_z);
-        if (enable_peg_holes) {
-            through_peg_socket_cuts(peg_positions, socket_diameter, print_z,
-                socket_depth, peg_chamfer, socket_peg_chamfer, peg_throat_reduction);
+    if (casing_output == "regions")
+        casing_core_region_volumes(regions, casing_region);
+    else {
+        difference() {
+            casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness);
+            if (webbed) casing_core_pocket_cuts(core_pockets, top_thickness, print_z);
+            if (enable_peg_holes) {
+                through_peg_socket_cuts(peg_positions, socket_diameter, print_z,
+                    socket_depth, peg_chamfer, socket_peg_chamfer, peg_throat_reduction);
+            }
+            if (enable_magnet_holes)
+                hutchfinity_magnet_well_cuts(
+                    magnet_positions,
+                    casing_magnet_bore_diameter,
+                    casing_magnet_rib_tip_diameter,
+                    casing_magnet_well_depth,
+                    casing_magnet_chamfer
+                );
         }
-        if (enable_magnet_holes)
-            hutchfinity_magnet_well_cuts(
-                magnet_positions,
-                casing_magnet_bore_diameter,
-                casing_magnet_rib_tip_diameter,
-                casing_magnet_well_depth,
-                casing_magnet_chamfer
-            );
-    }
 
-    if (webbed)
-        echo(str("casing core: webbed; pockets=", len(core_pockets), "; foot_bearing=",
-            round(1000 * casing_core_foot_bearing(outer_x, outer_y, side_thickness, back_thickness,
-                core_pockets)) / 1000));
+        if (webbed)
+            echo(str("casing core: webbed; pockets=", len(core_pockets), "; foot_bearing=",
+                round(1000 * casing_core_foot_bearing(outer_x, outer_y, side_thickness, back_thickness,
+                    core_pockets)) / 1000));
+        if (open_infill)
+            echo(str("casing core: open-infill; regions=", len(regions)));
+    }
 
     if (show_debug_markers && !enable_peg_holes)
         %peg_debug_markers(peg_positions);
