@@ -51,6 +51,39 @@ IMPORT_NOTE = (
 )
 
 
+# One table feeds the app note, PRINTING.md and print-settings.json, so they cannot disagree.
+# open-infill is a named control value that is not yet available, so it has no entry.
+CASING_CORE_ASSUMPTIONS = {
+    "solid": "Solid casing walls: no assumption beyond the settings of the receiving slicer.",
+    "webbed": (
+        "Webbed casing walls: the model replaces the infill. Casing infill is recommended at 100% with a "
+        "solid-compatible pattern, so any gap residue prints solid. One wall loop per contour is assumed "
+        "for the skins and webs, which are two roads wide, with no crossing pattern needed. The pockets are open at the "
+        "feet and need no bridging."
+    ),
+}
+DEFAULT_CORE_ROAD = 1.4
+
+
+def casing_core_assumption(value) -> str:
+    if value == "open-infill":
+        raise PrintSettingsError("casing_core open-infill is not available yet")
+    if not isinstance(value, str) or value not in CASING_CORE_ASSUMPTIONS:
+        raise PrintSettingsError(f"unknown casing_core: {value!r}")
+    return CASING_CORE_ASSUMPTIONS[value]
+
+
+def core_road(options: "PrintOptions") -> tuple[float, str]:
+    """One deposited road for the webbed core: the selected process's wall line width, else the default."""
+    for key in ("outer_wall_line_width", "line_width"):
+        raw = options.process.get(key)
+        if raw is not None and not raw.endswith("%"):
+            width = float(raw)
+            if width > 0:
+                return width, key
+    return DEFAULT_CORE_ROAD, "default"
+
+
 def setting_value(key: str, raw) -> str:
     """Validate the supported setting's scalar value and return Orca serialization."""
     if isinstance(raw, bool) or not isinstance(raw, (str, int, float)):
@@ -149,13 +182,21 @@ def load_print_options(path: Path | None = None, *, avoid_crossings=False, geome
                          avoid_crossings=avoid_crossings, geometry_only=geometry_only)
 
 
-def part_record(name: str, copies: int, options: PrintOptions, floor_mm: float | None = None) -> dict:
+def part_record(name: str, copies: int, options: PrintOptions, floor_mm: float | None = None,
+                casing_core: str = "solid") -> dict:
+    casing_core_assumption(casing_core)
     recommended: dict[str, str] = {}
     reasons = []
+    if name == "Casing" and casing_core == "webbed":
+        recommended.update(sparse_infill_density="100%", sparse_infill_pattern="rectilinear", fill_multiline="1")
+        reasons.append("Webbed casing: 100% infill with a solid-compatible sparse pattern, so any gap residue prints solid. "
+                       "The actual solid-infill path pattern remains the receiver's setting.")
+        if options.avoid_crossings:
+            reasons.append("Avoid-crossings is not applied: a webbed casing has no sparse infill crossings to avoid.")
     if name in {"Peg", "Pull"}:
         recommended.update(sparse_infill_density="100%", sparse_infill_pattern="rectilinear", fill_multiline="1")
         reasons.append("Solid accessory: 100% infill with a solid-compatible sparse pattern. The actual solid-infill path pattern remains the receiver's setting.")
-    if name == "Casing" and options.avoid_crossings:
+    if name == "Casing" and options.avoid_crossings and casing_core == "solid":
         recommended["sparse_infill_pattern"] = "tpmsd"
         reasons.append("Avoid-crossings choice uses TPMS-D for casing sparse infill; density stays inherited unless selected.")
     if floor_mm is not None:
@@ -172,14 +213,18 @@ def part_record(name: str, copies: int, options: PrintOptions, floor_mm: float |
     }
 
 
-def write_printing_files(folder: Path, jobs: list[dict], options: PrintOptions, *, stem: str = "") -> list[Path]:
+def write_printing_files(folder: Path, jobs: list[dict], options: PrintOptions, *, stem: str = "",
+                         casing_core: str = "solid") -> list[Path]:
     """Keep a small, human-readable companion and exact values beside the print files."""
     json_path = folder / (f"{stem}.print-settings.json" if stem else "print-settings.json")
     md_path = folder / (f"{stem}.PRINTING.md" if stem else "PRINTING.md")
-    record = {"version": 1, **options.record(), "inheritance": INHERITANCE_NOTE, "import_status": IMPORT_NOTE, "jobs": jobs}
+    assumption = casing_core_assumption(casing_core)
+    record = {"version": 1, **options.record(), "casing_core": {"mode": casing_core, "assumptions": assumption},
+              "inheritance": INHERITANCE_NOTE, "import_status": IMPORT_NOTE, "jobs": jobs}
     json_path.write_text(json.dumps(record, indent=2) + "\n")
     lines = ["# Printing", "", "Geometry only: no settings are embedded." if options.geometry_only else
              "These files include selected process overrides plus the part recommendations below.", "", INHERITANCE_NOTE, "", IMPORT_NOTE, ""]
+    lines += [f"Casing core: {casing_core}. {assumption}", ""]
     if options.profile_name:
         lines += [f"Selected process JSON: {options.profile_name}.", ""]
     if options.inherits:

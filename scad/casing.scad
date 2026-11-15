@@ -1,12 +1,15 @@
 // casing.scad
-// version: 0.12.0
+// version: 0.13.0
 // First-pass Hutchfinity casing shell. Standalone slot geometry: no tub import,
 // no front, no bottom. Continuous hourglass peg bores connect both faces
 // inside the flat side/back wall footprints. Optional legacy magnet wells
-// remain a separate, physically unvalidated interface.
+// remain a separate, physically unvalidated interface. casing_core selects the
+// wall construction: "solid" (default) or "webbed" (casing_core.scad). "open-infill"
+// is a named value that is not yet available and is refused.
 
 use <magnet_well.scad>;
 use <peg.scad>;
+use <casing_core.scad>;
 
 $fn = 64;
 EPS = 0.01;
@@ -229,7 +232,13 @@ module hutchfinity_casing(
     extended_warning_travel_fraction=EXTENDED_WARNING_TRAVEL_FRACTION,
     show_debug_markers=SHOW_DEBUG_MARKERS,
     peg_end_chamfer=PEG_END_CHAMFER,
-    peg_throat_reduction=PEG_THROAT_REDUCTION
+    peg_throat_reduction=PEG_THROAT_REDUCTION,
+    casing_core="solid",
+    core_road=1.4,
+    core_skin=undef,
+    core_web=undef,
+    core_collar=undef,
+    web_pitch=24
 ) {
     outer_x = casing_outer_x(slot_width, side_thickness);
     outer_y = casing_outer_y(slot_depth, back_thickness);
@@ -261,6 +270,23 @@ module hutchfinity_casing(
         extended_warning_travel_fraction
     );
 
+    webbed = casing_core == "webbed";
+    skin = is_undef(core_skin) ? 2 * core_road : core_skin;
+    web = is_undef(core_web) ? 2 * core_road : core_web;
+    collar = is_undef(core_collar) ? 2 * core_road : core_collar;
+    min_pocket = 3 * core_road;
+    core_radius = casing_core_zone_radius(socket_diameter, peg_chamfer, collar);
+    // Pillars exist only where there are bores; the gate keeps shallow casings solid.
+    core_pockets = webbed && print_z - top_thickness >= casing_core_min_cavity_depth() ?
+        casing_core_pockets(outer_x, outer_y, side_thickness, back_thickness,
+            enable_peg_holes ? peg_positions : [], core_radius, skin, web, web_pitch, min_pocket) : [];
+
+    assert(casing_core != "open-infill", "casing_core open-infill is not yet available; use solid or webbed");
+    assert(casing_core == "solid" || webbed, "unknown casing_core: use solid or webbed");
+    assert(!webbed || (core_road > 0 && skin > 0 && web > 0 && collar > 0),
+        "core road, skin, web and collar must be positive");
+    assert(!webbed || web_pitch >= web + min_pocket,
+        "web_pitch must leave room for a web and a minimum pocket");
     assert(slot_width > 0 && slot_depth > 0 && slot_height > 0,
         "slot dimensions must be positive");
     assert(side_thickness > 0 && back_thickness > 0 && top_thickness > 0,
@@ -305,6 +331,7 @@ module hutchfinity_casing(
 
     difference() {
         casing_shell(outer_x, outer_y, print_z, side_thickness, back_thickness, top_thickness);
+        if (webbed) casing_core_pocket_cuts(core_pockets, top_thickness, print_z);
         if (enable_peg_holes) {
             through_peg_socket_cuts(peg_positions, socket_diameter, print_z,
                 socket_depth, peg_chamfer, socket_peg_chamfer, peg_throat_reduction);
@@ -318,6 +345,11 @@ module hutchfinity_casing(
                 casing_magnet_chamfer
             );
     }
+
+    if (webbed)
+        echo(str("casing core: webbed; pockets=", len(core_pockets), "; foot_bearing=",
+            round(1000 * casing_core_foot_bearing(outer_x, outer_y, side_thickness, back_thickness,
+                core_pockets)) / 1000));
 
     if (show_debug_markers && !enable_peg_holes)
         %peg_debug_markers(peg_positions);

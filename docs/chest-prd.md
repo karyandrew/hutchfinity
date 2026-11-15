@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 1.5.0
+version: 1.6.0
 ---
 
 # Hutchfinity Chest PRD
@@ -44,7 +44,7 @@ A single drawer slot is one tub plus one casing, with an optional knob. Chests g
 | HR-11 | **Press-fit dimensions are provisional until physical validation lands.** Use the current crush-rib testbed and magnet wiki as the live recipe source. | Trial-01 was PHATTY-process evidence; standard-settings validation is still pending. |
 | HR-12 | **All XY dimensions derive from tub cell count and pitch.** | Parametric source stays the contract; manually tuned outer dimensions are drift magnets. |
 | HR-13 | **v1 is general-purpose.** No domain-specific assumptions, labels, colors, storage categories, or workflow content belong in the chest architecture. | This repo is public OSS and the chest is a general organizer system. |
-| HR-14 | **Back and side exterior faces stay flat.** No external stack pads, lugs, bosses, ribs, lands, or other protrusions on the casing sides or back. | Flat sides/back keep modules visually clean, easy to place against each other or other objects, and true to the simple shell architecture. Stack registration must be solved without changing the exterior side/back planes. |
+| HR-14 | **Back and side exterior faces stay flat.** No external stack pads, lugs, bosses, ribs, lands, or other protrusions on the casing sides or back. | Flat sides/back keep modules visually clean, easy to place against each other or other objects, and true to the simple shell architecture. Stack registration must be solved without changing the exterior side/back planes. A webbed core inside the wall thickness (two flat skins, cross webs, solid pillars around the peg bores, open at the feet) is allowed: it adds nothing to the exterior and leaves every exterior and slot-facing plane unchanged. |
 
 ## Architecture
 
