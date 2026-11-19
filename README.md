@@ -1,6 +1,6 @@
 ---
 sensitivity: public
-version: 2.5.0
+version: 2.5.1
 ---
 
 # hutchfinity
@@ -67,6 +67,10 @@ The suite renders actual geometry and exercises generator output. The [system sp
 ## Why half-pitch
 
 Gridfinity's standard pitch (42mm XY, 7mm Z) is too coarse for many small-parts organization use cases. The hutchfinity system uses **21mm XY / 3.5mm Z** — half of standard on each axis — for denser packing of small bins while preserving compatibility with standard gridfinity bin foot geometry. Bins printed for one pitch system can sit alongside bins printed for the other.
+
+## Optional drawer-sized baseplates
+
+For an existing drawer rather than a Hutchfinity tub, [GridFlock](docs/gridflock-drawer-baseplates.md) is an optional external OpenSCAD generator. It supports exact drawer envelopes, 21 mm half-pitch configured in source, and printable interlocking segments where the print bed is smaller than the baseplate. Its custom pitch is not formally certified by upstream; check bin-foot seating with a small coupon before printing a full plate. GridFlock is not vendored or a dependency of the built-in Hutchfinity generator.
 
 ## Status
 
