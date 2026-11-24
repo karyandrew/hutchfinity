@@ -1,5 +1,5 @@
 ---
-version: 0.27.1
+version: 0.27.2
 sensitivity: public
 ---
 
@@ -74,7 +74,7 @@ Grid pockets stay open through the selected grid height, including the 8 mm maxi
 | 10 × 10 × 10h | 214.4 × 214.4 × 44.84 mm | 252.4 × 232.9 × 48.84 mm |
 | Regular, 12 × 16 × 20h | 256.4 × 340.4 × 79.84 mm | 294.4 × 358.9 × 83.84 mm |
 
-The pull guide projects from the tub front. Body dimensions above exclude that projection; mesh bounds include it. The full-size pull flange is 90 × 32.9 mm and scales down uniformly where the wall band or tub width is smaller. It is a drawer pull, not a carrying handle.
+The pull guide projects from the tub front. Body dimensions above exclude that projection; mesh bounds include it. The full-size pull flange is 90 × 32.9 mm with a 1.2 mm thick flat glue base. The 3 mm flare and 14 mm grip give an overall projection of 18.2 mm. The pull scales down uniformly where the wall band or tub width is smaller. It is a drawer pull, not a carrying handle.
 
 The guide has a trapezoidal cross-section: its 1.4 mm wide base stays outside the pull flange with 0.5 mm clearance, and both sides taper at 45° over the 0.6 mm projection to a 0.2 mm flat crest. The underside of each horizontal bar therefore rises gradually from the wall. The bonding footprint remains flat, and the guide's wall footprint and maximum projection are unchanged. Sliced appearance and physical print quality depend on the selected process.
 

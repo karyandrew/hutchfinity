@@ -1,12 +1,12 @@
 // Hutchfinity optional glue-on knob prototype.
-// Version: 0.2.0
+// Version: 0.2.1
 
 $fn = 64;
 EPS = 0.01;
 
 BASE_WIDTH = 90.0;
 BASE_DEPTH = 34.0;
-BASE_THICKNESS = 2.0;
+BASE_THICKNESS = 1.2;
 BASE_CORNER_RADIUS = 5.0;
 
 FLARE_WIDTH = 62.0;
