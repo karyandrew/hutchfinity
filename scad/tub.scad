@@ -1,5 +1,5 @@
 // tub.scad
-// version: 1.2.1
+// version: 1.2.2
 // Parametric Hutchfinity drawer tub: thin floor, integral or removable grid.
 //
 // Heights are derived from the tallest bin the tub must hold, not from a fixed
@@ -181,14 +181,26 @@ module _pull_guide(cells_y, flange, band_bottom, total_z) {
     iz = flange[1] + 2 * GUIDE_CLEARANCE;
     inner_r = PULL_FLANGE_RADIUS * flange[0] / PULL_FLANGE_X + GUIDE_CLEARANCE;
     center_z = (band_bottom + total_z - TOP_SLOPE) / 2;
-    translate([0, -tub_outer_y(cells_y) / 2 + GUIDE_OVERLAP, center_z])
+    // Keep the wall footprint and glue clearance. A 45-degree taper on both
+    // sides leaves a trapezoidal ring, including under its upper and lower bars.
+    taper = GUIDE_PROJECTION;
+    assert(GUIDE_RING > 2 * taper, "pull guide must retain a flat crest");
+    translate([0, -tub_outer_y(cells_y) / 2, center_z])
         rotate([90, 0, 0])
-            linear_extrude(GUIDE_PROJECTION + GUIDE_OVERLAP)
-                difference() {
-                    polygon(rounded_rect_points(
-                        ix + 2 * GUIDE_RING, iz + 2 * GUIDE_RING, inner_r + GUIDE_RING, CORNER_STEPS));
-                    polygon(rounded_rect_points(ix, iz, inner_r, CORNER_STEPS));
-                }
+            difference() {
+                rounded_loft([
+                    [-GUIDE_OVERLAP, ix + 2 * GUIDE_RING, iz + 2 * GUIDE_RING, inner_r + GUIDE_RING],
+                    [0, ix + 2 * GUIDE_RING, iz + 2 * GUIDE_RING, inner_r + GUIDE_RING],
+                    [GUIDE_PROJECTION, ix + 2 * (GUIDE_RING - taper),
+                        iz + 2 * (GUIDE_RING - taper), inner_r + GUIDE_RING - taper],
+                ]);
+                rounded_loft([
+                    [-GUIDE_OVERLAP - EPS, ix, iz, inner_r],
+                    [0, ix, iz, inner_r],
+                    [GUIDE_PROJECTION, ix + 2 * taper, iz + 2 * taper, inner_r + taper],
+                    [GUIDE_PROJECTION + EPS, ix + 2 * taper, iz + 2 * taper, inner_r + taper],
+                ]);
+            }
 }
 
 // floor_mode: "integral-grid" has the grid built in; "plain" is a flat floor that
